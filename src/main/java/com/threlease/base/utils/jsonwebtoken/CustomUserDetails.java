@@ -1,6 +1,6 @@
-package com.nullvariable.devlog.utils.jsonwebtoken;
+package com.threlease.base.utils.jsonwebtoken;
 
-import com.nullvariable.devlog.entites.AuthEntity;
+import com.threlease.base.entites.AuthEntity;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
