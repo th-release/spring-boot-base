@@ -1,4 +1,4 @@
-package com.threlease.base.enums;
+package com.nullvariable.devlog.enums;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -6,5 +6,5 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum Roles {
-    USER, ADMIN
+    ROLE_USER, ROLE_ADMIN
 }
