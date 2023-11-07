@@ -1,4 +1,4 @@
-package com.nullvariable.devlog.enums;
+package com.threlease.base.enums;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
