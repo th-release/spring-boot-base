@@ -1,4 +1,4 @@
-package com.nullvariable.devlog.utils.jsonwebtoken;
+package com.threlease.base.utils.jsonwebtoken;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
