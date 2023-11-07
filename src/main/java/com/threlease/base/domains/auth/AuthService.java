@@ -1,6 +1,8 @@
 package com.threlease.base.domains.auth;
 
 import com.threlease.base.entites.AuthEntity;
+import org.jose4j.jwt.MalformedClaimException;
+import org.jose4j.jwt.consumer.InvalidJwtException;
 import org.jose4j.lang.JoseException;
 import org.springframework.data.repository.query.Param;
 import org.springframework.http.ResponseEntity;
@@ -28,5 +30,5 @@ public interface AuthService {
             @RequestParam(value = "file") MultipartFile file
     );
     ResponseEntity<Object> getProfile(@RequestParam("uuid") String uuid) throws IOException;
-    ResponseEntity<Object> Me(@RequestHeader(value = "Authorization") String token) throws JoseException;
+    ResponseEntity<Object> Me(@RequestHeader(value = "Authorization") String token) throws JoseException, InvalidJwtException, MalformedClaimException;
 }

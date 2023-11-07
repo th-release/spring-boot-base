@@ -8,6 +8,8 @@ import com.threlease.base.utils.Hash;
 import com.threlease.base.utils.JpaConnect;
 import com.threlease.base.utils.jsonwebtoken.JwtProvider;
 import com.threlease.base.utils.responses.BasicResponse;
+import org.jose4j.jwt.MalformedClaimException;
+import org.jose4j.jwt.consumer.InvalidJwtException;
 import org.jose4j.lang.JoseException;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.data.repository.query.Param;
@@ -129,7 +131,7 @@ public class AuthServiceImpl implements AuthService {
                 .password(new Hash().generateSHA512(password + salt))
                 .salt(salt)
                 .createdAt(LocalDateTime.now())
-                .role(Roles.USER)
+                .role(Roles.ROLE_USER)
                 .build();
 
         Optional<AuthEntity> User = authRepository.findOneByUsername(username);
@@ -179,7 +181,7 @@ public class AuthServiceImpl implements AuthService {
 
     public ResponseEntity<Object> Me(
             @RequestHeader(value = "Authorization") String token
-    ) throws JoseException {
+    ) throws JoseException, InvalidJwtException, MalformedClaimException {
         Optional<AuthEntity> data = jwtProvider.findByToken(token);
 
         if (data.isPresent()) {

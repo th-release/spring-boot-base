@@ -1,6 +1,8 @@
 package com.threlease.base.domains.auth;
 
 import com.threlease.base.utils.responses.BasicResponse;
+import org.jose4j.jwt.MalformedClaimException;
+import org.jose4j.jwt.consumer.InvalidJwtException;
 import org.jose4j.lang.JoseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -78,7 +80,7 @@ public class AuthController {
     @GetMapping("/@me")
     public ResponseEntity<Object> Me(
             @RequestHeader(value = "Authorization") String token
-    ) throws JoseException {
+    ) throws JoseException, InvalidJwtException, MalformedClaimException {
         return authService.Me(token);
     }
 }
