@@ -1,7 +1,7 @@
-package com.nullvariable.devlog.utils.jsonwebtoken;
+package com.threlease.base.utils.jsonwebtoken;
 
-import com.nullvariable.devlog.entites.AuthEntity;
-import com.nullvariable.devlog.repositories.AuthRepository;
+import com.threlease.base.entites.AuthEntity;
+import com.threlease.base.repositories.AuthRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UserDetails;
