@@ -1,4 +1,4 @@
-package com.threlease.base.domains.auth;
+package com.threlease.base.functions.auth;
 
 import com.threlease.base.entites.AuthEntity;
 import org.jose4j.jwt.MalformedClaimException;
@@ -19,16 +19,8 @@ public interface AuthService {
     public Optional<AuthEntity> findOneByUUID(@Param("uuid") String uuid);
     Optional<AuthEntity> findOneByUsername(@Param("username") String username);
     List<AuthEntity> findAllLimitOrderByCreatedAtDesc(@Param("limit") int limit);
-    ResponseEntity<Object> Login(
-            @RequestParam(value = "username") String username,
-            @RequestParam(value = "password") String password
-    ) throws JoseException;
-    ResponseEntity<Object> SignUp(
-            @RequestParam(value = "username") String username,
-            @RequestParam(value = "nickname") String nickname,
-            @RequestParam(value = "password") String password,
-            @RequestParam(value = "file") MultipartFile file
-    );
+    void authSave(AuthEntity auth);
+    String tokenSign(String uuid) throws JoseException;
     ResponseEntity<Object> getProfile(@RequestParam("uuid") String uuid) throws IOException;
     ResponseEntity<Object> Me(@RequestHeader(value = "Authorization") String token) throws JoseException, InvalidJwtException, MalformedClaimException;
 }
