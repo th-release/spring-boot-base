@@ -1,26 +1,36 @@
 package com.threlease.base.functions.auth;
 
 import com.threlease.base.entites.AuthEntity;
-import org.jose4j.jwt.MalformedClaimException;
-import org.jose4j.jwt.consumer.InvalidJwtException;
-import org.jose4j.lang.JoseException;
-import org.springframework.data.repository.query.Param;
-import org.springframework.http.ResponseEntity;
+import com.threlease.base.repositories.AuthRepository;
+import com.threlease.base.utils.jsonwebtoken.JwtProvider;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.util.List;
 import java.util.Optional;
 @Service
-public interface AuthService {
-    public Optional<AuthEntity> findOneByUUID(@Param("uuid") String uuid);
-    Optional<AuthEntity> findOneByUsername(@Param("username") String username);
-    List<AuthEntity> findAllLimitOrderByCreatedAtDesc(@Param("limit") int limit);
-    void authSave(AuthEntity auth);
-    String tokenSign(String uuid) throws JoseException;
-    ResponseEntity<Object> getProfile(@RequestParam("uuid") String uuid) throws IOException;
-    ResponseEntity<Object> Me(@RequestHeader(value = "Authorization") String token) throws JoseException, InvalidJwtException, MalformedClaimException;
+public class AuthService {
+    private final AuthRepository authRepository;
+    private final JwtProvider jwtProvider;
+
+    public AuthService(AuthRepository authRepository, JwtProvider jwtProvider) {
+        this.authRepository = authRepository;
+        this.jwtProvider = jwtProvider;
+    }
+
+    public Optional<AuthEntity> findOneByUUID(String uuid) {
+        return authRepository.findOneByUUID(uuid);
+    }
+    public Optional<AuthEntity> findOneByUsername(String username) {
+        return authRepository.findOneByUsername(username);
+    }
+    public void authSave(AuthEntity auth) {
+        authRepository.save(auth);
+    }
+
+    public String sign(AuthEntity user) {
+        return jwtProvider.sign(user.getUuid());
+    }
+
+    public Optional<AuthEntity> findOneByToken(String token) {
+        return jwtProvider.findOneByToken(token);
+    }
 }
