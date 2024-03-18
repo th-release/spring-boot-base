@@ -25,20 +25,13 @@ public class AuthEntity {
     @Column(name = "username", columnDefinition = "varchar(24)", nullable = false, unique = true)
     private String username;
 
-    @Column(name = "nickname", columnDefinition = "varchar(22)", nullable = false)
-    private String nickname;
-
     @Column(name = "password", columnDefinition = "text", nullable = false)
     private String password;
 
     @Column(name = "salt", columnDefinition = "varchar(32)", length = 32, nullable = false)
     private String salt;
 
-    @Column(name = "profilePath", columnDefinition = "text", nullable = true)
-    private String profilePath;
-
     @CreatedDate
-    @Column(updatable = false, nullable = false, name = "createdAt")
     private LocalDateTime createdAt;
 
     @Enumerated(EnumType.STRING)
