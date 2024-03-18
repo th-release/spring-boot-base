@@ -36,16 +36,25 @@ public class WebSecurityConfig {
                 .exceptionHandling((exceptionConfig) ->
                         exceptionConfig.authenticationEntryPoint(
                                 ((request, response, authException) -> {
+                                    BasicResponse b_response = BasicResponse.builder()
+                                            .success(false)
+                                            .message(Optional.of("인증되지 않은 사용자 입니다."))
+                                            .data(Optional.empty())
+                                            .build();
+                                    response.setContentType("application/json");
                                     response.setStatus(401);
-                                    response.setCharacterEncoding("utf-8");
-                                    response.setContentType("application/json; charset=UTF-8");
-                                    response.getWriter().write("{ \"success\": false, \"message\": \"인증되지 않은 사용자입니다.\"}");
+                                    response.getWriter().write(b_response.toJson());
                                 })
                         ).accessDeniedHandler(((request, response, accessDeniedException) -> {
+                            BasicResponse b_response = BasicResponse.builder()
+                                    .success(false)
+                                    .message(Optional.of("권한이 없는 사용자입니다."))
+                                    .data(Optional.empty())
+                                    .build();
                             response.setStatus(403);
                             response.setCharacterEncoding("utf-8");
-                            response.setContentType("text/html; charset=UTF-8");
-                            response.getWriter().write("{ \"success\": false, \"message\": \"권한이 없는 사용자입니다.\"}");
+                            response.setContentType("application/json");
+                            response.getWriter().write(b_response.toJson());
                         }))
                 );
         return http.build();
