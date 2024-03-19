@@ -67,7 +67,7 @@ public class JwtProvider {
                     .build()
                     .parseSignedClaims(token);
 
-            return true;
+            return !jws.getPayload().getExpiration().before(new Date());
         } catch (JwtException e) {
             return false;
         }
