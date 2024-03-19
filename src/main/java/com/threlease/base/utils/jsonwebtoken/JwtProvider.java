@@ -49,6 +49,10 @@ public class JwtProvider {
                     .build()
                     .parseSignedClaims(token);
 
+            if (jws.getPayload().getExpiration().before(new Date())){
+                return Optional.empty();
+            }
+
             return Optional.of(jws);
         } catch (JwtException e) {
             return Optional.empty();
