@@ -59,6 +59,16 @@ public class JwtProvider {
         }
     }
 
+    public Optional<AuthEntity> findOneByToken(String token) {
+        Optional<Jws<Claims>> verify = this.verify(token);
+
+        if (verify.isPresent()) {
+            return authRepository.findOneByUUID(verify.get().getPayload().getSubject());
+        } else {
+            return Optional.empty();
+        }
+    }
+
     public boolean validateToken(String token) {
         if (token == null || token.isEmpty() || !token.substring(0, "Bearer ".length()).equalsIgnoreCase("Bearer ")) {
             return false;
