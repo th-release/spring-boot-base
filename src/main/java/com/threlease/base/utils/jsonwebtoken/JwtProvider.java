@@ -87,17 +87,6 @@ public class JwtProvider {
         }
     }
 
-    public Optional<AuthEntity> findOneByToken(String token) {
-        boolean success = this.validateToken(token);
-        if (success || verify(token).isPresent()) {
-            String uuid = verify(token).get().getPayload().toString();
-
-            return authRepository.findOneByUUID(uuid);
-        } else {
-            return Optional.empty();
-        }
-    }
-
     public Authentication getAuthentication(String token) {
         UserDetails userDetails = userDetailsService.loadUserByUsername(verify(token).isPresent() ? verify(token).get().getPayload().getSubject() : "");
         return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
