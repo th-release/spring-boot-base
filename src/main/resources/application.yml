@@ -16,6 +16,16 @@ spring:
       max-request-size: 10MB
 
 server:
+  forward-headers-strategy: FRAMEWORK
   servlet:
     contextPath: /api
 
+
+springdoc:
+  swagger-ui:
+    path: /swagger  # swagger-ui 접근 경로에 대한 별칭, 해당 주소로 접속해도 http://localhost:8080/swagger-ui/index.html로 리다이렉션 됨.
+    groups-order: DESC # path, query, body, response 순으로 출력
+    tags-sorter: alpha # 태그를 알파벳 순으로 정렬
+    operations-sorter: method  # delete - get - patch - post - put 순으로 정렬, alpha를 사용하면 알파벳 순으로 정렬 가능
+  paths-to-match:
+    - /** # swagger-ui에 표시할 api의 엔드 포인트 패턴
