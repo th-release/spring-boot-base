@@ -20,4 +20,32 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(400).body(response);
     }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<BasicResponse> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        List<String> messagesRow = new ArrayList<>();
+        for (ObjectError error: ex.getBindingResult().getAllErrors()) {
+            boolean status = true;
+
+            for (String message: messagesRow) {
+                if (message.equals(error.getDefaultMessage()))
+                    status = false;
+            }
+
+            if (status)
+                messagesRow.add(error.getDefaultMessage());
+        }
+
+        StringBuilder messages = new StringBuilder();
+        for (String error: messagesRow) {
+            messages.append(error).append("\n");
+        }
+
+        return ResponseEntity.status(400).body(
+                BasicResponse.builder()
+                        .success(false)
+                        .message(Optional.of(messages.toString()))
+                        .build()
+        );
+    }
 }
