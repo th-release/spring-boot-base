@@ -12,13 +12,13 @@ import java.util.Optional;
 public class GlobalExceptionHandler {
     @ExceptionHandler(value = {NullPointerException.class})
     public ResponseEntity<?> handleNullPointerException(NullPointerException ex, WebRequest request) {
-        BasicResponse response = BasicResponse.builder()
-                .success(false)
-                .message(Optional.of("잘못된 요청입니다."))
-                .data(Optional.empty())
-                .build();
-
-        return ResponseEntity.status(400).body(response);
+        return ResponseEntity.status(400).body(
+                BasicResponse.builder()
+                        .success(false)
+                        .message(Optional.of(ex.getMessage()))
+                        .data(Optional.empty())
+                        .build()
+        );
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
