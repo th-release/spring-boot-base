@@ -1,7 +1,7 @@
 package com.threlease.base.utils.jsonwebtoken;
 
 import com.threlease.base.entites.AuthEntity;
-import com.threlease.base.repositories.AuthRepository;
+import com.threlease.base.repositories.auth.AuthRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UserDetails;
