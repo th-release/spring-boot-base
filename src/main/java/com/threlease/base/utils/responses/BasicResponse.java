@@ -1,15 +1,13 @@
 package com.threlease.base.utils.responses;
 // compileOnly 'org.projectlombok:lombok'
 // annotationProcessor 'org.projectlombok:lombok'
-// com.fasterxml.jackson
+// com.google.gson.Gson
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
+import com.google.gson.Gson;
 
 import java.util.Optional;
 
@@ -17,19 +15,14 @@ import java.util.Optional;
 @Getter
 @Setter
 @Builder
-public class BasicResponse {
+public class BasicResponse<T> {
     private boolean success;
     private Optional<String> message;
-    private Optional<Object> data;
+    private Optional<T> data;
 
-    public String toJson() throws JsonProcessingException {
-        ObjectMapper objectMapper = new ObjectMapper();
-        ObjectNode jsonNode = objectMapper.createObjectNode();
+    public String toJson() {
+        Gson gson = new Gson();
 
-        jsonNode.put("success", success);
-        message.ifPresent(s -> jsonNode.put("message", s));
-        data.ifPresent(o -> jsonNode.put("data", objectMapper.valueToTree(o)));
-
-        return objectMapper.writeValueAsString(jsonNode);
+        return gson.toJson(this);
     }
 }

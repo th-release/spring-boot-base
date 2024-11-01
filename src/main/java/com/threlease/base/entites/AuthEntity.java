@@ -1,5 +1,6 @@
 package com.threlease.base.entites;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.threlease.base.enums.Roles;
 import jakarta.persistence.*;
 import lombok.*;
@@ -19,16 +20,21 @@ import java.time.LocalDateTime;
 public class AuthEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "uuid", length = 36, columnDefinition = "varchar(36)", nullable = false)
+    @Column(length = 36, nullable = false)
     private String uuid;
 
-    @Column(name = "username", columnDefinition = "varchar(24)", nullable = false, unique = true)
+    @Column(length = 24, nullable = false, unique = true)
     private String username;
 
-    @Column(name = "password", columnDefinition = "text", nullable = false)
+    @Column(length = 36, nullable = false)
+    private String nickname;
+
+    @JsonIgnore
+    @Column(columnDefinition = "text", nullable = false)
     private String password;
 
-    @Column(name = "salt", columnDefinition = "varchar(32)", length = 32, nullable = false)
+    @JsonIgnore
+    @Column(length = 32, nullable = false)
     private String salt;
 
     @CreatedDate

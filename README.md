@@ -1,7 +1,14 @@
 # spring-boot-base
 spring boot base
 
-> 해당 `Repository`는 `cth.release` 기준 편안하게 만들어졌고\
-> Spring Security, Jwt, MYSQL, Swagger이 셋팅되어 있습니다.
+> 해당 프로젝트는 아래의 기능들이 셋팅되어있어요!
 
-> 웹 개발 동아리 학생들의 교육을 위해 작성되었습니다.
+* Security 
+* Json Web Token
+* MYSQL JPA
+* Swagger
+* Validate + Enum Validate
+* Encrypt Utils
+* Random String Utils
+* Failable
+* QueryDSL

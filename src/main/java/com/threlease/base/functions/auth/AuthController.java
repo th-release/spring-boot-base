@@ -3,11 +3,17 @@ package com.threlease.base.functions.auth;
 import com.threlease.base.entites.AuthEntity;
 import com.threlease.base.enums.Roles;
 import com.threlease.base.functions.auth.dto.LoginDto;
+import com.threlease.base.functions.auth.dto.SignUpDto;
 import com.threlease.base.utils.Hash;
+import com.threlease.base.utils.random.GetRandom;
+import com.threlease.base.utils.random.RandomType;
 import com.threlease.base.utils.responses.BasicResponse;
+import com.threlease.base.utils.responses.Messages;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -21,96 +27,89 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    private ResponseEntity<?> login(
-        @RequestAttribute LoginDto dto
+    private ResponseEntity<BasicResponse<String>> login(
+        @RequestBody @Valid LoginDto dto
     ) {
         Optional<AuthEntity> auth = authService.findOneByUsername(dto.getUsername());
-        if (auth.isPresent()) {
-            if (Objects.equals(auth.get().getPassword(), new Hash().generateSHA512(dto.getPassword()))) {
-                BasicResponse response = BasicResponse.builder()
+
+        if (auth.isEmpty())
+            return ResponseEntity.status(404).body(
+                    BasicResponse.<String>builder()
+                            .success(false)
+                            .message(Optional.of(Messages.NOT_FOUND_USER))
+                            .build()
+            );
+
+        if (!Objects.equals(auth.get().getPassword(), new Hash().generateSHA512(dto.getPassword())))
+            return ResponseEntity.status(403).body(
+                    BasicResponse.<String>builder()
+                            .success(false)
+                            .message(Optional.of(Messages.WRONG_AUTH))
+                            .build()
+            );
+
+        return ResponseEntity.status(201).body(
+                BasicResponse.<String>builder()
                         .success(true)
                         .message(Optional.empty())
                         .data(Optional.ofNullable(authService.sign(auth.get())))
-                        .build();
-
-                return ResponseEntity.status(201).body(response);
-            } else {
-                BasicResponse response = BasicResponse.builder()
-                        .success(false)
-                        .message(Optional.of("아이디 혹은 비밀번호를 확인해주세요."))
-                        .data(Optional.empty())
-                        .build();
-
-                return ResponseEntity.status(403).body(response);
-            }
-        } else {
-            BasicResponse response = BasicResponse.builder()
-                    .success(false)
-                    .message(Optional.of("유저를 찾을 수 없습니다."))
-                    .data(Optional.empty())
-                    .build();
-
-            return ResponseEntity.status(401).body(response);
-        }
+                        .build()
+        );
     }
 
     @PostMapping("/signup")
-    private ResponseEntity<?> signUp(
-            @RequestAttribute LoginDto dto
+    private ResponseEntity<BasicResponse<AuthEntity>> signUp(
+            @RequestBody @Valid SignUpDto dto
     ) {
         Optional<AuthEntity> auth = authService.findOneByUsername(dto.getUsername());
 
-        if (auth.isEmpty()) {
-            AuthEntity user = AuthEntity.builder()
-                    .username(dto.getUsername())
-                    .password(dto.getPassword())
-                    .role(Roles.ROLE_USER)
-                    .build();
+        if (auth.isPresent())
+            return ResponseEntity.status(403).body(
+                    BasicResponse.<AuthEntity>builder()
+                            .success(false)
+                            .message(Optional.of(Messages.DUPLICATE_USER))
+                            .build()
+            );
 
-            authService.authSave(user);
-            BasicResponse response = BasicResponse.builder()
-                    .success(true)
-                    .message(Optional.empty())
-                    .data(Optional.empty())
-                    .build();
+        String salt = GetRandom.run(RandomType.ALL, 32);
 
-            return ResponseEntity.status(201).body(response);
-        } else {
-            BasicResponse response = BasicResponse.builder()
-                    .success(false)
-                    .message(Optional.of("이미 해당 아이디를 사용하는 유저가 있습니다."))
-                    .data(Optional.empty())
-                    .build();
+        AuthEntity user = AuthEntity.builder()
+                .username(dto.getUsername())
+                .password(Hash.generateSHA512(dto.getPassword() + salt))
+                .salt(salt)
+                .nickname(dto.getNickname())
+                .role(Roles.ROLE_USER)
+                .createdAt(LocalDateTime.now())
+                .build();
 
-            return ResponseEntity.status(403).body(response);
-        }
+        authService.authSave(user);
+
+        return ResponseEntity.status(201).body(
+                BasicResponse.<AuthEntity>builder()
+                        .success(true)
+                        .data(Optional.of(user))
+                        .build()
+        );
     }
 
     @GetMapping("/@me")
-    private ResponseEntity<?> verify(
+    private ResponseEntity<BasicResponse<AuthEntity>> verify(
             @RequestHeader("Authorization") String token
     ) {
         Optional<AuthEntity> user = authService.findOneByToken(token);
 
-        if (user.isPresent()) {
-            user.get().setSalt("unknown");
-            user.get().setPassword("unknown");
+        return user.map(authEntity -> ResponseEntity.status(200).body(
+                BasicResponse.<AuthEntity>builder()
+                        .success(true)
+                        .message(Optional.empty())
+                        .data(Optional.of(authEntity))
+                        .build()
+        )).orElseGet(() -> ResponseEntity.status(403).body(
+                BasicResponse.<AuthEntity>builder()
+                        .success(false)
+                        .message(Optional.of(Messages.SESSION_ERROR))
+                        .build()
+        ));
 
-            BasicResponse response = BasicResponse.builder()
-                    .success(true)
-                    .message(Optional.empty())
-                    .data(Optional.of(user.get()))
-                    .build();
-
-            return ResponseEntity.status(200).body(response);
-        } else {
-            BasicResponse response = BasicResponse.builder()
-                    .success(false)
-                    .message(Optional.of("세션이 만료 되었거나 인증에 문제가 생겼습니다."))
-                    .data(Optional.empty())
-                    .build();
-
-            return ResponseEntity.status(403).body(response);
-        }
     }
 }
