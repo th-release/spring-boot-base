@@ -27,6 +27,7 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/login")
+    @Operation(summary = "로그인")
     private ResponseEntity<BasicResponse<String>> login(
         @RequestBody @Valid LoginDto dto
     ) {
@@ -58,6 +59,7 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
+    @Operation(summary = "회원가입")
     private ResponseEntity<BasicResponse<AuthEntity>> signUp(
             @RequestBody @Valid SignUpDto dto
     ) {
@@ -92,6 +94,7 @@ public class AuthController {
     }
 
     @GetMapping("/@me")
+    @Operation(summary = "인증")
     private ResponseEntity<BasicResponse<AuthEntity>> verify(
             @RequestHeader("Authorization") String token
     ) {
