@@ -9,7 +9,9 @@ import com.threlease.base.utils.random.GetRandom;
 import com.threlease.base.utils.random.RandomType;
 import com.threlease.base.utils.responses.BasicResponse;
 import com.threlease.base.utils.responses.Messages;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,12 +21,10 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/auth")
+@Tag(name = "Auth API")
+@AllArgsConstructor
 public class AuthController {
     private final AuthService authService;
-
-    public AuthController(AuthService authService) {
-        this.authService = authService;
-    }
 
     @PostMapping("/login")
     private ResponseEntity<BasicResponse<String>> login(
@@ -40,7 +40,7 @@ public class AuthController {
                             .build()
             );
 
-        if (!Objects.equals(auth.get().getPassword(), new Hash().generateSHA512(dto.getPassword())))
+        if (!Objects.equals(auth.get().getPassword(), Hash.generateSHA512(dto.getPassword() + auth.get().getSalt())))
             return ResponseEntity.status(403).body(
                     BasicResponse.<String>builder()
                             .success(false)
@@ -77,7 +77,6 @@ public class AuthController {
                 .username(dto.getUsername())
                 .password(Hash.generateSHA512(dto.getPassword() + salt))
                 .salt(salt)
-                .nickname(dto.getNickname())
                 .role(Roles.ROLE_USER)
                 .createdAt(LocalDateTime.now())
                 .build();
@@ -110,6 +109,5 @@ public class AuthController {
                         .message(Optional.of(Messages.SESSION_ERROR))
                         .build()
         ));
-
     }
 }
