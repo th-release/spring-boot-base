@@ -1,4 +1,4 @@
-package com.threlease.base.utils.jsonwebtoken;
+package com.threlease.base.common.details;
 
 import com.threlease.base.entites.AuthEntity;
 import lombok.AllArgsConstructor;

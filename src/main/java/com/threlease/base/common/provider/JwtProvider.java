@@ -1,7 +1,8 @@
-package com.threlease.base.utils.jsonwebtoken;
+package com.threlease.base.common.provider;
 
 import com.threlease.base.entites.AuthEntity;
 import com.threlease.base.repositories.auth.AuthRepository;
+import com.threlease.base.common.service.CustomUserDetailsService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwtException;

@@ -1,5 +1,6 @@
-package com.threlease.base.utils.jsonwebtoken;
+package com.threlease.base.common.filter;
 
+import com.threlease.base.common.provider.JwtProvider;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

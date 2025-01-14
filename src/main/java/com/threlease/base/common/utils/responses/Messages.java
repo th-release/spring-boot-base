@@ -1,4 +1,4 @@
-package com.threlease.base.utils.responses;
+package com.threlease.base.common.utils.responses;
 
 public class Messages {
     public static String SESSION_ERROR = "세션이 만료 되었거나 인증에 문제가 생겼습니다.";

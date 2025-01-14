@@ -1,4 +1,4 @@
-package com.threlease.base.utils;
+package com.threlease.base.common.configs;
 
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;

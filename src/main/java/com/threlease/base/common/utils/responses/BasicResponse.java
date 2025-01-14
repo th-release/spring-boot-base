@@ -1,4 +1,4 @@
-package com.threlease.base.utils.responses;
+package com.threlease.base.common.utils.responses;
 // compileOnly 'org.projectlombok:lombok'
 // annotationProcessor 'org.projectlombok:lombok'
 // com.google.gson.Gson

@@ -1,4 +1,4 @@
-package com.threlease.base.utils;
+package com.threlease.base.common.crypto;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;

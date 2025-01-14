@@ -1,4 +1,4 @@
-package com.threlease.base.utils;
+package com.threlease.base.common.utils;
 
 import lombok.Getter;
 

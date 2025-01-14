@@ -1,4 +1,4 @@
-package com.threlease.base.enums;
+package com.threlease.base.common.enums;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

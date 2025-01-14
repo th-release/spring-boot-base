@@ -1,6 +1,6 @@
-package com.threlease.base.utils.security;
+package com.threlease.base.common.handler;
 
-import com.threlease.base.utils.responses.BasicResponse;
+import com.threlease.base.common.utils.responses.BasicResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;

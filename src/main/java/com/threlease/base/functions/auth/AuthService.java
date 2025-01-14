@@ -2,7 +2,7 @@ package com.threlease.base.functions.auth;
 
 import com.threlease.base.entites.AuthEntity;
 import com.threlease.base.repositories.AuthRepository;
-import com.threlease.base.utils.jsonwebtoken.JwtProvider;
+import com.threlease.base.common.provider.JwtProvider;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;

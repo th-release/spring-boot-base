@@ -1,7 +1,7 @@
 package com.threlease.base.entites;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.threlease.base.enums.Roles;
+import com.threlease.base.common.enums.Roles;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;

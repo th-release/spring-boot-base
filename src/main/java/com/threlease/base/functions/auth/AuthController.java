@@ -1,14 +1,14 @@
 package com.threlease.base.functions.auth;
 
 import com.threlease.base.entites.AuthEntity;
-import com.threlease.base.enums.Roles;
+import com.threlease.base.common.enums.Roles;
 import com.threlease.base.functions.auth.dto.LoginDto;
 import com.threlease.base.functions.auth.dto.SignUpDto;
-import com.threlease.base.utils.Hash;
-import com.threlease.base.utils.random.GetRandom;
-import com.threlease.base.utils.random.RandomType;
-import com.threlease.base.utils.responses.BasicResponse;
-import com.threlease.base.utils.responses.Messages;
+import com.threlease.base.common.crypto.Hash;
+import com.threlease.base.common.utils.random.GetRandom;
+import com.threlease.base.common.utils.random.RandomType;
+import com.threlease.base.common.utils.responses.BasicResponse;
+import com.threlease.base.common.utils.responses.Messages;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;

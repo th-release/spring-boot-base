@@ -1,4 +1,4 @@
-package com.threlease.base.utils.random;
+package com.threlease.base.common.utils.random;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
