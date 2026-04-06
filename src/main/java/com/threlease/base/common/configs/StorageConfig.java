@@ -3,6 +3,7 @@ package com.threlease.base.common.configs;
 import com.threlease.base.common.utils.storage.LocalStorageService;
 import com.threlease.base.common.utils.storage.S3StorageService;
 import com.threlease.base.common.utils.storage.StorageService;
+import com.threlease.base.common.utils.storage.repository.FileRepository;
 import io.awspring.cloud.s3.S3Template;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -17,8 +18,8 @@ public class StorageConfig {
      */
     @Bean
     @ConditionalOnProperty(name = "spring.cloud.aws.s3.bucket")
-    public StorageService s3StorageService(S3Template s3Template) {
-        return new S3StorageService(s3Template);
+    public StorageService s3StorageService(S3Template s3Template, FileRepository fileRepository) {
+        return new S3StorageService(s3Template, fileRepository);
     }
 
     /**
@@ -27,7 +28,7 @@ public class StorageConfig {
     @Bean
     @Primary
     @ConditionalOnProperty(name = "spring.cloud.aws.s3.bucket", matchIfMissing = true, havingValue = "none")
-    public StorageService localStorageService() {
-        return new LocalStorageService();
+    public StorageService localStorageService(FileRepository fileRepository) {
+        return new LocalStorageService(fileRepository);
     }
 }
