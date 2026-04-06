@@ -11,6 +11,7 @@ import com.threlease.base.common.utils.responses.BasicResponse;
 import com.threlease.base.entities.AuthEntity;
 import com.threlease.base.functions.auth.dto.LoginDto;
 import com.threlease.base.functions.auth.dto.SignUpDto;
+import com.threlease.base.functions.auth.dto.TokenResponseDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -28,7 +29,7 @@ public class AuthController {
     @PostMapping("/login")
     @RateLimit(limit = 10, window = 60)
     @Operation(summary = "로그인")
-    public ResponseEntity<BasicResponse<String>> login(
+    public ResponseEntity<BasicResponse<TokenResponseDto>> login(
             @RequestBody @Valid LoginDto dto
     ) {
         AuthEntity auth = authService.findOneByUsername(dto.getUsername())
@@ -38,7 +39,15 @@ public class AuthController {
             throw new BusinessException(ErrorCode.WRONG_PASSWORD);
         }
 
-        return BasicResponse.created(authService.sign(auth));
+        return BasicResponse.created(authService.issueTokens(auth));
+    }
+
+    @PostMapping("/refresh")
+    @Operation(summary = "토큰 재발급")
+    public ResponseEntity<BasicResponse<TokenResponseDto>> refresh(
+            @RequestHeader("Refresh-Token") String refreshToken
+    ) {
+        return BasicResponse.ok(authService.refresh(refreshToken));
     }
 
     @PostMapping("/signup")

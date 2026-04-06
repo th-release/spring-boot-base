@@ -17,27 +17,39 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class JwtProvider {
 
-    private final long exp = 1000L * 60 * 60 * 8;
-    private final String issuer = "auto-trades";
+    private final long accessTokenExp = 1000L * 60 * 60; // 1 hour
+    private final long refreshTokenExp = 1000L * 60 * 60 * 24 * 14; // 14 days
+    private final String issuer = "spring-boot-base";
     private final SecretKey key = Jwts.SIG.HS512.key().build();
 
     private final AuthRepository authRepository;
 
-    public String sign(String payload) {
+    public String createAccessToken(String uuid) {
+        return createToken(uuid, accessTokenExp);
+    }
+
+    public String createRefreshToken(String uuid) {
+        return createToken(uuid, refreshTokenExp);
+    }
+
+    private String createToken(String payload, long expiration) {
         return Jwts.builder()
                 .subject(payload)
                 .issuer(issuer)
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + exp))
+                .expiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(key)
                 .compact();
     }
 
     public Optional<Jws<Claims>> verify(String token) {
-        if (token == null || token.isEmpty() || !token.substring(0, "Bearer ".length()).equalsIgnoreCase("Bearer ")) {
+        if (token == null || token.isEmpty()) {
             return Optional.empty();
         }
-        token = token.split(" ")[1].trim();
+        
+        if (token.toLowerCase().startsWith("bearer ")) {
+            token = token.substring(7).trim();
+        }
 
         try {
             Jws<Claims> jws = Jwts.parser()
@@ -63,5 +75,11 @@ public class JwtProvider {
         } else {
             return Optional.empty();
         }
+    }
+    
+    public String getSubject(String token) {
+        return verify(token)
+                .map(jws -> jws.getPayload().getSubject())
+                .orElse(null);
     }
 }
