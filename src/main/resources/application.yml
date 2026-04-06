@@ -105,3 +105,7 @@ storage:
   local:
     path: ./uploads
     prefix: /api/files
+  cleanup:
+    cron: "0 0 3 * * *"  # 매일 새벽 3시 / 비활성화: "-"
+    fixed-rate: 0         # ms 단위, 0이면 비활성화 / 예: 21600000 (6시간)
+    chunk-size: 100
