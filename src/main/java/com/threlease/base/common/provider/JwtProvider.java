@@ -69,27 +69,4 @@ public class JwtProvider {
             return Optional.empty();
         }
     }
-
-    public boolean validateToken(String token) {
-        if (token == null || token.isEmpty() || !token.substring(0, "Bearer ".length()).equalsIgnoreCase("Bearer ")) {
-            return false;
-        }
-        token = token.split(" ")[1].trim();
-
-        try {
-            Jws<Claims> jws = Jwts.parser()
-                    .verifyWith(key)
-                    .build()
-                    .parseSignedClaims(token);
-
-            return !jws.getPayload().getExpiration().before(new Date());
-        } catch (JwtException e) {
-            return false;
-        }
-    }
-
-    public Authentication getAuthentication(String token) {
-        UserDetails userDetails = userDetailsService.loadUserByUsername(verify(token).isPresent() ? verify(token).get().getPayload().getSubject() : "");
-        return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
-    }
 }
