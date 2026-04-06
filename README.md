@@ -35,6 +35,7 @@
     *   **P6Spy SQL Logging**: JPA가 생성하는 SQL문의 `?` 파라미터를 실제 값으로 치환하여 로깅 (`decorator.datasource.p6spy` 설정).
     *   **Hybrid Caching**: Redis 설정(`spring.data.redis.host`) 여부에 따라 **Redis** 또는 **Local Cache(ConcurrentMap)**를 자동으로 선택하여 사용.
     *   **Storage Abstraction**: AWS S3 설정(`spring.cloud.aws.s3.bucket`) 여부에 따라 **S3** 또는 **Local File System**을 스토리지로 사용하도록 자동 전환.
+    *   **Async & Scheduling**: 별도의 쓰레드 풀 설정을 통해 비동기 작업(`@Async`) 및 주기적 작업(`@Scheduled`)의 성능과 안정성 확보.
     *   **Structured Logging**: `logback-spring.xml` 설정을 통한 가독성 높은 로그 포맷 적용.
 *   **Common Utilities**:
     *   `BaseEntity`: 생성/수정 시간 자동 추적.
