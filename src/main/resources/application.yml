@@ -46,3 +46,10 @@ management:
   metrics:
     tags:
       application: ${spring.application.name:spring-boot-base}
+
+decorator:
+  datasource:
+    p6spy:
+      enable-logging: true
+      multiline: true # 쿼리를 여러 줄로 보기 좋게 출력
+      logging: slf4j
