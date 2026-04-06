@@ -25,6 +25,15 @@ spring:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
+  cloud:
+    aws:
+      s3:
+        bucket: ${AWS_S3_BUCKET:}
+      region:
+        static: ${AWS_REGION:ap-northeast-2}
+      credentials:
+        access-key: ${AWS_ACCESS_KEY:}
+        secret-key: ${AWS_SECRET_KEY:}
 
 springdoc:
   swagger-ui:
@@ -53,3 +62,8 @@ decorator:
       enable-logging: true
       multiline: true # 쿼리를 여러 줄로 보기 좋게 출력
       logging: slf4j
+
+storage:
+  local:
+    path: ./uploads
+    url-prefix: /api/files
