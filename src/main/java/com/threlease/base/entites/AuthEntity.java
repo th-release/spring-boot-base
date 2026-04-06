@@ -1,6 +1,7 @@
 package com.threlease.base.entites;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.threlease.base.common.entity.BaseEntity;
 import com.threlease.base.common.enums.Roles;
 import jakarta.persistence.*;
 import lombok.*;
@@ -17,7 +18,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
-public class AuthEntity {
+public class AuthEntity extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(length = 36, nullable = false)
@@ -36,9 +37,6 @@ public class AuthEntity {
     @JsonIgnore
     @Column(length = 32, nullable = false)
     private String salt;
-
-    @CreatedDate
-    private LocalDateTime createdAt;
 
     @Enumerated(EnumType.STRING)
     private Roles role;
