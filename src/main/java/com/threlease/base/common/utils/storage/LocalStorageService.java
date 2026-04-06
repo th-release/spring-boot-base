@@ -17,8 +17,8 @@ public class LocalStorageService implements StorageService {
     @Value("${storage.local.path:./uploads}")
     private String rootPath;
 
-    @Value("${storage.local.url-prefix:/api/files}")
-    private String urlPrefix;
+    @Value("${storage.local.prefix:/api/files}")
+    private String prefix;
 
     @Override
     public String upload(MultipartFile file, String dirName) throws IOException {
@@ -47,6 +47,6 @@ public class LocalStorageService implements StorageService {
 
     @Override
     public String getUrl(String filePath) {
-        return urlPrefix + "/" + filePath;
+        return prefix + "/" + filePath;
     }
 }
