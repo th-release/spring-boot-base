@@ -47,18 +47,23 @@ app:
     port: ${REDIS_PORT:6379}
   token:
     storage: ${TOKEN_STORAGE:rdb} # cache (Redis/Local), rdb (Database)
-  logging:
-    exclude-urls:
-      - /api/actuator
-      - /api/swagger
-      - /api/swagger-ui
-      - /api/v3/api-docs
   qr:
     margin: ${QR_MARGIN:1}
     charset: ${QR_CHARSET:UTF-8}
     format: ${QR_FORMAT:PNG}
     height: ${QR_HEIGHT:300}
     width: ${QR_WIDTH:300}
+  logging:
+    exclude-urls:
+      - /api/actuator
+      - /api/swagger
+      - /api/swagger-ui
+      - /api/v3/api-docs
+  swagger:
+    scheme: bearer
+    title: title
+    description: description
+    version: 1.0.0
 
 springdoc:
   swagger-ui:
