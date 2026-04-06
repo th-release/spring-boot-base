@@ -4,7 +4,7 @@ import com.threlease.base.common.annotation.RateLimit;
 import com.threlease.base.common.enums.Roles;
 import com.threlease.base.common.exception.BusinessException;
 import com.threlease.base.common.exception.ErrorCode;
-import com.threlease.base.common.crypto.Hash;
+import com.threlease.base.common.utils.crypto.HashComponent;
 import com.threlease.base.common.utils.random.GetRandom;
 import com.threlease.base.common.utils.random.RandomType;
 import com.threlease.base.common.utils.responses.BasicResponse;
@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 @AllArgsConstructor
 public class AuthController {
     private final AuthService authService;
+    private final HashComponent hashComponent;
 
     @PostMapping("/login")
     @RateLimit(limit = 10, window = 60)
@@ -35,7 +36,7 @@ public class AuthController {
         AuthEntity auth = authService.findOneByUsername(dto.getUsername())
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        if (!auth.getPassword().equals(Hash.generateSHA512(dto.getPassword() + auth.getSalt()))) {
+        if (!auth.getPassword().equals(hashComponent.generateSHA512(dto.getPassword() + auth.getSalt()))) {
             throw new BusinessException(ErrorCode.WRONG_PASSWORD);
         }
 
@@ -64,7 +65,7 @@ public class AuthController {
 
         AuthEntity user = AuthEntity.builder()
                 .username(dto.getUsername())
-                .password(Hash.generateSHA512(dto.getPassword() + salt))
+                .password(hashComponent.generateSHA512(dto.getPassword() + salt))
                 .salt(salt)
                 .role(Roles.ROLE_USER)
                 .build();

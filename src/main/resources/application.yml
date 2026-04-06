@@ -39,6 +39,10 @@ spring:
         access-key: ${AWS_ACCESS_KEY:}
         secret-key: ${AWS_SECRET_KEY:}
 
+crypto:
+  aes:
+    secret: ${AES_SECRET}
+
 # Redis 사용 여부 제어 (기본값 false)
 app:
   redis:
