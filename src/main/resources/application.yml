@@ -40,11 +40,13 @@ spring:
         secret-key: ${AWS_SECRET_KEY:}
 
 # Redis 사용 여부 제어 (기본값 false)
-수정 app:
+app:
   redis:
     enabled: ${REDIS_ENABLED:false}
     host: ${REDIS_HOST:localhost}
     port: ${REDIS_PORT:6379}
+  token:
+    storage: ${TOKEN_STORAGE:rdb} # cache (Redis/Local), rdb (Database)
 
 springdoc:
   swagger-ui:
@@ -81,4 +83,4 @@ decorator:
 storage:
   local:
     path: ./uploads
-    url-prefix: /api/files
+    prefix: /api/files
