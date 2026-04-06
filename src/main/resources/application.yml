@@ -53,6 +53,12 @@ app:
       - /api/swagger
       - /api/swagger-ui
       - /api/v3/api-docs
+  qr:
+    margin: ${QR_MARGIN:1}
+    charset: ${QR_CHARSET:UTF-8}
+    format: ${QR_FORMAT:PNG}
+    height: ${QR_HEIGHT:300}
+    width: ${QR_WIDTH:300}
 
 springdoc:
   swagger-ui:
