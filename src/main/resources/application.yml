@@ -47,6 +47,12 @@ app:
     port: ${REDIS_PORT:6379}
   token:
     storage: ${TOKEN_STORAGE:rdb} # cache (Redis/Local), rdb (Database)
+  logging:
+    exclude-urls:
+      - /api/actuator
+      - /api/swagger
+      - /api/swagger-ui
+      - /api/v3/api-docs
 
 springdoc:
   swagger-ui:
