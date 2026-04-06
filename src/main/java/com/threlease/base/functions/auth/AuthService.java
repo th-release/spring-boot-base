@@ -1,6 +1,6 @@
 package com.threlease.base.functions.auth;
 
-import com.threlease.base.entites.AuthEntity;
+import com.threlease.base.entities.AuthEntity;
 import com.threlease.base.repositories.auth.AuthRepository;
 import com.threlease.base.common.provider.JwtProvider;
 import org.springframework.stereotype.Service;

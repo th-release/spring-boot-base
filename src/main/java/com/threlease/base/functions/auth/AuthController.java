@@ -7,7 +7,7 @@ import com.threlease.base.common.crypto.Hash;
 import com.threlease.base.common.utils.random.GetRandom;
 import com.threlease.base.common.utils.random.RandomType;
 import com.threlease.base.common.utils.responses.BasicResponse;
-import com.threlease.base.entites.AuthEntity;
+import com.threlease.base.entities.AuthEntity;
 import com.threlease.base.functions.auth.dto.LoginDto;
 import com.threlease.base.functions.auth.dto.SignUpDto;
 import io.swagger.v3.oas.annotations.Operation;

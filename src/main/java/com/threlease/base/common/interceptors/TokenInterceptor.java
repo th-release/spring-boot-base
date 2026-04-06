@@ -2,7 +2,7 @@ package com.threlease.base.common.interceptors;
 
 import com.threlease.base.common.exception.BusinessException;
 import com.threlease.base.common.exception.ErrorCode;
-import com.threlease.base.entites.AuthEntity;
+import com.threlease.base.entities.AuthEntity;
 import com.threlease.base.functions.auth.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

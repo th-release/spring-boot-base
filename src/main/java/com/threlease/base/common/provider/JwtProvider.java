@@ -1,6 +1,6 @@
 package com.threlease.base.common.provider;
 
-import com.threlease.base.entites.AuthEntity;
+import com.threlease.base.entities.AuthEntity;
 import com.threlease.base.repositories.auth.AuthRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;

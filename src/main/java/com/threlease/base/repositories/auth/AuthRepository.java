@@ -1,6 +1,6 @@
 package com.threlease.base.repositories.auth;
 
-import com.threlease.base.entites.AuthEntity;
+import com.threlease.base.entities.AuthEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

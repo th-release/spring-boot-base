@@ -1,8 +1,8 @@
 package com.threlease.base.repositories.auth;
 
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import com.threlease.base.entites.AuthEntity;
-import com.threlease.base.entites.QAuthEntity;
+import com.threlease.base.entities.AuthEntity;
+import com.threlease.base.entities.QAuthEntity;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Repository;
 

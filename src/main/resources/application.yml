@@ -8,7 +8,7 @@ spring:
   datasource:
     hikari:
       driver-class-name: org.postgresql.Driver
-      jdbc-url: jdbc:postgresql://${DATABASE_HOST:192.168.0.1}:${DATABASE_PORT:5432}/${DATABASE_DATABASE:base}?characterEncoding=UTF-8&allowMultiQueries=true&allowMultiQueries=true&currentSchema==${DATABASE_SCHEMA:public}
+      jdbc-url: jdbc:postgresql://${DATABASE_HOST:192.168.0.1}:${DATABASE_PORT:5432}/${DATABASE_DATABASE:base}?characterEncoding=UTF-8&allowMultiQueries=true&allowMultiQueries=true&currentSchema=${DATABASE_SCHEMA:public}
       username: ${DATABASE_USERNAME:root}
       password: ${DATABASE_PASSWORD:root}
       ## 아래 수치들은 각 프로젝트별로 성능 테스트 후 변경하는 것을 권장한다.
