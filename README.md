@@ -36,6 +36,7 @@
     *   **Hybrid Caching**: Redis 설정(`spring.data.redis.host`) 여부에 따라 **Redis** 또는 **Local Cache(ConcurrentMap)**를 자동으로 선택하여 사용.
     *   **Storage Abstraction**: AWS S3 설정(`spring.cloud.aws.s3.bucket`) 여부에 따라 **S3** 또는 **Local File System**을 스토리지로 사용하도록 자동 전환.
     *   **Async & Scheduling**: 별도의 쓰레드 풀 설정을 통해 비동기 작업(`@Async`) 및 주기적 작업(`@Scheduled`)의 성능과 안정성 확보.
+    *   **MapStruct**: Entity와 DTO 간의 객체 매핑 코드를 컴파일 시점에 자동 생성하여 개발 생산성 향상.
     *   **Structured Logging**: `logback-spring.xml` 설정을 통한 가독성 높은 로그 포맷 적용.
 *   **Common Utilities**:
     *   `BaseEntity`: 생성/수정 시간 자동 추적.
@@ -55,7 +56,7 @@ src/main/java/com/threlease/base/
 │   ├── interceptors/   # JWT 인증 인터셉터
 │   ├── provider/       # JWT 토큰 생성 및 검증 Provider
 │   └── utils/          # 각종 유틸리티 (Encryption, Validation, Response)
-├── entites/            # JPA 엔티티 정의 (AuthEntity 등)
+├── entities/           # JPA 엔티티 정의 (AuthEntity 등)
 ├── functions/          # 비즈니스 로직 (Controller, Service, DTO)
 │   └── auth/           # 인증 관련 (로그인, 회원가입 등)
 └── repositories/       # JPA 및 QueryDSL 리포지토리
