@@ -2,15 +2,11 @@ package com.threlease.base.common.provider;
 
 import com.threlease.base.entites.AuthEntity;
 import com.threlease.base.repositories.auth.AuthRepository;
-import com.threlease.base.common.service.CustomUserDetailsService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -26,7 +22,6 @@ public class JwtProvider {
     private final SecretKey key = Jwts.SIG.HS512.key().build();
 
     private final AuthRepository authRepository;
-    private final CustomUserDetailsService userDetailsService;
 
     public String sign(String payload) {
         return Jwts.builder()
