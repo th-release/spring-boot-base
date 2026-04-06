@@ -5,8 +5,7 @@ import com.threlease.base.common.enums.Roles;
 import com.threlease.base.common.exception.BusinessException;
 import com.threlease.base.common.exception.ErrorCode;
 import com.threlease.base.common.utils.crypto.HashComponent;
-import com.threlease.base.common.utils.random.GetRandom;
-import com.threlease.base.common.utils.random.RandomType;
+import com.threlease.base.common.utils.random.RandomComponent;
 import com.threlease.base.common.utils.responses.BasicResponse;
 import com.threlease.base.entities.AuthEntity;
 import com.threlease.base.functions.auth.dto.LoginDto;
@@ -26,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
     private final AuthService authService;
     private final HashComponent hashComponent;
+    private final RandomComponent randomComponent;
 
     @PostMapping("/login")
     @RateLimit(limit = 10, window = 60)
@@ -61,7 +61,7 @@ public class AuthController {
             throw new BusinessException(ErrorCode.USER_DUPLICATE);
         }
 
-        String salt = GetRandom.run(RandomType.ALL, 32);
+        String salt = randomComponent.generateAlphanumeric(32);
 
         AuthEntity user = AuthEntity.builder()
                 .username(dto.getUsername())
