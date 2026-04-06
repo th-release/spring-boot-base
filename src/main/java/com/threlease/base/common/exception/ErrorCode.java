@@ -22,7 +22,10 @@ public enum ErrorCode {
 
     // 권한
     UNAUTHORIZED(401, "인증이 필요합니다."),
-    FORBIDDEN(403, "접근 권한이 없습니다.");
+    FORBIDDEN(403, "접근 권한이 없습니다."),
+
+    // Rate Limit
+    TOO_MANY_REQUESTS(429, "너무 많은 요청이 발생했습니다. 잠시 후 다시 시도해 주세요.");
 
     private final int status;
     private final String message;

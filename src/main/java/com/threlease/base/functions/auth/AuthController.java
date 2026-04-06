@@ -1,5 +1,6 @@
 package com.threlease.base.functions.auth;
 
+import com.threlease.base.common.annotation.RateLimit;
 import com.threlease.base.common.enums.Roles;
 import com.threlease.base.common.exception.BusinessException;
 import com.threlease.base.common.exception.ErrorCode;
@@ -25,6 +26,7 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/login")
+    @RateLimit(limit = 10, window = 60)
     @Operation(summary = "로그인")
     public ResponseEntity<BasicResponse<String>> login(
             @RequestBody @Valid LoginDto dto
@@ -40,6 +42,7 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
+    @RateLimit(limit = 5, window = 60)
     @Operation(summary = "회원가입")
     public ResponseEntity<BasicResponse<AuthEntity>> signUp(
             @RequestBody @Valid SignUpDto dto

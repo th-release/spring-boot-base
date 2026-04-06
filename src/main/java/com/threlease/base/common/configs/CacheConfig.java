@@ -1,5 +1,6 @@
 package com.threlease.base.common.configs;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
@@ -9,6 +10,9 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
@@ -18,11 +22,33 @@ import java.time.Duration;
 @Configuration
 public class CacheConfig {
 
+    @Value("${app.redis.host:localhost}")
+    private String redisHost;
+
+    @Value("${app.redis.port:6379}")
+    private int redisPort;
+
     /**
-     * Redis 설정(spring.data.redis.host)이 있을 때 활성화되는 Redis Cache
+     * app.redis.enabled=false 일 때 (기본값) Local Cache 사용
      */
     @Bean
-    @ConditionalOnProperty(name = "spring.data.redis.host")
+    @Primary
+    @ConditionalOnProperty(name = "app.redis.enabled", havingValue = "false", matchIfMissing = true)
+    public CacheManager localCacheManager() {
+        return new ConcurrentMapCacheManager();
+    }
+
+    /**
+     * app.redis.enabled=true 일 때만 Redis 관련 빈 생성
+     */
+    @Bean
+    @ConditionalOnProperty(name = "app.redis.enabled", havingValue = "true")
+    public RedisConnectionFactory redisConnectionFactory() {
+        return new LettuceConnectionFactory(redisHost, redisPort);
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "app.redis.enabled", havingValue = "true")
     public CacheManager redisCacheManager(RedisConnectionFactory connectionFactory) {
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofHours(1))
@@ -34,13 +60,19 @@ public class CacheConfig {
                 .build();
     }
 
-    /**
-     * Redis 설정이 없을 때 활성화되는 In-Memory Cache (Fallback)
-     */
     @Bean
-    @Primary
-    @ConditionalOnProperty(name = "spring.data.redis.host", matchIfMissing = true, havingValue = "false")
-    public CacheManager localCacheManager() {
-        return new ConcurrentMapCacheManager();
+    @ConditionalOnProperty(name = "app.redis.enabled", havingValue = "true")
+    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
+        RedisTemplate<String, Object> template = new RedisTemplate<>();
+        template.setConnectionFactory(connectionFactory);
+        template.setKeySerializer(new StringRedisSerializer());
+        template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
+        return template;
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "app.redis.enabled", havingValue = "true")
+    public StringRedisTemplate stringRedisTemplate(RedisConnectionFactory connectionFactory) {
+        return new StringRedisTemplate(connectionFactory);
     }
 }

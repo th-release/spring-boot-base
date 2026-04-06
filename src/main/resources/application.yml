@@ -5,21 +5,25 @@ server:
   port: ${PORT:8080}
 
 spring:
+  # Redis 자동 설정을 완전히 제외 (우리가 CacheConfig에서 직접 제어함)
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
   datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://${DATABASE_HOST:127.0.0.1}:${DATABASE_PORT:5432}/${DATABASE_DATABASE:base}?characterEncoding=UTF-8&allowMultiQueries=true&allowMultiQueries=true&currentSchema=${DATABASE_SCHEMA:public}
+    username: ${DATABASE_USERNAME:root}
+    password: ${DATABASE_PASSWORD:root}
     hikari:
-      driver-class-name: org.postgresql.Driver
-      jdbc-url: jdbc:postgresql://${DATABASE_HOST:192.168.0.1}:${DATABASE_PORT:5432}/${DATABASE_DATABASE:base}?characterEncoding=UTF-8&allowMultiQueries=true&allowMultiQueries=true&currentSchema=${DATABASE_SCHEMA:public}
-      username: ${DATABASE_USERNAME:root}
-      password: ${DATABASE_PASSWORD:root}
-      ## 아래 수치들은 각 프로젝트별로 성능 테스트 후 변경하는 것을 권장한다.
-      maximum-pool-size: 50 # 최대 pool 갯수
-      connection-timeout: 2000 # pool에서 이용가능한 커넥션을 기다리는 시간
-      validation-timeout: 5000 # 커넥션 유효성 검사 시간
+      maximum-pool-size: 50
+      connection-timeout: 2000
+      validation-timeout: 5000
   jpa:
     hibernate:
       ddl-auto: update
-    properties: # property ?? ??
-      hibernate: # hibernate property ??
+    properties:
+      hibernate:
         format_sql: true
   servlet:
     multipart:
@@ -35,14 +39,21 @@ spring:
         access-key: ${AWS_ACCESS_KEY:}
         secret-key: ${AWS_SECRET_KEY:}
 
+# Redis 사용 여부 제어 (기본값 false)
+수정 app:
+  redis:
+    enabled: ${REDIS_ENABLED:false}
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+
 springdoc:
   swagger-ui:
-    path: /swagger  # swagger-ui 접근 경로에 대한 별칭, 해당 주소로 접속해도 http://localhost:8080/swagger-ui/index.html로 리다이렉션 됨.
-    groups-order: DESC # path, query, body, response 순으로 출력
-    tags-sorter: alpha # 태그를 알파벳 순으로 정렬
-    operations-sorter: method  # delete - get - patch - post - put 순으로 정렬, alpha를 사용하면 알파벳 순으로 정렬 가능
+    path: /swagger
+    groups-order: DESC
+    tags-sorter: alpha
+    operations-sorter: method
   paths-to-match:
-    - /** # swagger-ui에 표시할 api의 엔드 포인트 패턴
+    - /**
 
 management:
   endpoints:
@@ -52,6 +63,10 @@ management:
   endpoint:
     health:
       show-details: always
+  # Redis 헬스 체크도 비활성화 (연결 시도 방지)
+  health:
+    redis:
+      enabled: false
   metrics:
     tags:
       application: ${spring.application.name:spring-boot-base}
@@ -60,7 +75,7 @@ decorator:
   datasource:
     p6spy:
       enable-logging: true
-      multiline: true # 쿼리를 여러 줄로 보기 좋게 출력
+      multiline: true
       logging: slf4j
 
 storage:
