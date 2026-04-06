@@ -18,7 +18,7 @@ import java.util.Base64;
  * AES-256-GCM 기반 양방향 암호화 유틸
  *
  * 키 설정:
- * - application.yml에 crypto.aes.secret-key 가 있으면 해당 키 사용
+ * - application.yml에 crypto.aes.secret 가 있으면 해당 키 사용
  * - 없으면 서버 시작 시 랜덤 키 자동 생성 (재시작 시 기존 데이터 복호화 불가 — 개발 환경 전용)
  */
 @Slf4j
@@ -29,7 +29,7 @@ public class AesComponent {
     private static final int IV_LENGTH = 12;    // GCM 권장 IV 길이
     private static final int TAG_LENGTH = 128;  // 인증 태그 비트
 
-    @Value("${crypto.aes.secret-key:}")
+    @Value("${crypto.aes.secret:}")
     private String base64Key;
 
     private SecretKey secretKey;
@@ -40,7 +40,7 @@ public class AesComponent {
             byte[] keyBytes = new byte[32];
             new SecureRandom().nextBytes(keyBytes);
             this.secretKey = new SecretKeySpec(keyBytes, "AES");
-            log.warn("[CryptoUtils] crypto.aes.secret-key 가 설정되지 않아 랜덤 키를 생성했습니다. " +
+            log.warn("[CryptoUtils] crypto.aes.secret 가 설정되지 않아 랜덤 키를 생성했습니다. " +
                      "서버 재시작 시 기존 암호화 데이터를 복호화할 수 없으니 운영 환경에서는 반드시 키를 고정하세요.");
         } else {
             byte[] keyBytes = Base64.getDecoder().decode(base64Key);
