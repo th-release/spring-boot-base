@@ -27,6 +27,9 @@ dependencies {
 	testImplementation 'org.springframework.security:spring-security-test'
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'
 
+	// 문자열 관련
+	implementation 'com.googlecode.libphonenumber:libphonenumber:8.13.0'
+
 	// 로그 관련
 	implementation 'com.github.gavlyukovskiy:p6spy-spring-boot-starter:1.9.0'
 
