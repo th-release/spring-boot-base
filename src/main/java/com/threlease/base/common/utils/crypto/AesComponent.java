@@ -29,7 +29,7 @@ public class AesComponent {
     private static final int IV_LENGTH = 12;    // GCM 권장 IV 길이
     private static final int TAG_LENGTH = 128;  // 인증 태그 비트
 
-    @Value("${crypto.aes.secret:}")
+    @Value("${crypto.aes.secret-key:}")
     private String base64Key;
 
     private SecretKey secretKey;
@@ -37,20 +37,21 @@ public class AesComponent {
     @PostConstruct
     public void init() {
         if (base64Key == null || base64Key.isBlank()) {
-            byte[] keyBytes = new byte[32];
-            new SecureRandom().nextBytes(keyBytes);
-            this.secretKey = new SecretKeySpec(keyBytes, "AES");
-            log.warn("[CryptoUtils] crypto.aes.secret 가 설정되지 않아 랜덤 키를 생성했습니다. " +
-                     "서버 재시작 시 기존 암호화 데이터를 복호화할 수 없으니 운영 환경에서는 반드시 키를 고정하세요.");
-        } else {
-            byte[] keyBytes = Base64.getDecoder().decode(base64Key);
-            if (keyBytes.length != 32) {
-                throw new IllegalArgumentException(
-                        "AES-256 키는 32 bytes(256 bit)여야 합니다. 현재: " + keyBytes.length + " bytes");
-            }
-            this.secretKey = new SecretKeySpec(keyBytes, "AES");
-            log.info("[CryptoUtils] application.yml의 AES-256 키로 초기화되었습니다.");
+            throw new IllegalStateException(
+                    "[CryptoUtils] crypto.aes.secret-key 가 설정되지 않았습니다. " +
+                            "AesKeyGenerator.main() 을 실행하여 키를 생성한 뒤 application.yml 에 등록하세요."
+            );
         }
+
+        byte[] keyBytes = Base64.getDecoder().decode(base64Key);
+        if (keyBytes.length != 32) {
+            throw new IllegalStateException(
+                    "[CryptoUtils] AES-256 키는 32 bytes(256 bit)여야 합니다. 현재: " + keyBytes.length + " bytes"
+            );
+        }
+
+        this.secretKey = new SecretKeySpec(keyBytes, "AES");
+        log.info("[CryptoUtils] AES-256 키 초기화 완료");
     }
 
     /**
