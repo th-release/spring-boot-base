@@ -1,10 +1,11 @@
 server:
   forward-headers-strategy: FRAMEWORK
-  servlet:
-    contextPath: /api
   port: ${PORT:8080}
 
 spring:
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
   # Redis 자동 설정을 완전히 제외 (우리가 CacheConfig에서 직접 제어함)
   autoconfigure:
     exclude:
@@ -41,7 +42,8 @@ spring:
 
 crypto:
   aes:
-    secret: ${AES_SECRET}
+    # 32 bytes (256 bits) Base64 encoded key
+    secret-key: ${AES_SECRET_KEY:R3zmKTgCnAp1m0zRd5DCVmTA3GQhYPYd+iJsbk1+l9c=}
 
 # Redis 사용 여부 제어 (기본값 false)
 app:

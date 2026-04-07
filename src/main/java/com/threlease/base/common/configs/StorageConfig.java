@@ -16,7 +16,7 @@ public class StorageConfig {
      */
     @Bean
     @ConditionalOnBean(S3StorageService.class)
-    public StorageService storageService(S3StorageService s3StorageService) {
+    public StorageService s3StorageServiceBean(S3StorageService s3StorageService) {
         return s3StorageService;
     }
 
@@ -25,7 +25,7 @@ public class StorageConfig {
      */
     @Bean
     @ConditionalOnMissingBean(S3StorageService.class)
-    public StorageService storageService(LocalStorageService localStorageService) {
+    public StorageService localStorageServiceBean(LocalStorageService localStorageService) {
         return localStorageService;
     }
 }
