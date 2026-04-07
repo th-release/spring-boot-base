@@ -11,7 +11,6 @@ import org.springframework.web.servlet.config.annotation.*;
  */
 @Configuration
 @AllArgsConstructor
-@EnableWebMvc
 public class WebMvcConfig implements WebMvcConfigurer {
     private final TokenInterceptor tokenInterceptor;
 
@@ -40,35 +39,6 @@ public class WebMvcConfig implements WebMvcConfigurer {
                         "/api/v3/api-docs/**",
                         "/api/actuator/**"
                 );
-    }
-
-    /**
-     * static 리소스 핸들러 등록
-     */
-    @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // 루트 및 정적 리소스 핸들링
-        registry.addResourceHandler("/**")
-                .addResourceLocations("classpath:/static/");
-
-        // Swagger UI 전용 핸들러 (API prefix 영향 받지 않도록)
-        registry.addResourceHandler("/swagger-ui/**")
-                .addResourceLocations("classpath:/META-INF/resources/webjars/swagger-ui/");
-    }
-
-    /**
-     * SPA 라우팅 대응 (React Router)
-     * API(/api/**)가 아닌 모든 요청을 index.html로 포워딩
-     */
-    @Override
-    public void addViewControllers(ViewControllerRegistry registry) {
-        // API 경로(/api/**)를 제외한 모든 경로를 index.html로 리다이렉트 (SPA 지원)
-        registry.addViewController("/{spring:\\w+}")
-                .setViewName("forward:/index.html");
-        registry.addViewController("/**/{spring:\\w+}")
-                .setViewName("forward:/index.html");
-        registry.addViewController("/{spring:\\w+}/**{spring:?!(\\.js|\\.css|\\.png|\\.jpg|\\.jpeg|\\.gif|\\.svg|\\.ico|\\.json)$}")
-                .setViewName("forward:/index.html");
     }
 
     /**
