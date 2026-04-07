@@ -3,6 +3,9 @@ server:
   port: ${PORT:8080}
 
 spring:
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
   mvc:
     pathmatch:
       matching-strategy: ant_path_matcher
@@ -83,7 +86,7 @@ app:
 
 springdoc:
   swagger-ui:
-    path: /swagger
+    path: /api/swagger
     groups-order: DESC
     tags-sorter: alpha
     operations-sorter: method
