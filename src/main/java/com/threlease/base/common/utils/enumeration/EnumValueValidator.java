@@ -1,16 +1,16 @@
 package com.threlease.base.common.utils.enumeration;
 
-import com.threlease.base.common.annotation.Enumeration;
+import com.threlease.base.common.annotation.ValidEnum;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
-public class EnumValueValidator implements ConstraintValidator<Enumeration, Enum<?>> {
+public class EnumValueValidator implements ConstraintValidator<ValidEnum, Enum<?>> {
 
     private Class<? extends Enum<?>> enumClass;
-    private Enumeration annotation;
+    private ValidEnum annotation;
 
     @Override
-    public void initialize(Enumeration constraintAnnotation) {
+    public void initialize(ValidEnum constraintAnnotation) {
         enumClass = constraintAnnotation.enumClass();
         this.annotation = constraintAnnotation;
     }
