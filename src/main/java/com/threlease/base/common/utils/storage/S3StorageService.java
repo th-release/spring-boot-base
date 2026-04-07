@@ -1,11 +1,11 @@
 package com.threlease.base.common.utils.storage;
 
+import com.threlease.base.common.properties.aws.s3.S3Properties;
 import com.threlease.base.common.utils.storage.entity.FileEntity;
 import com.threlease.base.common.utils.storage.repository.FileRepository;
 import io.awspring.cloud.s3.S3Template;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -19,24 +19,24 @@ public class S3StorageService implements StorageService {
 
     private final S3Template s3Template;
     private final FileRepository fileRepository;
-
-    @Value("${spring.cloud.aws.s3.bucket}")
-    private String bucket;
+    private final S3Properties s3Properties;
 
     @Override
     public FileEntity upload(MultipartFile file, String dirName) throws IOException {
-        String fileName = dirName + "/" + UUID.randomUUID() + "_" + file.getOriginalFilename();
+        String bucket = s3Properties.getBucket();
+        String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+        String filePath = dirName + "/" + fileName;
 
-        s3Template.upload(bucket, fileName, file.getInputStream());
+        s3Template.upload(bucket, filePath, file.getInputStream());
 
         FileEntity fileEntity = FileEntity.builder()
-                .filePath(fileName)
+                .filePath(filePath)
                 .originalFileName(file.getOriginalFilename())
                 .contentType(file.getContentType())
                 .fileSize(file.getSize())
                 .dirName(dirName)
                 .storageType(FileEntity.StorageType.S3)
-                .url(getUrl(fileName))
+                .url(getUrl(filePath))
                 .build();
 
         return fileRepository.save(fileEntity);
@@ -44,8 +44,13 @@ public class S3StorageService implements StorageService {
 
     @Override
     public void delete(String filePath) {
+        String bucket = s3Properties.getBucket();
         // 실제 S3 파일 삭제
-        s3Template.deleteObject(bucket, filePath);
+        try {
+            s3Template.deleteObject(bucket, filePath);
+        } catch (Exception e) {
+            log.error("S3 파일 삭제 실패: filePath={}", filePath, e);
+        }
 
         // DB soft delete
         fileRepository.findByFilePathAndDeletedFalse(filePath)
@@ -60,6 +65,7 @@ public class S3StorageService implements StorageService {
 
     @Override
     public String getUrl(String filePath) {
+        String bucket = s3Properties.getBucket();
         return "https://" + bucket + ".s3.amazonaws.com/" + filePath;
     }
 }

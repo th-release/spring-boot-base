@@ -1,9 +1,10 @@
 package com.threlease.base.common.utils.crypto;
 
 import com.threlease.base.common.exception.CryptoException;
+import com.threlease.base.common.properties.crypto.CryptoProperties;
 import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.Cipher;
@@ -23,20 +24,31 @@ import java.util.Base64;
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class AesComponent {
 
     private static final String ALGORITHM = "AES/GCM/NoPadding";
     private static final int IV_LENGTH = 12;    // GCM 권장 IV 길이
     private static final int TAG_LENGTH = 128;  // 인증 태그 비트
 
-    @Value("${crypto.aes.secret-key:}")
-    private String base64Key;
+    private final CryptoProperties cryptoProperties;
 
     private SecretKey secretKey;
 
+    public static String generateBase64Key() {
+        byte[] key = new byte[32]; // 256 bit
+        new SecureRandom().nextBytes(key);
+        return Base64.getEncoder().encodeToString(key);
+    }
+
     @PostConstruct
     public void init() {
+        String base64Key = cryptoProperties.getAes() != null ? cryptoProperties.getAes().getSecretKey() : null;
+
         if (base64Key == null || base64Key.isBlank()) {
+            System.out.println("=== AES-256 Secret Key ===");
+            System.out.println(generateBase64Key());
+
             throw new IllegalStateException(
                     "[CryptoUtils] crypto.aes.secret-key 가 설정되지 않았습니다. " +
                             "AesKeyGenerator.main() 을 실행하여 키를 생성한 뒤 application.yml 에 등록하세요."

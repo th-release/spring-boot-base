@@ -1,18 +1,15 @@
 package com.threlease.base.common.utils.storage.batch;
 
+import com.threlease.base.common.properties.storage.StorageProperties;
 import com.threlease.base.common.utils.storage.entity.FileEntity;
 import com.threlease.base.common.utils.storage.repository.FileRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.List;
 
 /**
@@ -39,12 +36,7 @@ public class OrphanFileCleanupJob {
 
     private final FileRepository fileRepository;
     private final OrphanFileDeleter orphanFileDeleter;
-
-    @Value("${storage.cleanup.chunk-size:100}")
-    private int chunkSize;
-
-    @Value("${storage.cleanup.fixed-rate:0}")
-    private long fixedRate;
+    private final StorageProperties storageProperties;
 
     // =========================================================
     // cron 기반 실행 (기본: 매일 새벽 3시)
@@ -63,7 +55,8 @@ public class OrphanFileCleanupJob {
     // storage.cleanup.fixed-rate가 설정되지 않았을 때 매우 큰 값(100년)을 주어 사실상 비활성화합니다.
     @Scheduled(fixedRateString = "${storage.cleanup.fixed-rate:3153600000000}")
     public void cleanupByFixedRate() {
-        if (fixedRate <= 0) return;
+        Long fixedRate = storageProperties.getCleanup().getFixedRate();
+        if (fixedRate == null || fixedRate <= 0) return;
         log.info("[OrphanFileCleanup] fixed-rate 배치 시작 ({}ms 주기)", fixedRate);
         cleanup();
     }
@@ -74,6 +67,7 @@ public class OrphanFileCleanupJob {
 
     @Transactional
     public void cleanup() {
+        int chunkSize = storageProperties.getCleanup().getChunkSize();
         long totalTarget = fileRepository.countByDeletedTrue();
         if (totalTarget == 0) {
             log.info("[OrphanFileCleanup] 정리할 파일 없음, 종료");

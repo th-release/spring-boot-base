@@ -1,10 +1,10 @@
 package com.threlease.base.common.utils.storage;
 
+import com.threlease.base.common.properties.storage.StorageProperties;
 import com.threlease.base.common.utils.storage.entity.FileEntity;
 import com.threlease.base.common.utils.storage.repository.FileRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -20,15 +20,11 @@ import java.util.UUID;
 public class LocalStorageService implements StorageService {
 
     private final FileRepository fileRepository;
-
-    @Value("${storage.local.path:./uploads}")
-    private String rootPath;
-
-    @Value("${storage.local.prefix:/api/files}")
-    private String prefix;
+    private final StorageProperties storageProperties;
 
     @Override
     public FileEntity upload(MultipartFile file, String dirName) throws IOException {
+        String rootPath = storageProperties.getLocal().getPath();
         String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
         Path targetDir = Paths.get(rootPath, dirName);
 
@@ -56,6 +52,7 @@ public class LocalStorageService implements StorageService {
 
     @Override
     public void delete(String filePath) {
+        String rootPath = storageProperties.getLocal().getPath();
         // 실제 파일 삭제
         try {
             Path fileToDelete = Paths.get(rootPath, filePath);
@@ -77,6 +74,7 @@ public class LocalStorageService implements StorageService {
 
     @Override
     public String getUrl(String filePath) {
+        String prefix = storageProperties.getLocal().getPrefix();
         return prefix + "/" + filePath;
     }
 }

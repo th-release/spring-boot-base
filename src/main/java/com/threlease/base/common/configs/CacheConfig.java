@@ -1,6 +1,7 @@
 package com.threlease.base.common.configs;
 
-import org.springframework.beans.factory.annotation.Value;
+import com.threlease.base.common.properties.app.redis.RedisProperties;
+import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
@@ -20,13 +21,10 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 import java.time.Duration;
 
 @Configuration
+@RequiredArgsConstructor
 public class CacheConfig {
 
-    @Value("${app.redis.host:localhost}")
-    private String redisHost;
-
-    @Value("${app.redis.port:6379}")
-    private int redisPort;
+    private final RedisProperties redisProperties;
 
     /**
      * app.redis.enabled=false 일 때 (기본값) Local Cache 사용
@@ -44,7 +42,9 @@ public class CacheConfig {
     @Bean
     @ConditionalOnProperty(name = "app.redis.enabled", havingValue = "true")
     public RedisConnectionFactory redisConnectionFactory() {
-        return new LettuceConnectionFactory(redisHost, redisPort);
+        String host = redisProperties.getHost() != null ? redisProperties.getHost() : "localhost";
+        int port = redisProperties.getPort() != null ? Integer.parseInt(redisProperties.getPort()) : 6379;
+        return new LettuceConnectionFactory(host, port);
     }
 
     @Bean
