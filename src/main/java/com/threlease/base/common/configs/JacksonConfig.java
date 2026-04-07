@@ -43,7 +43,7 @@ public class JacksonConfig {
         }
 
         @Override
-        public int[] getAsciiEscapes() {
+        public int[] getEscapeCodesForAscii() {
             return asciiEscapes;
         }
 
