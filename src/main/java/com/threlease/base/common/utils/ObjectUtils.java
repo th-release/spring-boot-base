@@ -5,6 +5,7 @@ import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
 
 import java.beans.FeatureDescriptor;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 /**
@@ -17,23 +18,36 @@ public class ObjectUtils {
     }
 
     /**
-     * 원본 객체의 속성을 대상 객체로 복사합니다.
-     * Spring의 BeanUtils.copyProperties를 사용하여 속성 복사를 수행합니다.
-     * 이 메서드는 기본적으로 null 값을 복사하지 않습니다.
+     * 원본 객체의 null이 아닌 속성만 대상 객체로 복사합니다. (Merge/Patch 용)
      *
      * @param source 원본 객체
      * @param target 대상 객체
      */
-    public static void copyProperties(Object source, Object target) {
+    public static void copyNonNullProperties(Object source, Object target) {
+        if (source == null || target == null) return;
         BeanUtils.copyProperties(source, target, getNullPropertyNames(source));
     }
 
     /**
-     * 원본 객체에서 null이 아닌 속성 이름들을 가져옵니다.
-     * 이는 copyProperties에서 null 값을 복사하지 않도록 할 때 사용됩니다.
-     *
-     * @param source 원본 객체
-     * @return null이 아닌 속성 이름들의 배열
+     * 두 객체 간에 데이터가 변경되었는지 확인합니다. (Diff 용)
+     * 모든 필드를 equals로 비교하며, 하나라도 다르면 true를 반환합니다.
+     */
+    public static boolean isChanged(Object oldObj, Object newObj) {
+        if (oldObj == newObj) return false;
+        if (oldObj == null || newObj == null) return true;
+        if (!oldObj.getClass().equals(newObj.getClass())) return true;
+
+        final BeanWrapper oldWrapper = new BeanWrapperImpl(oldObj);
+        final BeanWrapper newWrapper = new BeanWrapperImpl(newObj);
+
+        return Stream.of(oldWrapper.getPropertyDescriptors())
+                .map(FeatureDescriptor::getName)
+                .filter(name -> !"class".equals(name))
+                .anyMatch(name -> !Objects.equals(oldWrapper.getPropertyValue(name), newWrapper.getPropertyValue(name)));
+    }
+
+    /**
+     * 원본 객체에서 null인 속성 이름들을 가져옵니다.
      */
     private static String[] getNullPropertyNames(Object source) {
         final BeanWrapper wrappedSource = new BeanWrapperImpl(source);
@@ -45,9 +59,6 @@ public class ObjectUtils {
 
     /**
      * 주어진 객체가 null인지 확인합니다.
-     *
-     * @param obj 확인할 객체
-     * @return 객체가 null이면 true, 그렇지 않으면 false
      */
     public static boolean isNull(Object obj) {
         return obj == null;
@@ -55,9 +66,6 @@ public class ObjectUtils {
 
     /**
      * 주어진 객체가 null이 아닌지 확인합니다.
-     *
-     * @param obj 확인할 객체
-     * @return 객체가 null이 아니면 true, 그렇지 않으면 false
      */
     public static boolean isNotNull(Object obj) {
         return obj != null;
@@ -65,45 +73,25 @@ public class ObjectUtils {
 
     /**
      * 두 객체가 동등한지 비교합니다. (null 안전)
-     *
-     * @param obj1 첫 번째 객체
-     * @param obj2 두 번째 객체
-     * @return 두 객체가 모두 null이거나 equals 메서드가 true를 반환하면 true
      */
     public static boolean nullSafeEquals(Object obj1, Object obj2) {
-        return (obj1 == obj2 || (obj1 != null && obj1.equals(obj2)));
+        return Objects.equals(obj1, obj2);
     }
 
     /**
      * 주어진 객체가 비어있는지 확인합니다. (String, Collection, Map, Array 등)
-     *
-     * @param obj 확인할 객체
-     * @return 객체가 비어있으면 true, 그렇지 않으면 false
      */
     public static boolean isEmpty(Object obj) {
-        if (obj == null) {
-            return true;
-        }
-        if (obj instanceof String) {
-            return ((String) obj).isEmpty();
-        }
-        if (obj instanceof java.util.Collection) {
-            return ((java.util.Collection<?>) obj).isEmpty();
-        }
-        if (obj instanceof java.util.Map) {
-            return ((java.util.Map<?, ?>) obj).isEmpty();
-        }
-        if (obj.getClass().isArray()) {
-            return java.lang.reflect.Array.getLength(obj) == 0;
-        }
+        if (obj == null) return true;
+        if (obj instanceof String) return ((String) obj).isEmpty();
+        if (obj instanceof java.util.Collection) return ((java.util.Collection<?>) obj).isEmpty();
+        if (obj instanceof java.util.Map) return ((java.util.Map<?, ?>) obj).isEmpty();
+        if (obj.getClass().isArray()) return java.lang.reflect.Array.getLength(obj) == 0;
         return false;
     }
 
     /**
      * 주어진 객체가 비어있지 않은지 확인합니다.
-     *
-     * @param obj 확인할 객체
-     * @return 객체가 비어있지 않으면 true, 그렇지 않으면 false
      */
     public static boolean isNotEmpty(Object obj) {
         return !isEmpty(obj);

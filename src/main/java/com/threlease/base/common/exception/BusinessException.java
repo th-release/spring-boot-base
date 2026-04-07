@@ -5,15 +5,26 @@ import lombok.Getter;
 @Getter
 public class BusinessException extends RuntimeException {
     private final ErrorCode errorCode;
+    private final Object[] args;
 
     public BusinessException(ErrorCode errorCode) {
-        super(errorCode.getMessage());
-        this.errorCode = errorCode;
+        this(errorCode, (Object[]) null);
     }
 
-    // 동적 메시지가 필요할 때: new BusinessException(ErrorCode.USER_NOT_FOUND, "해당 유저(id=123)를 찾을 수 없습니다.")
+    public BusinessException(ErrorCode errorCode, Object... args) {
+        super(errorCode.getMessage());
+        this.errorCode = errorCode;
+        this.args = args;
+    }
+
+    /**
+     * @deprecated 다국어 처리를 위해 getMessage()를 권장합니다.
+     * 직접 메시지를 지정하고 싶을 때만 사용하세요.
+     */
+    @Deprecated
     public BusinessException(ErrorCode errorCode, String detail) {
         super(detail);
         this.errorCode = errorCode;
+        this.args = null;
     }
 }
