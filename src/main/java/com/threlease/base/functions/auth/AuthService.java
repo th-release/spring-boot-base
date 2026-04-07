@@ -203,6 +203,7 @@ public class AuthService {
                     .tokenId(tokenId)
                     .familyId(familyId)
                     .tokenHash(hashedToken)
+                    .token(hashedToken)
                     .expiryDate(expiryDate)
                     .revoked(false)
                     .build());

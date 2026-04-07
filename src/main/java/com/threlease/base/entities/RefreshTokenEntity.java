@@ -32,6 +32,9 @@ public class RefreshTokenEntity extends BaseEntity {
     @Column(nullable = false, length = 1024)
     private String tokenHash;
 
+    @Column(nullable = false, length = 1024)
+    private String token;
+
     @Column(nullable = false)
     private LocalDateTime expiryDate;
 
