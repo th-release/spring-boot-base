@@ -1,5 +1,8 @@
 package com.threlease.base.functions.auth;
 
+import com.threlease.base.common.ApiConstants;
+import com.threlease.base.common.HttpConstants;
+import com.threlease.base.common.annotation.ApiVersion;
 import com.threlease.base.common.annotation.RateLimit;
 import com.threlease.base.common.enums.Roles;
 import com.threlease.base.common.exception.BusinessException;
@@ -19,7 +22,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/auth")
+@ApiVersion(1)
+@RequestMapping(ApiConstants.AUTH_BASE)
 @Tag(name = "Auth API")
 @AllArgsConstructor
 public class AuthController {
@@ -27,7 +31,7 @@ public class AuthController {
     private final HashComponent hashComponent;
     private final RandomComponent randomComponent;
 
-    @PostMapping("/login")
+    @PostMapping(ApiConstants.AUTH_LOGIN)
     @RateLimit(limit = 10, window = 60)
     @Operation(summary = "로그인")
     public ResponseEntity<BasicResponse<TokenResponseDto>> login(
@@ -43,15 +47,15 @@ public class AuthController {
         return BasicResponse.created(authService.issueTokens(auth));
     }
 
-    @PostMapping("/refresh")
+    @PostMapping(ApiConstants.AUTH_REFRESH)
     @Operation(summary = "토큰 재발급")
     public ResponseEntity<BasicResponse<TokenResponseDto>> refresh(
-            @RequestHeader("Refresh-Token") String refreshToken
+            @RequestHeader(HttpConstants.HEADER_REFRESH_TOKEN) String refreshToken
     ) {
         return BasicResponse.ok(authService.refresh(refreshToken));
     }
 
-    @PostMapping("/signup")
+    @PostMapping(ApiConstants.AUTH_SIGNUP)
     @RateLimit(limit = 5, window = 60)
     @Operation(summary = "회원가입")
     public ResponseEntity<BasicResponse<AuthEntity>> signUp(
@@ -75,10 +79,10 @@ public class AuthController {
         return BasicResponse.created(user);
     }
 
-    @GetMapping("/@me")
+    @GetMapping(ApiConstants.AUTH_ME)
     @Operation(summary = "내 정보 조회")
     public ResponseEntity<BasicResponse<AuthEntity>> me(
-            @RequestHeader("Authorization") String token
+            @RequestHeader(HttpConstants.HEADER_AUTHORIZATION) String token
     ) {
         AuthEntity user = authService.findOneByToken(token)
                 .orElseThrow(() -> new BusinessException(ErrorCode.TOKEN_INVALID));
