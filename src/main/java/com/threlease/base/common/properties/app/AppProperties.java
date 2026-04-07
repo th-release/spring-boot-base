@@ -1,6 +1,6 @@
 package com.threlease.base.common.properties.app;
 
-import com.threlease.base.common.properties.app.cors.CorsProperties;
+import com.threlease.base.common.properties.cors.CorsProperties;
 import com.threlease.base.common.properties.app.redis.RedisProperties;
 import com.threlease.base.common.properties.app.token.TokenProperties;
 import lombok.Getter;

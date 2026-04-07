@@ -2,7 +2,7 @@ package com.threlease.base.common.configs;
 
 import com.threlease.base.common.interceptors.TokenInterceptor;
 import com.threlease.base.common.properties.app.AppProperties;
-import com.threlease.base.common.properties.app.cors.CorsProperties;
+import com.threlease.base.common.properties.cors.CorsProperties;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.bind.annotation.RestController;

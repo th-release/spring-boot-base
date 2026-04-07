@@ -14,4 +14,6 @@ import java.util.List;
 @ConfigurationProperties("app.logging")
 public class LoggingProperties {
     private List<String> excludeUrls = new ArrayList<>();
+    private boolean request = true;
+    private boolean response = false;
 }

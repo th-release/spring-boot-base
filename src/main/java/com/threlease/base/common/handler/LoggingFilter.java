@@ -17,6 +17,10 @@ import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * API 요청/응답 로깅 필터
+ * 설정에 따라 Request/Response Payload 로깅 여부를 결정합니다.
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -27,7 +31,16 @@ public class LoggingFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String uri = request.getRequestURI();
-        return loggingProperties.getExcludeUrls().stream()
+
+        // /api로 시작하지 않는 요청(Static Resource, View 등)은 로깅하지 않음
+        if (!uri.startsWith("/api")) {
+            return true;
+        }
+
+        List<String> excludeUrls = loggingProperties.getExcludeUrls();
+        if (excludeUrls == null) return false;
+        
+        return excludeUrls.stream()
                 .anyMatch(uri::startsWith);
     }
 
@@ -38,38 +51,51 @@ public class LoggingFilter extends OncePerRequestFilter {
         String requestId = UUID.randomUUID().toString().substring(0, 8);
         MDC.put("requestId", requestId);
 
-        ContentCachingRequestWrapper requestWrapper = new ContentCachingRequestWrapper(request);
-        ContentCachingResponseWrapper responseWrapper = new ContentCachingResponseWrapper(response);
+        // 로깅 설정에 따라 Wrapper 적용 여부 결정
+        HttpServletRequest requestToUse = loggingProperties.isRequest() ? new ContentCachingRequestWrapper(request) : request;
+        HttpServletResponse responseToUse = loggingProperties.isResponse() ? new ContentCachingResponseWrapper(response) : response;
 
         long startTime = System.currentTimeMillis();
 
         try {
-            filterChain.doFilter(requestWrapper, responseWrapper);
+            filterChain.doFilter(requestToUse, responseToUse);
         } finally {
             long duration = System.currentTimeMillis() - startTime;
-            logRequest(requestWrapper, duration);
-            logResponse(responseWrapper);
-            responseWrapper.copyBodyToResponse();
+            
+            if (loggingProperties.isRequest() && requestToUse instanceof ContentCachingRequestWrapper) {
+                logRequest((ContentCachingRequestWrapper) requestToUse, responseToUse.getStatus(), duration);
+            }
+            
+            if (loggingProperties.isResponse() && responseToUse instanceof ContentCachingResponseWrapper) {
+                logResponse((ContentCachingResponseWrapper) responseToUse);
+                ((ContentCachingResponseWrapper) responseToUse).copyBodyToResponse();
+            }
+            
             MDC.clear();
         }
     }
 
-    private void logRequest(ContentCachingRequestWrapper request, long duration) {
+    private void logRequest(ContentCachingRequestWrapper request, int status, long duration) {
         String queryString = request.getQueryString();
-        log.info("Request: [{}], Method: [{}], URI: [{}], Duration: [{}ms], Payload: [{}]",
+        String uri = queryString == null ? request.getRequestURI() : request.getRequestURI() + "?" + queryString;
+        String payload = getContent(request.getContentAsByteArray());
+
+        log.info("API Request - ID: [{}], Method: [{}], URI: [{}], Status: [{}], Duration: [{}ms], Payload: [{}]",
                 MDC.get("requestId"),
                 request.getMethod(),
-                queryString == null ? request.getRequestURI() : request.getRequestURI() + "?" + queryString,
+                uri,
+                status,
                 duration,
-                getContent(request.getContentAsByteArray())
+                payload
         );
     }
 
     private void logResponse(ContentCachingResponseWrapper response) {
-        log.info("Response: [{}], Status: [{}], Payload: [{}]",
+        String payload = getContent(response.getContentAsByteArray());
+        log.info("API Response - ID: [{}], Status: [{}], Payload: [{}]",
                 MDC.get("requestId"),
                 response.getStatus(),
-                getContent(response.getContentAsByteArray())
+                payload
         );
     }
 
