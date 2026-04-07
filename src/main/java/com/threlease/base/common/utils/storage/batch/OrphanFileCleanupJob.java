@@ -57,10 +57,11 @@ public class OrphanFileCleanupJob {
     }
 
     // =========================================================
-    // fixed-rate 기반 실행 (0이면 스킵)
+    // fixed-rate 기반 실행 (비활성 시 주석 처리 권장)
     // =========================================================
 
-    @Scheduled(fixedRateString = "${storage.cleanup.fixed-rate:1000}")
+    // storage.cleanup.fixed-rate가 설정되지 않았을 때 매우 큰 값(100년)을 주어 사실상 비활성화합니다.
+    @Scheduled(fixedRateString = "${storage.cleanup.fixed-rate:3153600000000}")
     public void cleanupByFixedRate() {
         if (fixedRate <= 0) return;
         log.info("[OrphanFileCleanup] fixed-rate 배치 시작 ({}ms 주기)", fixedRate);
