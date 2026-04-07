@@ -150,16 +150,24 @@ src/main/java/com/threlease/base/
 
 ## 🏃 Getting Started
 
-1.  **Environment Setup (Docker)**:
-    ```bash
-    # PostgreSQL, Redis, Prometheus 동시 실행
-    docker-compose up -d
-    ```
-2.  **Build & Run**:
-    ```bash
-    ./gradlew clean build
-    ./gradlew bootRun
-    ```
+### 1. 로컬 인프라 및 앱 동시 실행 (Docker)
+제공된 `Dockerfile`은 Multi-stage 빌드와 `jlink`를 통해 이미지 크기를 최소화(약 100MB 내외)하고 보안을 강화한 최적화된 설정을 제공합니다.
+
+```bash
+# 전체 시스템(App + DB + Redis + Prometheus) 빌드 및 실행
+docker-compose up -d --build
+```
+
+### 2. 매뉴얼 빌드 & 실행
+인프라만 Docker로 띄우고 앱은 로컬에서 실행할 경우:
+```bash
+# 인프라만 실행
+docker-compose up -d db redis prometheus
+
+# 앱 빌드 및 실행
+./gradlew clean build
+./gradlew bootRun
+```
 3.  **API Docs**: `http://localhost:8080/api/swagger`
 
 ---

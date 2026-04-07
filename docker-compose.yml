@@ -1,6 +1,28 @@
 version: '3.8'
 
 services:
+  # Application: Spring Boot
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: spring-boot-app
+    ports:
+      - "8080:8080"
+    environment:
+      - DATABASE_HOST=db
+      - DATABASE_PORT=5432
+      - DATABASE_DATABASE=base
+      - DATABASE_USERNAME=root
+      - DATABASE_PASSWORD=root
+      - REDIS_ENABLED=true
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - AES_SECRET_KEY=R3zmKTgCnAp1m0zRd5DCVmTA3GQhYPYd+iJsbk1+l9c=
+    depends_on:
+      - db
+      - redis
+
   # Database: PostgreSQL
   db:
     image: postgres:16-alpine
@@ -12,7 +34,7 @@ services:
       POSTGRES_PASSWORD: root
       POSTGRES_DB: base
     volumes:
-      - ./docker/postgres/data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
 
   # Cache & Lock: Redis
   redis:
