@@ -2,6 +2,9 @@ package com.threlease.base.common.configs;
 
 import com.threlease.base.common.properties.app.redis.RedisProperties;
 import lombok.RequiredArgsConstructor;
+import org.redisson.Redisson;
+import org.redisson.api.RedissonClient;
+import org.redisson.config.Config;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
@@ -43,7 +46,8 @@ public class CacheConfig {
     @ConditionalOnProperty(name = "app.redis.enabled", havingValue = "true")
     public RedisConnectionFactory redisConnectionFactory() {
         String host = redisProperties.getHost() != null ? redisProperties.getHost() : "localhost";
-        int port = redisProperties.getPort() != null ? Integer.parseInt(redisProperties.getPort()) : 6379;
+        int port = (redisProperties.getPort() != null && !redisProperties.getPort().isEmpty()) 
+                   ? Integer.parseInt(redisProperties.getPort()) : 6379;
         return new LettuceConnectionFactory(host, port);
     }
 
@@ -74,5 +78,22 @@ public class CacheConfig {
     @ConditionalOnProperty(name = "app.redis.enabled", havingValue = "true")
     public StringRedisTemplate stringRedisTemplate(RedisConnectionFactory connectionFactory) {
         return new StringRedisTemplate(connectionFactory);
+    }
+
+    /**
+     * RedissonClient 빈 생성 (분산 락 용)
+     */
+    @Bean
+    @ConditionalOnProperty(name = "app.redis.enabled", havingValue = "true")
+    public RedissonClient redissonClient() {
+        String host = redisProperties.getHost() != null ? redisProperties.getHost() : "localhost";
+        String port = (redisProperties.getPort() != null && !redisProperties.getPort().isEmpty()) 
+                      ? redisProperties.getPort() : "6379";
+        
+        Config config = new Config();
+        config.useSingleServer()
+                .setAddress("redis://" + host + ":" + port);
+        
+        return Redisson.create(config);
     }
 }

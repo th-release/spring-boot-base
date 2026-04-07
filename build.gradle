@@ -69,6 +69,7 @@ dependencies {
 	// 캐시 관련
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 	implementation 'org.springframework.boot:spring-boot-starter-cache'
+	implementation 'org.redisson:redisson-spring-boot-starter:3.24.3'
 
 	// QR 코드 관련
 	implementation 'com.google.zxing:core:3.5.3'

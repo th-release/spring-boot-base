@@ -13,7 +13,11 @@ import java.util.Base64;
 @EnableCaching
 @EnableScheduling
 @EnableJpaRepositories
-@SpringBootApplication
+@SpringBootApplication(exclude = {
+		org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration.class,
+		org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration.class,
+		org.redisson.spring.starter.RedissonAutoConfigurationV2.class
+})
 public class BaseApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(BaseApplication.class, args);

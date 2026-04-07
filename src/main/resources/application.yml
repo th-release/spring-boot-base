@@ -98,6 +98,10 @@ management:
   endpoint:
     health:
       show-details: always
+    prometheus:
+      enabled: true
+    metrics:
+      enabled: true
   # Redis 헬스 체크도 비활성화 (연결 시도 방지)
   health:
     redis:
@@ -105,6 +109,10 @@ management:
   metrics:
     tags:
       application: ${spring.application.name:spring-boot-base}
+  prometheus:
+    metrics:
+      export:
+        enabled: true
 
 decorator:
   datasource:

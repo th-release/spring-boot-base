@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Configuration
-@ConfigurationProperties("cors")
+@ConfigurationProperties("app.cors")
 @Getter
 @Setter
 public class CorsProperties {
