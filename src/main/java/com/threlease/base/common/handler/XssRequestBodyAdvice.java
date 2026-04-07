@@ -61,7 +61,10 @@ public class XssRequestBodyAdvice extends RequestBodyAdviceAdapter {
             for (Map.Entry<?, ?> entry : map.entrySet()) {
                 Object value = entry.getValue();
                 if (value instanceof String stringValue) {
-                    ((Map<Object, Object>) map).put(entry.getKey(), XssUtils.sanitize(stringValue));
+                    String keyName = entry.getKey() == null ? null : entry.getKey().toString();
+                    if (!shouldSkipField(keyName)) {
+                        ((Map<Object, Object>) map).put(entry.getKey(), XssUtils.sanitize(stringValue));
+                    }
                 } else {
                     sanitizeObject(value, visited);
                 }

@@ -1,5 +1,8 @@
 package com.threlease.base.common.configs;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 import com.threlease.base.common.properties.app.redis.RedisProperties;
 import lombok.RequiredArgsConstructor;
 import org.redisson.Redisson;
@@ -28,6 +31,7 @@ import java.time.Duration;
 public class CacheConfig {
 
     private final RedisProperties redisProperties;
+    private final ObjectMapper objectMapper;
 
     /**
      * app.redis.enabled=false 일 때 (기본값) Local Cache 사용
@@ -54,10 +58,14 @@ public class CacheConfig {
     @Bean
     @ConditionalOnProperty(name = "app.redis.enabled", havingValue = "true")
     public CacheManager redisCacheManager(RedisConnectionFactory connectionFactory) {
+        GenericJackson2JsonRedisSerializer redisSerializer =
+                new GenericJackson2JsonRedisSerializer(redisObjectMapper());
+
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofHours(1))
+                .computePrefixWith(cacheName -> redisCachePrefix(cacheName))
                 .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()));
+                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(redisSerializer));
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(config)
@@ -67,11 +75,39 @@ public class CacheConfig {
     @Bean
     @ConditionalOnProperty(name = "app.redis.enabled", havingValue = "true")
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
+        GenericJackson2JsonRedisSerializer redisSerializer =
+                new GenericJackson2JsonRedisSerializer(redisObjectMapper());
+
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
         template.setKeySerializer(new StringRedisSerializer());
-        template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
+        template.setValueSerializer(redisSerializer);
+        template.setHashKeySerializer(new StringRedisSerializer());
+        template.setHashValueSerializer(redisSerializer);
+        template.afterPropertiesSet();
         return template;
+    }
+
+    private ObjectMapper redisObjectMapper() {
+        ObjectMapper redisObjectMapper = objectMapper.copy();
+        redisObjectMapper.activateDefaultTyping(
+                BasicPolymorphicTypeValidator.builder()
+                        .allowIfSubType("com.threlease.base")
+                        .allowIfSubType("java.util")
+                        .allowIfSubType("java.time")
+                        .build(),
+                ObjectMapper.DefaultTyping.NON_FINAL,
+                JsonTypeInfo.As.PROPERTY
+        );
+        return redisObjectMapper;
+    }
+
+    private String redisCachePrefix(String cacheName) {
+        String prefix = redisProperties.getCachePrefix();
+        if (prefix == null || prefix.isBlank()) {
+            return cacheName + "::";
+        }
+        return prefix.trim() + "::" + cacheName + "::";
     }
 
     @Bean

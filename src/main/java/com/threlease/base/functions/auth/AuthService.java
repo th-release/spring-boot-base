@@ -66,14 +66,12 @@ public class AuthService {
         }
     }
 
-    @Cacheable(value = "user", key = "#uuid", unless = "#result == null")
     public Optional<AuthEntity> findOneByUUID(String uuid) {
-        return authRepository.findOneByUUID(uuid);
+        return Optional.ofNullable(findCachedUserByUUID(uuid));
     }
 
-    @Cacheable(value = "user", key = "#username", unless = "#result == null")
     public Optional<AuthEntity> findOneByUsername(String username) {
-        return authRepository.findOneByUsername(username);
+        return Optional.ofNullable(findCachedUserByUsername(username));
     }
 
     @Caching(evict = {
@@ -82,6 +80,16 @@ public class AuthService {
     })
     public void authSave(AuthEntity auth) {
         authRepository.save(auth);
+    }
+
+    @Cacheable(value = "user", key = "#uuid", unless = "#result == null")
+    public AuthEntity findCachedUserByUUID(String uuid) {
+        return authRepository.findOneByUUID(uuid).orElse(null);
+    }
+
+    @Cacheable(value = "user", key = "#username", unless = "#result == null")
+    public AuthEntity findCachedUserByUsername(String username) {
+        return authRepository.findOneByUsername(username).orElse(null);
     }
 
     /**

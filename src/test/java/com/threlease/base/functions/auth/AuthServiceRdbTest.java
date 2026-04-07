@@ -35,7 +35,7 @@ class AuthServiceRdbTest {
     @BeforeEach
     void setUp() {
         JwtProperties jwtProperties = new JwtProperties();
-        jwtProperties.setSecretKey("QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQQ==");
+        jwtProperties.setSecretKey("Nwzbu8o3Rkf0iOJj0wpY2i749zjM7kr6Hnnl6x/n4e+tJoAmn5wYJt/jeFX71cawaR4kQFTw1ACeJgsHAJ/AeA==");
         jwtProperties.validateSecretKey();
 
         JwtProvider jwtProvider = new JwtProvider(authRepository, jwtProperties);
@@ -46,6 +46,7 @@ class AuthServiceRdbTest {
         TokenProperties tokenProperties = new TokenProperties();
         tokenProperties.setStorage("rdb");
         tokenProperties.setMaxSessionsPerUser(5);
+        tokenProperties.setValidateSchema(false);
 
         ObjectProvider<StringRedisTemplate> objectProvider = mock(ObjectProvider.class);
         when(objectProvider.getIfAvailable()).thenReturn(null);

@@ -107,6 +107,7 @@ public class AuthController {
 
         AuthEntity user = AuthEntity.builder()
                 .username(dto.getUsername())
+                .nickname(dto.getNickname())
                 .password(passwordEncoder.encode(dto.getPassword()))
                 .salt(salt)
                 .role(com.threlease.base.common.enums.Roles.ROLE_USER)

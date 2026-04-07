@@ -13,4 +13,5 @@ public class RedisProperties {
     private Boolean enabled;
     private String host;
     private String port;
+    private String cachePrefix = "v1";
 }

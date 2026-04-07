@@ -62,11 +62,13 @@ app:
     enabled: ${REDIS_ENABLED:false}
     host: ${REDIS_HOST:localhost}
     port: ${REDIS_PORT:6379}
+    cache-prefix: ${REDIS_CACHE_PREFIX:v1}
   jwt:
     secret-key: ${JWT_SECRET_KEY:4zB0ZR7iYAfapSSkFfQKP33FYQHJx3o/frfaL2oZNvM9OvWt5IPUZaTH+3imbJGaNDN68VHWaCmB+IdyQHmWKQ==}
   token:
     storage: ${TOKEN_STORAGE:rdb} # cache (Redis/Local), rdb (Database)
     max-sessions-per-user: ${TOKEN_MAX_SESSIONS_PER_USER:5}
+    validate-schema: ${TOKEN_VALIDATE_SCHEMA:true}
   qr:
     margin: ${QR_MARGIN:1}
     charset: ${QR_CHARSET:UTF-8}
@@ -109,10 +111,10 @@ app:
       - setcookie
       - cookie
     sensitive-value-patterns:
-      - "(?i)Bearer\\\\s+[A-Za-z0-9\\\\-._~+/]+=*"
-      - "\\\\b[A-Za-z0-9_-]+\\\\.[A-Za-z0-9_-]+\\\\.[A-Za-z0-9_-]+\\\\b"
-      - "(?i)(sk|rk)_[A-Za-z0-9]{16,}"
-      - "(?i)AKIA[0-9A-Z]{16}"
+      - '(?i)Bearer\s+[A-Za-z0-9._~+/\-=]+'
+      - '\b[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b'
+      - '(?i)(sk|rk)_[A-Za-z0-9]{16,}'
+      - '(?i)AKIA[0-9A-Z]{16}'
   swagger:
     scheme: bearer
     title: title
