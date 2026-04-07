@@ -1,5 +1,6 @@
 package com.threlease.base.common.utils.enumeration;
 
+import com.threlease.base.common.annotation.Enumeration;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
