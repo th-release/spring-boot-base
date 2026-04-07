@@ -45,17 +45,16 @@ crypto:
     # 32 bytes (256 bits) Base64 encoded key
     secret-key: ${AES_SECRET_KEY:R3zmKTgCnAp1m0zRd5DCVmTA3GQhYPYd+iJsbk1+l9c=}
 
-cors:
-  allowedOrigins:
-    - "http://localhost:3000"
-    - "http://localhost:8080"
-  allowedMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"]
-  allowedHeaders: ["*"]
-  exposedHeaders: ["Authorization", "Refresh-Token"]
-  allowCredentials: true
-  maxAge: 3600
-
 app:
+  cors:
+    allowedOrigins:
+      - "http://localhost:3000"
+      - "http://localhost:8080"
+    allowedMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"]
+    allowedHeaders: ["*"]
+    exposedHeaders: ["Authorization", "Refresh-Token"]
+    allowCredentials: true
+    maxAge: 3600
   redis:
     enabled: ${REDIS_ENABLED:false}
     host: ${REDIS_HOST:localhost}
