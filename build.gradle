@@ -77,6 +77,7 @@ dependencies {
 
 	// 파일 관련
 	implementation 'io.awspring.cloud:spring-cloud-aws-starter-s3:3.0.1'
+	implementation 'org.apache.poi:poi-ooxml:5.2.3'
 }
 
 tasks.named('test') {
