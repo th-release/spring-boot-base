@@ -5,6 +5,7 @@ import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Configuration
@@ -12,10 +13,10 @@ import java.util.List;
 @Getter
 @Setter
 public class CorsProperties {
-    private List<String> allowedOrigins;
-    private List<String> allowedMethods;
-    private List<String> allowedHeaders;
-    private List<String> exposedHeaders;
-    private Boolean allowCredentials;
-    private Long maxAge;
+    private List<String> allowedOrigins = new ArrayList<>();
+    private List<String> allowedMethods = new ArrayList<>();
+    private List<String> allowedHeaders = new ArrayList<>();
+    private List<String> exposedHeaders = new ArrayList<>();
+    private Boolean allowCredentials = false;
+    private Long maxAge = 1800L;
 }
