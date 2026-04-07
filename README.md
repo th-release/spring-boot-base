@@ -24,7 +24,9 @@
 
 ### 🔐 Security & Identity
 *   **JWT with Token Rotation**: RTR(Refresh Token Rotation) 기술이 적용된 무상태 인증 시스템.
-*   **Data Encryption**: JPA Converter를 통해 민감 데이터를 DB 레벨에서 AES-256 자동 암복호화.
+*   **Global XSS Prevention**: Jackson 커스텀 설정 및 Servlet Filter를 통해 JSON 페이로드와 URL 파라미터 전역에 대한 XSS 방지 처리를 자동 수행합니다.
+*   **Data Encryption**: JPA Converter를 통해 민감 데이터를 DB 레벨에서 AES-256 자동 암복호화 처리합니다.
+
 *   **Smart IP Extraction**: `IpUtils`를 통해 다양한 프록시 환경에서도 실제 클라이언트 IP를 정확히 추출.
 
 ### 💾 Data & Performance
