@@ -1,4 +1,68 @@
-/build
-/.gradle
-/.idea
-/user
+# ══════════════════════════════════════════════
+# 🚀 Spring Boot Premium Base .gitignore
+# ══════════════════════════════════════════════
+
+### Java & Build Tools ###
+build/
+out/
+.gradle/
+.lock
+bin/
+!gradle-wrapper.jar
+
+### IDE Settings (IntelliJ & VSCode) ###
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.classpath
+.project
+.settings/
+.nbworkspace
+.factorypath
+
+### Operating System (macOS & Windows) ###
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.Spotlight-V100
+.Trashes
+desktop.ini
+thumbs.db
+ehthumbs.db
+
+### Docker & Infrastructure ###
+# 로컬 DB 데이터가 커밋되는 것을 방지 (중요!)
+docker/postgres/data/
+docker/prometheus/data/
+docker/redis/data/
+
+### Environment & Secrets ###
+.env
+.env.local
+.env.*.local
+*.secret
+*.jks
+*.p12
+*.pem
+credentials.json
+
+### Logs & Temp ###
+logs/
+*.log
+*.temp
+*.tmp
+p6spy.log
+
+### QueryDSL & Generated Sources ###
+# 빌드 시 자동 생성되는 코드들
+src/main/generated/
+src/test/generated/
+
+### Project Specific ###
+uploads/
+temp-qr/
+.DS_Store
