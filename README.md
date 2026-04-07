@@ -1,77 +1,100 @@
 # Spring Boot Base Project
 
-이 프로젝트는 Spring Boot 기반의 백엔드 애플리케이션 개발을 위한 스타터 킷(Base)입니다. 보안, DB 연동, API 문서화, 공통 유틸리티 등 서비스 개발에 필수적인 요소들이 미리 설정되어 있습니다.
+이 프로젝트는 Spring Boot 기반의 고성능, 확장 가능한 백엔드 애플리케이션 개발을 위한 프리미엄 스타터 킷(Base)입니다. 보안, 데이터 관리, 파일 스토리지, 모니터링 및 생산성 도구들이 최신 베스트 프랙티스에 맞춰 구성되어 있습니다.
 
 ## 🛠 Tech Stack
 
 *   **Framework**: Spring Boot 3.1.5 (Java 17)
-*   **Database**: PostgreSQL
-*   **ORM/Query**: Spring Data JPA, QueryDSL 5.0.0
-*   **Security**: Spring Security 6 (Stateless JWT 기반)
-*   **API Documentation**: Springdoc-openapi (Swagger UI)
-*   **Build Tool**: Gradle
-*   **Utilities**: Lombok, Gson, JJWT (v0.12.5)
+*   **Database**: PostgreSQL 16+
+*   **ORM/Query**: Spring Data JPA, QueryDSL 5.0.0 (Jakarta)
+*   **Security**: Spring Security 6 (Stateless JWT)
+*   **Caching**: Redis (Optional) / ConcurrentMap (Local)
+*   **Storage**: AWS S3 / Local File System
+*   **API Docs**: Springdoc-openapi 2.2.0 (Swagger UI)
+*   **Monitoring**: Spring Boot Actuator, Micrometer (Prometheus)
+*   **Logging**: SLF4J (Logback), P6Spy (SQL Logging)
+*   **Build Tool**: Gradle 8.x
 
 ## 🚀 Key Features
 
-*   **Security & JWT Auth**:
-    *   `jjwt`를 사용한 토큰 기반 인증 및 권한 관리.
-    *   Stateless 세션 정책 적용 및 CORS 설정 완료.
-    *   `TokenInterceptor`를 통한 유연한 토큰 검증 및 경로 예외 처리.
-*   **Database & Query**:
-    *   PostgreSQL 연동 및 HikariCP 최적화 설정.
-    *   `QueryDSL` 설정으로 복잡한 동적 쿼리 및 타입 세이프한 쿼리 작성 가능.
-    *   `CustomPhysicalNamingStrategy`를 통한 네이밍 컨벤션 자동화.
-*   **API Documentation**:
-    *   Swagger(Springdoc) 연동 (`/api/swagger`를 통해 접속 가능).
-*   **Validation**:
-    *   Spring Validation 적용 및 Enum 값 검증을 위한 커스텀 어노테이션 (`EnumValueValidator`) 제공.
-*   **Global Exception Handling**:
-    *   `BusinessException` 및 `GlobalExceptionHandler`를 통한 일관된 에러 응답 구조.
-*   **Production Readiness (Monitoring & Logging)**:
-    *   **Spring Boot Actuator**: 애플리케이션 상태 및 메트릭 노출 (`/api/actuator/health`, `/api/actuator/metrics` 등).
-    *   **Request/Response Logging**: `LoggingFilter`를 통해 모든 API 요청/응답의 Payload 및 처리 시간 기록.
-    *   **MDC Request Tracing**: 각 요청마다 고유한 `requestId`를 부여하여 로그 추적성 확보.
-    *   **P6Spy SQL Logging**: JPA가 생성하는 SQL문의 `?` 파라미터를 실제 값으로 치환하여 로깅 (`decorator.datasource.p6spy` 설정).
-    *   **Hybrid Caching**: Redis 설정(`spring.data.redis.host`) 여부에 따라 **Redis** 또는 **Local Cache(ConcurrentMap)**를 자동으로 선택하여 사용.
-    *   **Storage Abstraction**: AWS S3 설정(`spring.cloud.aws.s3.bucket`) 여부에 따라 **S3** 또는 **Local File System**을 스토리지로 사용하도록 자동 전환.
-    *   **Async & Scheduling**: 별도의 쓰레드 풀 설정을 통해 비동기 작업(`@Async`) 및 주기적 작업(`@Scheduled`)의 성능과 안정성 확보.
-    *   **MapStruct**: Entity와 DTO 간의 객체 매핑 코드를 컴파일 시점에 자동 생성하여 개발 생산성 향상.
-    *   **Structured Logging**: `logback-spring.xml` 설정을 통한 가독성 높은 로그 포맷 적용.
-*   **Common Utilities**:
-    *   `BaseEntity`: 생성/수정 시간 자동 추적.
-    *   `BasicResponse`, `PageResponse`: 표준화된 API 응답 규격.
-    *   `Hash`: SHA-256 기반 암호화 유틸리티.
-    *   `GetRandom`: 랜덤 문자열 및 숫자 생성기.
+### 🔐 Security & Identity
+*   **JWT with Token Rotation**: `jjwt`를 사용한 인증 시스템으로, Access Token과 Refresh Token을 모두 지원하며 보안 강화를 위해 Refresh Token Rotation(RTR) 기술이 적용되어 있습니다.
+*   **Stateless Architecture**: 세션을 사용하지 않는 완전한 무상태성 아키텍처로 설계되어 수평적 확장에 용이합니다.
+*   **Custom Interceptor**: `TokenInterceptor`를 통해 유연한 인증 제어가 가능하며, 특정 경로에 대한 예외 처리가 간편합니다.
+*   **Data Encryption**: `EncryptedStringConverter`를 통해 민감한 데이터(전화번호, 이메일 등)를 DB 레벨에서 AES-256으로 자동 암호화/복호화합니다.
+
+### 💾 Data & Performance
+*   **QueryDSL Integration**: 타입 세이프한 동적 쿼리 작성을 지원하여 복잡한 검색 및 필터링 로직을 안전하게 구현할 수 있습니다.
+*   **Smart Caching**: Redis 연결 설정 여부에 따라 시스템이 자동으로 **Distributed Cache(Redis)**와 **Local Cache(ConcurrentMap)** 사이를 전환합니다.
+*   **Rate Limiting**: `@RateLimit` 어노테이션과 AOP를 통해 API별 호출 속도 제한을 손쉽게 설정하여 서비스 안정성을 확보합니다.
+*   **SQL Monitoring**: P6Spy를 통해 런타임에 생성되는 SQL문을 실시간 모니터링하며, 바인딩 파라미터가 포함된 완전한 쿼리를 로그로 남깁니다.
+
+### 📂 Storage Abstraction
+*   **Hybrid Storage Service**: 설정에 따라 **AWS S3**와 **로컬 파일 시스템**을 투명하게 전환하여 사용합니다.
+*   **Orphan File Cleanup**: DB에 기록되지 않은 유령 파일을 주기적으로 찾아 삭제하는 `OrphanFileCleanupJob` 배치 프로세스가 내장되어 있습니다.
+
+### 🛠 Productivity & Utilities
+*   **QR Code Generator**: ZXing 라이브러리를 기반으로 한 고성능 QR 코드 생성 유틸리티를 제공합니다.
+*   **MapStruct**: 엔티티와 DTO 간의 변환 코드를 자동 생성하여 개발자의 실수 방지 및 성능을 극대화합니다.
+*   **Standardized Responses**: `BasicResponse`, `PageResponse`를 통해 전사적으로 통일된 API 응답 규격을 유지합니다.
+*   **Global Exception Handling**: 비즈니스 예외(`BusinessException`) 중심의 체계적인 에러 핸들링 시스템을 구축하였습니다.
+
+### 📈 Production Readiness
+*   **Observability**: Actuator를 통해 애플리케이션의 Health, Metrics 정보를 Prometheus 포맷으로 노출합니다.
+*   **Structured Logging**: `LoggingFilter`를 통해 요청/응답 페이로드, 처리 시간, MDC 기반의 `requestId`를 로그에 기록하여 추적성을 보장합니다.
 
 ## 📂 Project Structure
 
 ```text
 src/main/java/com/threlease/base/
-├── common/             # 공통 기능 (Config, Exception, Utils, Response)
-│   ├── configs/        # QueryDSL, Security, Swagger, WebMvc 등 설정
-│   ├── entity/         # BaseEntity 등 공통 엔티티
-│   ├── exception/      # 비즈니스 예외 및 에러 코드 정의
-│   ├── handler/        # 전역 예외 처리기 (ControllerAdvice)
-│   ├── interceptors/   # JWT 인증 인터셉터
-│   ├── provider/       # JWT 토큰 생성 및 검증 Provider
-│   └── utils/          # 각종 유틸리티 (Encryption, Validation, Response)
-├── entities/           # JPA 엔티티 정의 (AuthEntity 등)
-├── functions/          # 비즈니스 로직 (Controller, Service, DTO)
-│   └── auth/           # 인증 관련 (로그인, 회원가입 등)
-└── repositories/       # JPA 및 QueryDSL 리포지토리
+├── common/             # 공통 인프라 스트럭처
+│   ├── annotation/     # 커스텀 어노테이션 (RateLimit 등)
+│   ├── configs/        # 프레임워크 상세 설정 (Security, Async, Cache, Storage 등)
+│   ├── convert/        # JPA Attribute Converters (암호화 등)
+│   ├── exception/      # 전역 예외 정의 및 에러 코드
+│   ├── handler/        # AOP Aspect 및 Global Exception Handler
+│   ├── interceptors/   # 비즈니스 인터셉터 (Auth)
+│   ├── provider/       # JWT 및 보안 관련 Provider
+│   └── utils/          # 유틸리티 컴포넌트 (QR, Storage, Crypto, Response)
+├── entities/           # JPA 도메인 엔티티
+├── functions/          # 도메인별 비즈니스 기능 (Controller, Service, DTO)
+└── repositories/       # Data Access Layer (JPA, QueryDSL)
 ```
 
-## ⚙️ Configuration
+## ⚙️ Configuration (application.yml)
 
-애플리케이션 설정은 `src/main/resources/application.yml`에서 관리합니다.
-
-*   **Database**: PostgreSQL 환경변수(`DATABASE_HOST`, `DATABASE_PORT` 등)를 통해 동적 설정이 가능합니다.
-*   **Context Path**: 모든 API는 `/api` 프리픽스를 가집니다.
-*   **Swagger**: `/api/swagger`를 통해 API 문서를 확인할 수 있습니다.
+| 속성 | 설명 | 비고 |
+| :--- | :--- | :--- |
+| `app.redis.enabled` | Redis 사용 여부 제어 | `false` 시 로컬 캐시 사용 |
+| `app.token.storage` | 토큰 저장 위치 설정 | `cache` (Redis/Local), `rdb` 선택 가능 |
+| `storage.local.path` | 로컬 파일 저장 경로 | 기본값 `./uploads` |
+| `storage.cleanup.cron` | 유령 파일 정리 주기 | 기본값 매일 새벽 3시 |
+| `crypto.aes.secret` | DB 암호화용 비밀키 | **필수 설정** |
 
 ## 🏃 Getting Started
 
-1.  **PostgreSQL 설정**: `application.yml`의 DB 연결 정보를 환경에 맞게 수정합니다.
-2.  **의존성 설치**: `./gradlew build`
-3.  **애플리케이션 실행**: `./gradlew bootRun`
+1.  **Environment Setup**:
+    *   PostgreSQL 설치 및 데이터베이스 생성
+    *   `src/main/resources/application.yml`의 DB 접속 정보 수정
+2.  **Build**:
+    ```bash
+    ./gradlew clean build
+    ```
+3.  **Run**:
+    ```bash
+    ./gradlew bootRun
+    ```
+4.  **API Documentation**:
+    *   Swagger UI: `http://localhost:8080/api/swagger`
+
+## ⚛️ React Deployment
+
+React의 빌드 결과물(HTML, CSS, JS)을 Spring Boot에서 서비스하려면 다음 단계를 따르세요:
+
+1.  React 프로젝트에서 빌드 수행: `npm run build`
+2.  빌드된 `build/` 폴더 내의 모든 파일을 이 프로젝트의 `src/main/resources/static/` 디렉토리로 복사합니다.
+3.  Spring Boot 애플리케이션을 실행하면 `http://localhost:8080/` 에서 React 앱이 로드됩니다.
+4.  **라우팅 구조**:
+    *   **Backend API**: 모든 `@RestController`는 자동으로 `/api` 접두사가 붙습니다 (예: `GET /api/auth/@me`).
+    *   **Frontend View**: `/api`로 시작하지 않는 모든 경로는 `index.html`로 포워딩되어 React Router가 처리합니다.
+    *   **Swagger**: `http://localhost:8080/api/swagger`를 통해 접근 가능합니다.
