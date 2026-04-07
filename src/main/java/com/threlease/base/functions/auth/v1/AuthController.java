@@ -11,14 +11,19 @@ import com.threlease.base.common.utils.responses.BasicResponse;
 import com.threlease.base.entities.AuthEntity;
 import com.threlease.base.functions.auth.AuthService;
 import com.threlease.base.functions.auth.dto.LoginDto;
+import com.threlease.base.functions.auth.dto.RefreshTokenSessionDto;
 import com.threlease.base.functions.auth.dto.SignUpDto;
 import com.threlease.base.functions.auth.dto.TokenResponseDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * v1 인증 컨트롤러
@@ -33,6 +38,7 @@ public class AuthController {
     private final AuthService authService;
     private final HashComponent hashComponent;
     private final RandomComponent randomComponent;
+    private final PasswordEncoder passwordEncoder;
 
     @PostMapping("/login")
     @RateLimit(limit = 10, window = 60)
@@ -41,7 +47,7 @@ public class AuthController {
         AuthEntity auth = authService.findOneByUsername(dto.getUsername())
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        if (!hashComponent.generateSHA512(dto.getPassword() + auth.getSalt()).equals(auth.getPassword())) {
+        if (!isPasswordValid(dto.getPassword(), auth)) {
             throw new BusinessException(ErrorCode.WRONG_PASSWORD);
         }
 
@@ -52,6 +58,41 @@ public class AuthController {
     @Operation(summary = "토큰 재발급")
     public ResponseEntity<BasicResponse<TokenResponseDto>> refresh(@RequestHeader(HttpConstants.HEADER_REFRESH_TOKEN) String refreshToken) {
         return BasicResponse.ok(authService.refresh(refreshToken));
+    }
+
+    @PostMapping("/logout")
+    @Operation(summary = "로그아웃")
+    public ResponseEntity<BasicResponse<Void>> logout(@RequestHeader(HttpConstants.HEADER_REFRESH_TOKEN) String refreshToken,
+                                                      HttpServletRequest request) {
+        AuthEntity user = (AuthEntity) request.getAttribute("user");
+        authService.logout(refreshToken, user.getUuid());
+        return BasicResponse.noContent();
+    }
+
+    @PostMapping("/logout-all")
+    @Operation(summary = "전체 로그아웃")
+    public ResponseEntity<BasicResponse<Void>> logoutAll(HttpServletRequest request) {
+        AuthEntity user = (AuthEntity) request.getAttribute("user");
+        authService.logoutAll(user.getUuid());
+        return BasicResponse.noContent();
+    }
+
+    @GetMapping("/sessions")
+    @Operation(summary = "활성 세션 목록 조회")
+    public ResponseEntity<BasicResponse<List<RefreshTokenSessionDto>>> sessions(
+            HttpServletRequest request,
+            @RequestHeader(value = HttpConstants.HEADER_REFRESH_TOKEN, required = false) String refreshToken) {
+        AuthEntity user = (AuthEntity) request.getAttribute("user");
+        return BasicResponse.ok(authService.getSessions(user.getUuid(), refreshToken));
+    }
+
+    @DeleteMapping("/sessions/{tokenId}")
+    @Operation(summary = "특정 세션 종료")
+    public ResponseEntity<BasicResponse<Void>> revokeSession(@PathVariable String tokenId,
+                                                             HttpServletRequest request) {
+        AuthEntity user = (AuthEntity) request.getAttribute("user");
+        authService.revokeSession(user.getUuid(), tokenId);
+        return BasicResponse.noContent();
     }
 
     @PostMapping("/signup")
@@ -66,7 +107,7 @@ public class AuthController {
 
         AuthEntity user = AuthEntity.builder()
                 .username(dto.getUsername())
-                .password(hashComponent.generateSHA512(dto.getPassword() + salt))
+                .password(passwordEncoder.encode(dto.getPassword()))
                 .salt(salt)
                 .role(com.threlease.base.common.enums.Roles.ROLE_USER)
                 .build();
@@ -83,5 +124,21 @@ public class AuthController {
                 .orElseThrow(() -> new BusinessException(ErrorCode.TOKEN_INVALID));
 
         return BasicResponse.ok(user);
+    }
+
+    private boolean isPasswordValid(String rawPassword, AuthEntity auth) {
+        if (passwordEncoder.matches(rawPassword, auth.getPassword())) {
+            return true;
+        }
+
+        String legacyHash = hashComponent.generateSHA512(rawPassword + auth.getSalt());
+        if (!legacyHash.equals(auth.getPassword())) {
+            return false;
+        }
+
+        auth.setPassword(passwordEncoder.encode(rawPassword));
+        auth.setSalt(randomComponent.generateAlphanumeric(32));
+        authService.authSave(auth);
+        return true;
     }
 }

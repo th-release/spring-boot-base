@@ -2,39 +2,68 @@ package com.threlease.base.functions.auth;
 
 import com.threlease.base.common.exception.BusinessException;
 import com.threlease.base.common.exception.ErrorCode;
+import com.threlease.base.common.properties.app.redis.RedisProperties;
+import com.threlease.base.common.properties.app.token.TokenProperties;
 import com.threlease.base.common.provider.JwtProvider;
+import com.threlease.base.common.provider.JwtProvider.RefreshTokenClaims;
+import com.threlease.base.common.utils.crypto.HashComponent;
 import com.threlease.base.entities.AuthEntity;
+import com.threlease.base.entities.RefreshTokenEntity;
+import com.threlease.base.functions.auth.dto.RefreshTokenSessionDto;
 import com.threlease.base.functions.auth.dto.TokenResponseDto;
 import com.threlease.base.repositories.auth.AuthRepository;
+import com.threlease.base.repositories.auth.RefreshTokenRepository;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.Map;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
 public class AuthService {
+    private static final String REDIS_TOKEN_KEY_PREFIX = "refresh_token:";
+    private static final String REDIS_FAMILY_KEY_PREFIX = "refresh_token_family:";
+    private static final String REDIS_USER_KEY_PREFIX = "refresh_token_user:";
+
     private final AuthRepository authRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
     private final JwtProvider jwtProvider;
     private final ObjectProvider<StringRedisTemplate> stringRedisTemplateProvider;
-    
-    // Redis 미사용 시 로컬 메모리 저장소
-    private final Map<String, String> localRefreshTokenStorage = new ConcurrentHashMap<>();
+    private final HashComponent hashComponent;
+    private final TokenProperties tokenProperties;
+    private final boolean redisEnabled;
 
     public AuthService(AuthRepository authRepository, 
+                       RefreshTokenRepository refreshTokenRepository,
                        JwtProvider jwtProvider, 
-                       ObjectProvider<StringRedisTemplate> stringRedisTemplateProvider) {
+                       ObjectProvider<StringRedisTemplate> stringRedisTemplateProvider,
+                       HashComponent hashComponent,
+                       RedisProperties redisProperties,
+                       TokenProperties tokenProperties) {
         this.authRepository = authRepository;
+        this.refreshTokenRepository = refreshTokenRepository;
         this.jwtProvider = jwtProvider;
         this.stringRedisTemplateProvider = stringRedisTemplateProvider;
+        this.hashComponent = hashComponent;
+        this.tokenProperties = tokenProperties;
+        this.redisEnabled = Boolean.TRUE.equals(redisProperties.getEnabled());
+
+        if (!isRdbStorage() && !redisEnabled) {
+            throw new IllegalStateException("Refresh token storage requires app.redis.enabled=true when app.token.storage is not 'rdb'");
+        }
     }
 
     @Cacheable(value = "user", key = "#uuid", unless = "#result == null")
@@ -59,10 +88,16 @@ public class AuthService {
      * 로그인 - 토큰 세트 발급
      */
     public TokenResponseDto issueTokens(AuthEntity user) {
-        String accessToken = jwtProvider.createAccessToken(user.getUuid());
-        String refreshToken = jwtProvider.createRefreshToken(user.getUuid());
+        return issueTokens(user, UUID.randomUUID().toString());
+    }
 
-        saveRefreshToken(user.getUuid(), refreshToken);
+    public TokenResponseDto issueTokens(AuthEntity user, String familyId) {
+        enforceSessionLimit(user.getUuid());
+        String refreshTokenId = UUID.randomUUID().toString();
+        String accessToken = jwtProvider.createAccessToken(user.getUuid());
+        String refreshToken = jwtProvider.createRefreshToken(user.getUuid(), refreshTokenId, familyId);
+
+        saveRefreshToken(user.getUuid(), refreshTokenId, familyId, refreshToken);
 
         return TokenResponseDto.builder()
                 .accessToken(accessToken)
@@ -74,54 +109,295 @@ public class AuthService {
      * 토큰 갱신 (Token Rotation 적용)
      */
     public TokenResponseDto refresh(String refreshToken) {
-        String uuid = jwtProvider.getSubject(refreshToken);
-        if (uuid == null) {
+        RefreshTokenClaims claims = jwtProvider.getRefreshTokenClaims(refreshToken);
+        if (claims == null) {
             throw new BusinessException(ErrorCode.TOKEN_INVALID);
         }
 
-        String storedToken = getStoredRefreshToken(uuid);
-        if (storedToken == null || !storedToken.equals(refreshToken)) {
+        RefreshTokenRecord storedToken = getStoredRefreshToken(claims.tokenId());
+        if (storedToken == null || storedToken.isExpired() || storedToken.revoked()
+                || !storedToken.userUuid().equals(claims.userUuid())
+                || !storedToken.familyId().equals(claims.familyId())
+                || !storedToken.tokenHash().equals(hashRefreshToken(refreshToken))) {
             // 토큰 탈취 가능성 (이전 토큰 재사용 시도) -> 저장된 토큰 삭제 후 에러
-            deleteRefreshToken(uuid);
-            log.warn("Refresh token reuse detected for user: {}. Revoking all tokens.", uuid);
+            revokeRefreshTokenFamily(claims.familyId());
+            log.warn("Refresh token reuse detected for user: {}. Revoking token family: {}", claims.userUuid(), claims.familyId());
             throw new BusinessException(ErrorCode.TOKEN_INVALID);
         }
 
-        AuthEntity user = findOneByUUID(uuid)
+        AuthEntity user = findOneByUUID(claims.userUuid())
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
-        // 새로운 토큰 세트 발급 (Rotation)
-        return issueTokens(user);
+        rotateRefreshToken(storedToken);
+        return issueTokens(user, claims.familyId());
     }
 
-    private void saveRefreshToken(String uuid, String refreshToken) {
-        StringRedisTemplate redisTemplate = stringRedisTemplateProvider.getIfAvailable();
-        if (redisTemplate != null) {
-            redisTemplate.opsForValue().set("refresh_token:" + uuid, refreshToken, 14, TimeUnit.DAYS);
-        } else {
-            localRefreshTokenStorage.put(uuid, refreshToken);
+    public void logout(String refreshToken, String userUuid) {
+        RefreshTokenClaims claims = jwtProvider.getRefreshTokenClaims(refreshToken);
+        if (claims == null || !claims.userUuid().equals(userUuid)) {
+            throw new BusinessException(ErrorCode.TOKEN_INVALID);
         }
+
+        deleteRefreshToken(claims.tokenId(), claims.familyId());
     }
 
-    private String getStoredRefreshToken(String uuid) {
-        StringRedisTemplate redisTemplate = stringRedisTemplateProvider.getIfAvailable();
-        if (redisTemplate != null) {
-            return redisTemplate.opsForValue().get("refresh_token:" + uuid);
-        } else {
-            return localRefreshTokenStorage.get(uuid);
+    public void logoutAll(String userUuid) {
+        if (isRdbStorage()) {
+            refreshTokenRepository.findAllByUserUuidAndRevokedFalse(userUuid)
+                    .forEach(entity -> revokeRefreshToken(entity.getTokenId(), entity.getFamilyId(), "LOGOUT_ALL"));
+            return;
         }
+
+        getUserTokenIds(userUuid).stream()
+                .map(this::getStoredRefreshToken)
+                .filter(java.util.Objects::nonNull)
+                .forEach(record -> revokeRefreshToken(record.tokenId(), record.familyId(), "LOGOUT_ALL"));
     }
 
-    private void deleteRefreshToken(String uuid) {
-        StringRedisTemplate redisTemplate = stringRedisTemplateProvider.getIfAvailable();
-        if (redisTemplate != null) {
-            redisTemplate.delete("refresh_token:" + uuid);
-        } else {
-            localRefreshTokenStorage.remove(uuid);
+    public void revokeSession(String userUuid, String tokenId) {
+        if (isRdbStorage()) {
+            RefreshTokenEntity entity = refreshTokenRepository.findByTokenIdAndUserUuid(tokenId, userUuid)
+                    .orElseThrow(() -> new BusinessException(ErrorCode.TOKEN_INVALID));
+            revokeRefreshToken(entity.getTokenId(), entity.getFamilyId(), "REVOKED");
+            return;
         }
+
+        RefreshTokenRecord record = getStoredRefreshToken(tokenId);
+        if (record == null || !userUuid.equals(record.userUuid())) {
+            throw new BusinessException(ErrorCode.TOKEN_INVALID);
+        }
+        revokeRefreshToken(record.tokenId(), record.familyId(), "REVOKED");
+    }
+
+    public List<RefreshTokenSessionDto> getSessions(String userUuid, String currentRefreshToken) {
+        String currentTokenId = Optional.ofNullable(jwtProvider.getRefreshTokenClaims(currentRefreshToken))
+                .map(RefreshTokenClaims::tokenId)
+                .orElse(null);
+
+        return getActiveRefreshTokenRecords(userUuid).stream()
+                .sorted(Comparator.comparing(RefreshTokenRecord::expiryDate).reversed())
+                .map(record -> RefreshTokenSessionDto.builder()
+                        .tokenId(record.tokenId())
+                        .familyId(record.familyId())
+                        .expiryDate(record.expiryDate())
+                        .current(record.tokenId().equals(currentTokenId))
+                        .build())
+                .toList();
+    }
+
+    private void saveRefreshToken(String uuid, String tokenId, String familyId, String refreshToken) {
+        String hashedToken = hashRefreshToken(refreshToken);
+        LocalDateTime expiryDate = LocalDateTime.now().plusSeconds(jwtProvider.getRefreshTokenExpSeconds());
+
+        if (isRdbStorage()) {
+            refreshTokenRepository.save(RefreshTokenEntity.builder()
+                    .userUuid(uuid)
+                    .tokenId(tokenId)
+                    .familyId(familyId)
+                    .tokenHash(hashedToken)
+                    .expiryDate(expiryDate)
+                    .revoked(false)
+                    .build());
+            return;
+        }
+
+        StringRedisTemplate redisTemplate = getRedisTemplate();
+        redisTemplate.opsForValue().set(buildRedisTokenKey(tokenId),
+                serializeRefreshTokenRecord(new RefreshTokenRecord(tokenId, familyId, uuid, hashedToken, expiryDate, false)),
+                jwtProvider.getRefreshTokenExpSeconds(),
+                TimeUnit.SECONDS);
+        redisTemplate.opsForSet().add(buildRedisFamilyKey(familyId), tokenId);
+        redisTemplate.opsForSet().add(buildRedisUserKey(uuid), tokenId);
+        redisTemplate.expire(buildRedisFamilyKey(familyId), jwtProvider.getRefreshTokenExpSeconds(), TimeUnit.SECONDS);
+        redisTemplate.expire(buildRedisUserKey(uuid), jwtProvider.getRefreshTokenExpSeconds(), TimeUnit.SECONDS);
+    }
+
+    private RefreshTokenRecord getStoredRefreshToken(String tokenId) {
+        if (isRdbStorage()) {
+            return refreshTokenRepository.findByTokenId(tokenId)
+                    .map(this::toRefreshTokenRecord)
+                    .orElse(null);
+        }
+
+        StringRedisTemplate redisTemplate = getRedisTemplate();
+        String storedValue = redisTemplate.opsForValue().get(buildRedisTokenKey(tokenId));
+        return storedValue == null ? null : deserializeRefreshTokenRecord(storedValue);
+    }
+
+    private void deleteRefreshToken(String tokenId, String familyId) {
+        if (isRdbStorage()) {
+            refreshTokenRepository.deleteByTokenId(tokenId);
+            return;
+        }
+
+        revokeRefreshToken(tokenId, familyId, "DELETED");
     }
 
     public Optional<AuthEntity> findOneByToken(String token) {
         return jwtProvider.findOneByToken(token);
+    }
+
+    private String hashRefreshToken(String refreshToken) {
+        return hashComponent.generateSHA256(refreshToken);
+    }
+
+    private boolean isRdbStorage() {
+        return "rdb".equalsIgnoreCase(tokenProperties.getStorage());
+    }
+
+    private StringRedisTemplate getRedisTemplate() {
+        StringRedisTemplate redisTemplate = stringRedisTemplateProvider.getIfAvailable();
+        if (redisTemplate == null) {
+            throw new IllegalStateException("StringRedisTemplate is required when app.token.storage is not 'rdb'");
+        }
+        return redisTemplate;
+    }
+
+    private void rotateRefreshToken(RefreshTokenRecord currentToken) {
+        revokeRefreshToken(currentToken.tokenId(), currentToken.familyId(), "ROTATED");
+    }
+
+    private void revokeRefreshTokenFamily(String familyId) {
+        if (isRdbStorage()) {
+            refreshTokenRepository.findAllByFamilyId(familyId).forEach(entity -> {
+                entity.setRevoked(true);
+                refreshTokenRepository.save(entity);
+            });
+            return;
+        }
+
+        StringRedisTemplate redisTemplate = getRedisTemplate();
+        String familyKey = buildRedisFamilyKey(familyId);
+        Optional.ofNullable(redisTemplate.opsForSet().members(familyKey))
+                .ifPresent(tokenIds -> tokenIds.forEach(tokenId -> {
+                    RefreshTokenRecord record = getStoredRefreshToken(tokenId);
+                    redisTemplate.delete(buildRedisTokenKey(tokenId));
+                    if (record != null) {
+                        redisTemplate.opsForSet().remove(buildRedisUserKey(record.userUuid()), tokenId);
+                    }
+                }));
+        redisTemplate.delete(familyKey);
+    }
+
+    private RefreshTokenRecord toRefreshTokenRecord(RefreshTokenEntity entity) {
+        return new RefreshTokenRecord(
+                entity.getTokenId(),
+                entity.getFamilyId(),
+                entity.getUserUuid(),
+                entity.getTokenHash(),
+                entity.getExpiryDate(),
+                entity.isRevoked()
+        );
+    }
+
+    private String buildRedisTokenKey(String tokenId) {
+        return REDIS_TOKEN_KEY_PREFIX + tokenId;
+    }
+
+    private String buildRedisFamilyKey(String familyId) {
+        return REDIS_FAMILY_KEY_PREFIX + familyId;
+    }
+
+    private String buildRedisUserKey(String userUuid) {
+        return REDIS_USER_KEY_PREFIX + userUuid;
+    }
+
+    private String serializeRefreshTokenRecord(RefreshTokenRecord record) {
+        return String.join("|",
+                record.tokenId(),
+                record.familyId(),
+                record.userUuid(),
+                record.tokenHash(),
+                String.valueOf(record.expiryDate().toEpochSecond(ZoneOffset.UTC)),
+                String.valueOf(record.revoked()));
+    }
+
+    private RefreshTokenRecord deserializeRefreshTokenRecord(String value) {
+        String[] parts = value.split("\\|", -1);
+        return new RefreshTokenRecord(
+                parts[0],
+                parts[1],
+                parts[2],
+                parts[3],
+                LocalDateTime.ofEpochSecond(Long.parseLong(parts[4]), 0, ZoneOffset.UTC),
+                Boolean.parseBoolean(parts[5])
+        );
+    }
+
+    private record RefreshTokenRecord(
+            String tokenId,
+            String familyId,
+            String userUuid,
+            String tokenHash,
+            LocalDateTime expiryDate,
+            boolean revoked
+    ) {
+        private boolean isExpired() {
+            return expiryDate.isBefore(LocalDateTime.now());
+        }
+    }
+
+    private void revokeRefreshToken(String tokenId, String familyId, String replacementState) {
+        if (isRdbStorage()) {
+            refreshTokenRepository.findByTokenId(tokenId).ifPresent(entity -> {
+                entity.setRevoked(true);
+                entity.setReplacedByTokenId(replacementState);
+                refreshTokenRepository.save(entity);
+            });
+            return;
+        }
+
+        RefreshTokenRecord record = getStoredRefreshToken(tokenId);
+        if (record == null) {
+            return;
+        }
+
+        StringRedisTemplate redisTemplate = getRedisTemplate();
+        redisTemplate.delete(buildRedisTokenKey(tokenId));
+        redisTemplate.opsForSet().remove(buildRedisFamilyKey(familyId), tokenId);
+        redisTemplate.opsForSet().remove(buildRedisUserKey(record.userUuid()), tokenId);
+    }
+
+    private List<RefreshTokenRecord> getActiveRefreshTokenRecords(String userUuid) {
+        if (isRdbStorage()) {
+            return refreshTokenRepository.findAllByUserUuidAndRevokedFalse(userUuid).stream()
+                    .map(this::toRefreshTokenRecord)
+                    .filter(record -> !record.isExpired())
+                    .toList();
+        }
+
+        return getUserTokenIds(userUuid).stream()
+                .map(this::getStoredRefreshToken)
+                .filter(record -> record != null && !record.isExpired() && !record.revoked())
+                .toList();
+    }
+
+    private Set<String> getUserTokenIds(String userUuid) {
+        if (isRdbStorage()) {
+            return refreshTokenRepository.findAllByUserUuidAndRevokedFalse(userUuid).stream()
+                    .map(RefreshTokenEntity::getTokenId)
+                    .collect(java.util.stream.Collectors.toCollection(TreeSet::new));
+        }
+
+        StringRedisTemplate redisTemplate = getRedisTemplate();
+        Set<String> members = redisTemplate.opsForSet().members(buildRedisUserKey(userUuid));
+        return members == null ? Set.of() : members;
+    }
+
+    private void enforceSessionLimit(String userUuid) {
+        int maxSessions = Math.max(tokenProperties.getMaxSessionsPerUser(), 1);
+        List<RefreshTokenRecord> activeSessions = getActiveRefreshTokenRecords(userUuid).stream()
+                .sorted(Comparator.comparing(RefreshTokenRecord::expiryDate))
+                .toList();
+
+        int overflow = activeSessions.size() - maxSessions + 1;
+        if (overflow <= 0) {
+            return;
+        }
+
+        for (int i = 0; i < overflow; i++) {
+            RefreshTokenRecord record = activeSessions.get(i);
+            revokeRefreshToken(record.tokenId(), record.familyId(), "SESSION_LIMIT");
+        }
     }
 }

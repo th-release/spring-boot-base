@@ -11,4 +11,5 @@ import org.springframework.context.annotation.Configuration;
 @Setter
 public class TokenProperties {
     private String storage; //cache or rdb
+    private int maxSessionsPerUser = 5;
 }

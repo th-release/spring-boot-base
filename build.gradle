@@ -30,6 +30,7 @@ dependencies {
 	// 문자열 관련
 	implementation 'com.googlecode.libphonenumber:libphonenumber:8.13.0'
 	implementation 'org.apache.commons:commons-text:1.10.0'
+	implementation 'org.jsoup:jsoup:1.17.2'
 
 	// 로그 관련
 	implementation 'com.github.gavlyukovskiy:p6spy-spring-boot-starter:1.9.0'
