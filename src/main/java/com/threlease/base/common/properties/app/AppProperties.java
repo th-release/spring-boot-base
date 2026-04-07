@@ -1,5 +1,6 @@
 package com.threlease.base.common.properties.app;
 
+import com.threlease.base.common.properties.app.cors.CorsProperties;
 import com.threlease.base.common.properties.app.redis.RedisProperties;
 import com.threlease.base.common.properties.app.token.TokenProperties;
 import lombok.Getter;
@@ -14,4 +15,5 @@ import org.springframework.context.annotation.Configuration;
 public class AppProperties {
     private RedisProperties redis;
     private TokenProperties token;
+    private CorsProperties cors;
 }

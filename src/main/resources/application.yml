@@ -45,6 +45,17 @@ crypto:
     # 32 bytes (256 bits) Base64 encoded key
     secret-key: ${AES_SECRET_KEY:R3zmKTgCnAp1m0zRd5DCVmTA3GQhYPYd+iJsbk1+l9c=}
 
+# CORS 설정
+  cors:
+    allowed-origins:
+      - "http://localhost:3000"
+      - "http://localhost:8080"
+    allowed-methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"]
+    allowed-headers: ["*"]
+    exposed-headers: ["Authorization", "Refresh-Token"]
+    allow-credentials: true
+    max-age: 3600
+
 # Redis 사용 여부 제어 (기본값 false)
 app:
   redis:
@@ -109,5 +120,5 @@ storage:
     prefix: /api/files
   cleanup:
     cron: "0 0 3 * * *"  # 매일 새벽 3시 / 비활성화: "-"
-    fixed-rate: 0         # ms 단위, 0이면 비활성화 / 예: 21600000 (6시간)
+    # fixed-rate: 21600000 # ms 단위, 사용하려면 주석 해제 (예: 6시간)
     chunk-size: 100
