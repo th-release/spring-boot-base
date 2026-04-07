@@ -36,14 +36,14 @@
 ### 📈 Observability (장애 추적성)
 *   **Full-Trace Logging**: 인바운드 요청부터 비동기 처리, 아웃바운드 API 호출까지 하나의 `X-Correlation-ID`로 묶어 완벽한 로그 추적 기능을 제공합니다.
 *   **Async MDC Propagation**: `@Async` 비동기 스레드 실행 시에도 로그 추적 ID가 유실되지 않도록 `TaskDecorator`를 통해 컨텍스트를 전파합니다.
-*   **Payload Masking**: 로그 기록 시 비밀번호 등 민감한 JSON 필드를 재귀적으로 탐색하여 자동으로 마스킹(`********`) 처리합니다.
-*   **Outbound Logging**: `RestService`(Axios-like)를 통한 외부 API 호출 시 모든 요청/응답을 기록하며 추적 ID를 전파합니다.
+*   **Payload Masking**: 로그 기록 시 비밀번호 등 민감한 JSON 필드를 재귀적으로 탐색하여 자동으로 마스킹 처리합니다.
+*   **Outbound Retry**: `RestService`를 통한 외부 API 호출 시 일시적 네트워크 장애 시 **Spring Retry**를 통해 자동으로 재시도합니다.
 
 ### 🛠 Productivity & Utilities
-*   **Excel Automation**: `@ExcelColumn` 어노테이션 설정만으로 리스트 데이터를 엑셀로 Export하거나 업로드된 엑셀을 Import하는 기능을 제공합니다.
-*   **Clean Versioning**: `@ApiVersion(n)` 어노테이션과 패키지 구조를 활용하여 `/api/v1/...` 경로를 자동으로 생성하고 관리합니다.
-*   **i18n Support**: `MessageUtils`와 연동된 `GlobalExceptionHandler`를 통해 에러 메시지를 클라이언트 언어에 맞춰 자동 번역하여 반환합니다.
-*   **Standardized Responses**: `BasicResponse`, `PageResponse`를 통해 전사적으로 통일된 API 규격을 유지합니다.
+*   **Excel Automation**: `@ExcelColumn` 설정만으로 리스트 데이터를 엑셀로 Export하거나 업로드된 엑셀을 Import합니다.
+*   **Enum API Automation**: 서버의 Enum을 프론트엔드에서 즉시 사용할 수 있도록 코드-명칭 쌍으로 반환하는 공통 API(`/api/common/enums`)를 제공합니다.
+*   **Clean Versioning**: `@ApiVersion(n)` 어노테이션을 활용하여 `/api/v1/...` 경로를 자동으로 생성하고 관리합니다.
+*   **i18n Support**: `MessageUtils`와 연동된 `GlobalExceptionHandler`를 통해 에러 메시지를 클라이언트 언어에 맞춰 자동 번역합니다.
 
 ---
 
@@ -53,8 +53,8 @@
 src/main/java/com/threlease/base/
 ├── common/             # 공통 인프라 스트럭처
 │   ├── annotation/     # 커스텀 어노테이션 (DistributedLock, ApiVersion, RateLimit 등)
-│   ├── configs/        # 상세 설정 (Async, Cache, QueryDsl, RestTemplate 등)
-│   ├── convert/        # JPA Attribute Converters (AES 암호화 등)
+│   ├── configs/        # 상세 설정 (Async, Cache, QueryDsl, RestTemplate, Retry 등)
+│   ├── controller/     # 공통 컨트롤러 (Common Enum API, View Controller)
 │   ├── exception/      # 전역 예외 정의 및 에러 코드
 │   ├── handler/        # AOP Aspect, Global Exception Handler, Logging Filter
 │   ├── interceptors/   # 비즈니스 인터셉터 (Auth Token)
@@ -73,8 +73,6 @@ src/main/java/com/threlease/base/
 | 속성 | 설명 | 비고 |
 | :--- | :--- | :--- |
 | `app.redis.enabled` | Redis & 분산 락 사용 여부 | `false` 시 로컬 캐시 사용 및 락 비활성화 |
-| `app.logging.request` | 요청 페이로드 로깅 여부 | 민감 정보 마스킹 포함 |
-| `app.logging.sensitive-fields` | 마스킹 처리할 필드 목록 | `password`, `token` 등 |
 | `crypto.aes.secret-key` | DB 암호화용 비밀키 | **필수 설정 (Base64)** |
 | `storage.local.path` | 로컬 파일 저장 경로 | 기본값 `./uploads` |
 
@@ -82,7 +80,11 @@ src/main/java/com/threlease/base/
 
 ## 🏃 Getting Started
 
-1.  **Environment**: PostgreSQL 및 Redis(선택) 설치
+1.  **Environment Setup (Docker)**:
+    ```bash
+    # PostgreSQL, Redis, Prometheus 동시 실행
+    docker-compose up -d
+    ```
 2.  **Build**: `./gradlew clean build`
 3.  **Run**: `./gradlew bootRun`
 4.  **API Docs**: `http://localhost:8080/api/swagger`

@@ -40,6 +40,8 @@ dependencies {
 
 	// 모니터링 관련
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'io.micrometer:micrometer-registry-prometheus'
+	implementation 'org.springframework.retry:spring-retry'
 
 	// 토큰 관련
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.5'
