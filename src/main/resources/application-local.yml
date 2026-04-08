@@ -4,6 +4,7 @@ spring:
       on-profile: local
   cloud:
     aws:
+      # local 프로필용 AWS/S3 샘플 값
       s3:
         bucket: ""
       region:
@@ -14,25 +15,31 @@ spring:
 
 crypto:
   aes:
+    # 로컬 개발용 AES 키
     secret-key: "R3zmKTgCnAp1m0zRd5DCVmTA3GQhYPYd+iJsbk1+l9c="
 
 app:
   redis:
+    # local 캐시/토큰 저장 관련 Redis 설정
     enabled: false
     host: localhost
     port: "6379"
     cache-prefix: v1
   cache:
+    # 공통 캐시 이름과 기본 TTL
     default-ttl-seconds: 3600
     names:
       - user
   jwt:
+    # local 프로필용 JWT 서명 키
     secret-key: "4zB0ZR7iYAfapSSkFfQKP33FYQHJx3o/frfaL2oZNvM9OvWt5IPUZaTH+3imbJGaNDN68VHWaCmB+IdyQHmWKQ=="
   token:
+    # refresh token 저장 방식 및 세션 제한
     storage: rdb
     max-sessions-per-user: 5
     validate-schema: true
   auth:
+    # 로그인 실패 제한, 감사 로그, 비밀번호 재설정, MFA 정책
     audit:
       enabled: true
       include-user-agent: true
@@ -50,6 +57,7 @@ app:
       allowed-windows: 1
       required-roles: []
   outbound:
+    # 외부 API 호출 timeout/retry/header 정책
     connect-timeout-seconds: 5
     read-timeout-seconds: 5
     retry:
@@ -59,21 +67,25 @@ app:
       forward-correlation-id: true
       add-idempotency-key: true
   privacy:
+    # 개인정보 마스킹/보존 정책
     mask-audit-ip: true
     include-user-agent: true
     audit-retention-days: 90
   qr:
+    # QR 코드 생성 기본값
     margin: 1
     charset: UTF-8
     format: PNG
     height: 300
     width: 300
   security:
+    # 보안 헤더 기본 정책
     headers:
       hsts-enabled: false
       content-security-policy: "default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
       referrer-policy: strict-origin-when-cross-origin
   email:
+    # 이메일 유틸 on/off 및 SMTP 설정
     enabled: false
     host: localhost
     port: 587
@@ -88,12 +100,14 @@ app:
     read-timeout-millis: 5000
     write-timeout-millis: 5000
   firebase:
+    # Firebase 유틸 on/off 및 Admin SDK 설정
     enabled: false
     project-id: local-project
     credentials-path: ""
     credentials-json: ""
     database-url: ""
 management:
+  # local actuator 노출 범위
   endpoints:
     web:
       exposure:
@@ -101,14 +115,17 @@ management:
 
 storage:
   local:
+    # 로컬 파일 저장 경로와 접근 prefix
     path: ./uploads
     prefix: /api/files
   upload:
+    # 업로드 보안 정책
     enabled: true
     max-file-size-bytes: 10485760
     block-double-extension: true
     allowed-extensions: [jpg, jpeg, png, gif, pdf, txt, csv]
     allowed-content-types: [image/jpeg, image/png, image/gif, application/pdf, text/plain, text/csv]
   cleanup:
+    # 고아 파일 정리 배치 설정
     cron: "0 0 3 * * *"
     chunk-size: 100

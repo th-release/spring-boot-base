@@ -1,14 +1,18 @@
 server:
+  # 프록시/로드밸런서 뒤에서 전달된 헤더를 Spring MVC가 신뢰하도록 설정
   forward-headers-strategy: FRAMEWORK
+  # 애플리케이션 기본 포트
   port: ${PORT:8080}
 
 spring:
+  # 기본 활성 프로필. 별도 지정이 없으면 local 사용
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:local}
   jackson:
     serialization:
       write-dates-as-timestamps: false
   datasource:
+    # 공통 DB 연결 정보. 실제 스키마는 JPA_SCHEMA/currentSchema 로 제어
     driver-class-name: org.postgresql.Driver
     url: jdbc:postgresql://${DATABASE_HOST:127.0.0.1}:${DATABASE_PORT:5432}/${DATABASE_DATABASE:base}?characterEncoding=UTF-8&allowMultiQueries=true&allowMultiQueries=true&currentSchema=${JPA_SCHEMA:public}
     username: ${DATABASE_USERNAME:root}
@@ -19,12 +23,14 @@ spring:
       validation-timeout: 5000
   jpa:
     hibernate:
+      # 베이스 프로젝트 기본값. 운영에서는 migration 중심 관리 권장
       ddl-auto: update
     properties:
       hibernate:
         format_sql: true
         default_schema: ${JPA_SCHEMA:public}
   flyway:
+    # Flyway와 JPA는 서로 다른 schema를 보도록 분리 가능
     enabled: ${FLYWAY_ENABLED:true}
     baseline-on-migrate: true
     baseline-version: 0
@@ -41,11 +47,13 @@ spring:
       - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
   servlet:
     multipart:
+      # 공통 multipart 업로드 한도
       max-file-size: 10MB
       max-request-size: 10MB
 
 app:
   cors:
+    # 공통 CORS 정책. 실제 허용 origin은 환경별 값으로 조정
     allowedOrigins:
       - ${CORS_ALLOWED_ORIGIN_1:http://localhost:3000}
       - ${CORS_ALLOWED_ORIGIN_2:http://localhost:8080}
@@ -55,9 +63,11 @@ app:
     allowCredentials: true
     maxAge: 3600
   database:
+    # JPA/Flyway schema 분리용 공통 app 설정
     jpa-schema: ${JPA_SCHEMA:${DATABASE_SCHEMA:public}}
     flyway-schema: ${FLYWAY_SCHEMA:${DATABASE_SCHEMA:public}}
   logging:
+    # 요청/응답 로깅과 민감정보 마스킹 정책
     request: true
     response: false
     exclude-urls:
@@ -99,12 +109,14 @@ app:
       - '(?i)AKIA[0-9A-Z]{16}'
     max-payload-size: 1024
   swagger:
+    # Swagger/OpenAPI 문서 기본 메타 정보
     scheme: bearer
     title: title
     description: description
     version: 1.0.0
 
 springdoc:
+  # Swagger UI와 OpenAPI 문서 경로 설정
   api-docs:
     enabled: ${SWAGGER_API_DOCS_ENABLED:true}
   swagger-ui:
@@ -117,6 +129,7 @@ springdoc:
     - /**
 
 management:
+  # Actuator/metrics/prometheus 공통 노출 설정
   endpoints:
     web:
       exposure:
@@ -143,6 +156,7 @@ management:
 decorator:
   datasource:
     p6spy:
+      # SQL 확인용 p6spy 설정
       enable-logging: true
       multiline: true
       logging: slf4j

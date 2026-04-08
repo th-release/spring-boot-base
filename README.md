@@ -8,12 +8,14 @@
 
 - JWT access/refresh token 인증
 - refresh token rotation, token family, 세션별 관리
+- 인증 목적별 공통 검증 데이터 저장
 - BCrypt 기반 비밀번호 저장/검증
 - 로그인 실패 횟수 제한 및 계정 잠금
 - 최근 로그인 시간/IP 기록
 - 선택적 MFA(TOTP)
 - 이메일 유틸 및 비밀번호 재설정
 - Firebase 유틸
+- FCM 디바이스 토큰 관리
 - 감사 로그
 - 민감정보 로그 마스킹
 - XSS 방어 및 HTML 허용 예외 정책
@@ -134,7 +136,10 @@ spring:
 - 현재 세션 로그아웃
 - 전체 로그아웃
 - 비밀번호 변경
-- 관리자용 사용자 조회/잠금/세션조회/전체로그아웃
+- 관리자용 사용자 조회/잠금/잠금해제/세션조회/전체로그아웃
+- 관리자용 MFA 초기화
+- FCM 디바이스 토큰 등록/조회/비활성화
+- 관리자용 FCM 토큰 조회 및 푸시 발송
 
 ### 인증 API
 
@@ -148,6 +153,9 @@ spring:
 - `POST /api/v1/auth/password/change`
 - `POST /api/v1/auth/password/reset/request`
 - `POST /api/v1/auth/password/reset/confirm`
+- `GET /api/v1/auth/fcm/tokens`
+- `POST /api/v1/auth/fcm/tokens`
+- `DELETE /api/v1/auth/fcm/tokens/{id}`
 - `GET /api/v1/auth/@me`
 
 ### 관리자 API
@@ -156,6 +164,10 @@ spring:
 - `GET /api/v1/auth/admin/users/{uuid}/sessions`
 - `POST /api/v1/auth/admin/users/{uuid}/logout-all`
 - `POST /api/v1/auth/admin/users/{uuid}/lock`
+- `POST /api/v1/auth/admin/users/{uuid}/unlock`
+- `POST /api/v1/auth/admin/users/{uuid}/mfa/reset`
+- `GET /api/v1/auth/admin/users/{uuid}/fcm/tokens`
+- `POST /api/v1/auth/admin/users/{uuid}/fcm/push`
 - `GET /api/v1/auth/admin/audit-logs`
 
 관리자 권한은 `ROLE_ADMIN` 이어야 합니다.
@@ -240,6 +252,26 @@ app:
       code-expire-minutes: 10
 ```
 
+### 공통 인증 검증 데이터
+
+대표 클래스:
+
+- `entities/AuthVerificationEntity`
+- `functions/auth/AuthVerificationService`
+- `common/enums/AuthVerificationType`
+
+이 구조는 "이 인증 데이터가 어떤 액션을 위한 것인지"를 타입으로 구분해서 저장합니다.
+
+현재 사용 중인 타입:
+
+- `PASSWORD_RESET`
+
+향후 확장 예:
+
+- 이메일 인증
+- 로그인 챌린지
+- 추가 본인확인 단계
+
 ### MFA
 
 지원 기능:
@@ -275,16 +307,11 @@ app:
 
 기록 대상 예시:
 
-- 로그인 성공
-- 로그인 실패
-- 계정 잠금
-- 회원가입
-- 비밀번호 변경
-- MFA 활성화/비활성화
-- 로그아웃
-- 전체 로그아웃
-- 세션 종료
 - 관리자 작업
+- 관리자 잠금/잠금 해제
+- 관리자 MFA 초기화
+- 관리자 전체 로그아웃
+- 관리자 FCM 푸시 발송
 
 관련 설정:
 
@@ -301,6 +328,11 @@ app:
 - `app.privacy.mask-audit-ip`
 - `app.privacy.include-user-agent`
 - `app.privacy.audit-retention-days`
+
+참고:
+
+- 일반 사용자 인증 활동은 DB 적재 대신 콘솔 로그로만 남깁니다.
+- 관리자 관련 작업만 `audit_log` 테이블에 저장합니다.
 
 ## 이메일 유틸리티
 
@@ -347,6 +379,7 @@ emailService.sendHtml("user@example.com", "Subject", "<b>Body</b>");
 - Firebase Admin SDK 초기화
 - Firebase ID 토큰 검증
 - FCM push 전송
+- 사용자별 디바이스 토큰 기반 푸시 발송 지원
 - on/off 설정 지원
 - on 인데 필수 설정이 비어 있으면 시작 시 강제 종료
 
@@ -361,6 +394,31 @@ emailService.sendHtml("user@example.com", "Subject", "<b>Body</b>");
 firebaseUtils.verifyIdToken(idToken);
 firebaseUtils.sendNotification(targetToken, "title", "body", Map.of("type", "notice"));
 ```
+
+## FCM 디바이스 토큰 관리
+
+대표 클래스:
+
+- `entities/FcmDeviceTokenEntity`
+- `functions/auth/FcmDeviceTokenService`
+- `repositories/auth/FcmDeviceTokenRepository`
+
+기능:
+
+- 사용자 디바이스 토큰 등록
+- 내 토큰 목록 조회
+- 토큰 비활성화
+- 관리자용 사용자 토큰 조회
+- 관리자용 사용자 디바이스 푸시 발송
+
+저장 정보:
+
+- `deviceToken`
+- `deviceLabel`
+- `userAgent`
+- `lastIpAddress`
+- `lastUsedAt`
+- `enabled`
 
 ## 웹/MVC 기능
 
