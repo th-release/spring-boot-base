@@ -11,12 +11,32 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface AuthRepository extends JpaRepository<AuthEntity, String>, UserCustomRepository {
+public interface AuthRepository extends JpaRepository<AuthEntity, String> {
     @Query("SELECT u FROM AuthEntity u WHERE u.uuid = :uuid")
     Optional<AuthEntity> findOneByUUID(@Param("uuid") String uuid);
 
-    @Query(value = "SELECT u FROM AuthEntity u")
+    @Query("SELECT u FROM AuthEntity u")
     Page<AuthEntity> findByPagination(Pageable pageable);
 
-    Page<AuthEntity> findByUsernameContainingIgnoreCaseOrNicknameContainingIgnoreCase(String username, String nickname, Pageable pageable);
+    @Query("SELECT u FROM AuthEntity u WHERE LOWER(u.username) = LOWER(:username)")
+    Optional<AuthEntity> findOneByUsername(@Param("username") String username);
+
+    @Query("SELECT u FROM AuthEntity u WHERE LOWER(u.email) = LOWER(:email)")
+    Optional<AuthEntity> findOneByEmail(@Param("email") String email);
+
+    @Query("""
+            SELECT u
+            FROM AuthEntity u
+            WHERE LOWER(u.username) = LOWER(:identifier)
+               OR LOWER(u.email) = LOWER(:identifier)
+            """)
+    Optional<AuthEntity> findOneByUsernameOrEmail(@Param("identifier") String identifier);
+
+    @Query("""
+            SELECT u
+            FROM AuthEntity u
+            WHERE LOWER(u.username) LIKE LOWER(CONCAT('%', :query, '%'))
+               OR LOWER(u.nickname) LIKE LOWER(CONCAT('%', :query, '%'))
+            """)
+    Page<AuthEntity> findByUsernameContainingIgnoreCaseOrNicknameContainingIgnoreCase(@Param("query") String query, Pageable pageable);
 }

@@ -267,7 +267,7 @@ public class AuthService {
         org.springframework.data.domain.Page<AuthEntity> pageResult =
                 (query == null || query.isBlank())
                         ? authRepository.findByPagination(pageable)
-                        : authRepository.findByUsernameContainingIgnoreCaseOrNicknameContainingIgnoreCase(query, query, pageable);
+                        : authRepository.findByUsernameContainingIgnoreCaseOrNicknameContainingIgnoreCase(query, pageable);
 
         return new PageResult<>(
                 pageResult.getContent().stream().map(this::toAdminUserSummary).toList(),
@@ -341,7 +341,8 @@ public class AuthService {
 
     private void deleteRefreshToken(String tokenId, String familyId) {
         if (isRdbStorage()) {
-            refreshTokenRepository.deleteByTokenId(tokenId);
+            refreshTokenRepository.findByTokenId(tokenId)
+                    .ifPresent(refreshTokenRepository::delete);
             return;
         }
 

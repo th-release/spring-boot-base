@@ -72,7 +72,9 @@ public class AuditLogService {
 
     @Scheduled(cron = "0 30 4 * * *")
     public void cleanupExpiredAuditLogs() {
-        auditLogRepository.deleteByCreatedAtBefore(LocalDateTime.now().minusDays(privacyProperties.getAuditRetentionDays()));
+        auditLogRepository.deleteAll(
+                auditLogRepository.findAllByCreatedAtBefore(LocalDateTime.now().minusDays(privacyProperties.getAuditRetentionDays()))
+        );
     }
 
     private String resolveUserAgent(HttpServletRequest request) {

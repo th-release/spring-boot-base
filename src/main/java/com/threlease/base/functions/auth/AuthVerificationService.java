@@ -21,7 +21,7 @@ public class AuthVerificationService {
     private final RandomComponent randomComponent;
 
     public String issueCode(AuthEntity auth, AuthVerificationType type, String target, int expireMinutes) {
-        authVerificationRepository.deleteAllByUserUuidAndType(auth.getUuid(), type);
+        authVerificationRepository.deleteAll(authVerificationRepository.findAllByUserUuidAndType(auth.getUuid(), type));
         String code = randomComponent.generateOtp(6);
         authVerificationRepository.save(AuthVerificationEntity.builder()
                 .userUuid(auth.getUuid())
@@ -57,6 +57,6 @@ public class AuthVerificationService {
     }
 
     public void clear(AuthEntity auth, AuthVerificationType type) {
-        authVerificationRepository.deleteAllByUserUuidAndType(auth.getUuid(), type);
+        authVerificationRepository.deleteAll(authVerificationRepository.findAllByUserUuidAndType(auth.getUuid(), type));
     }
 }
