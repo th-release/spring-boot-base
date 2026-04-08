@@ -26,6 +26,7 @@ public enum ErrorCode {
     ACCOUNT_LOCKED(423, "로그인이 잠금 상태입니다. 잠시 후 다시 시도해주세요."),
     EMAIL_DISABLED(400, "이메일 기능이 비활성화되어 있습니다."),
     EMAIL_NOT_REGISTERED(400, "해당 계정에 등록된 이메일이 없습니다."),
+    FIREBASE_DISABLED(400, "Firebase 기능이 비활성화되어 있습니다."),
     MFA_DISABLED(400, "MFA 기능이 비활성화되어 있습니다."),
     MFA_REQUIRED(401, "MFA 인증 코드가 필요합니다."),
     MFA_INVALID_CODE(401, "유효하지 않은 MFA 인증 코드입니다."),

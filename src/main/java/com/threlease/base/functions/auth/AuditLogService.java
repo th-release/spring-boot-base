@@ -8,6 +8,7 @@ import com.threlease.base.functions.auth.dto.AuditLogDto;
 import com.threlease.base.repositories.auth.AuditLogRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class AuditLogService {
     private final AuditLogRepository auditLogRepository;
@@ -24,6 +26,18 @@ public class AuditLogService {
 
     public void log(String actorUuid, String action, String resourceType, String resourceId, boolean success,
                     HttpServletRequest request, String detail) {
+        log.info("AUTH EVENT actor={}, action={}, resourceType={}, resourceId={}, success={}, ip={}, detail={}",
+                actorUuid,
+                action,
+                resourceType,
+                resourceId,
+                success,
+                maskIpIfNeeded(request != null ? IpUtils.getClientIp(request) : null),
+                detail);
+    }
+
+    public void logAdmin(String actorUuid, String action, String resourceType, String resourceId, boolean success,
+                         HttpServletRequest request, String detail) {
         if (!authSecurityProperties.getAudit().isEnabled()) {
             return;
         }

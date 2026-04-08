@@ -133,24 +133,4 @@ class AuthServiceRdbTest {
         assertEquals(1, sessions.size());
         assertTrue(sessions.get(0).isCurrent());
     }
-
-    @Test
-    void createPasswordResetCodeStoresHashAndExpiry() {
-        AuthEntity user = AuthEntity.builder()
-                .uuid("user-1")
-                .username("tester")
-                .nickname("tester")
-                .email("tester@example.com")
-                .password("encoded")
-                .salt("salt")
-                .build();
-
-        when(authRepository.save(any(AuthEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        String code = authService.createPasswordResetCode(user);
-
-        assertNotNull(code);
-        assertNotNull(user.getPasswordResetCodeHash());
-        assertNotNull(user.getPasswordResetCodeExpiry());
-    }
 }

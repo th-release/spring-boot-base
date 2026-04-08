@@ -287,36 +287,6 @@ public class AuthService {
         authSave(auth);
     }
 
-    public String createPasswordResetCode(AuthEntity auth) {
-        String code = randomComponent.generateOtp(6);
-        auth.setPasswordResetCodeHash(hashComponent.generateSHA256(code));
-        auth.setPasswordResetCodeExpiry(LocalDateTime.now().plusMinutes(Math.max(1, authSecurityProperties.getPasswordReset().getCodeExpireMinutes())));
-        authSave(auth);
-        return code;
-    }
-
-    public void validatePasswordResetCode(AuthEntity auth, String verificationCode) {
-        if (verificationCode == null || verificationCode.isBlank()) {
-            throw new BusinessException(ErrorCode.PASSWORD_RESET_CODE_INVALID);
-        }
-        if (auth.getPasswordResetCodeHash() == null || auth.getPasswordResetCodeExpiry() == null) {
-            throw new BusinessException(ErrorCode.PASSWORD_RESET_CODE_INVALID);
-        }
-        if (auth.getPasswordResetCodeExpiry().isBefore(LocalDateTime.now())) {
-            throw new BusinessException(ErrorCode.PASSWORD_RESET_CODE_EXPIRED);
-        }
-        String providedHash = hashComponent.generateSHA256(verificationCode);
-        if (!providedHash.equals(auth.getPasswordResetCodeHash())) {
-            throw new BusinessException(ErrorCode.PASSWORD_RESET_CODE_INVALID);
-        }
-    }
-
-    public void clearPasswordResetCode(AuthEntity auth) {
-        auth.setPasswordResetCodeHash(null);
-        auth.setPasswordResetCodeExpiry(null);
-        authSave(auth);
-    }
-
     public int getPasswordResetExpireMinutes() {
         return Math.max(1, authSecurityProperties.getPasswordReset().getCodeExpireMinutes());
     }

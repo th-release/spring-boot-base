@@ -3,6 +3,7 @@ package com.threlease.base.functions.auth.v1;
 import com.threlease.base.common.HttpConstants;
 import com.threlease.base.common.annotation.ApiVersion;
 import com.threlease.base.common.annotation.RateLimit;
+import com.threlease.base.common.enums.AuthVerificationType;
 import com.threlease.base.common.exception.BusinessException;
 import com.threlease.base.common.exception.ErrorCode;
 import com.threlease.base.common.enums.Roles;
@@ -10,14 +11,20 @@ import com.threlease.base.common.utils.IpUtils;
 import com.threlease.base.common.properties.app.email.EmailProperties;
 import com.threlease.base.common.utils.responses.BasicResponse;
 import com.threlease.base.common.utils.email.EmailService;
+import com.threlease.base.common.utils.firebase.FirebaseUtils;
 import com.threlease.base.entities.AuthEntity;
 import com.threlease.base.functions.auth.AuthService;
 import com.threlease.base.functions.auth.AuditLogService;
+import com.threlease.base.functions.auth.AuthVerificationService;
+import com.threlease.base.functions.auth.FcmDeviceTokenService;
 import com.threlease.base.functions.auth.MfaService;
 import com.threlease.base.functions.auth.dto.AdminUserSummaryDto;
 import com.threlease.base.functions.auth.dto.AuthProfileDto;
 import com.threlease.base.functions.auth.dto.AuditLogDto;
 import com.threlease.base.functions.auth.dto.ChangePasswordDto;
+import com.threlease.base.functions.auth.dto.FcmDeviceTokenDto;
+import com.threlease.base.functions.auth.dto.FcmDeviceTokenRequestDto;
+import com.threlease.base.functions.auth.dto.FcmPushRequestDto;
 import com.threlease.base.functions.auth.dto.LoginDto;
 import com.threlease.base.functions.auth.dto.MfaDisableDto;
 import com.threlease.base.functions.auth.dto.MfaEnableDto;
@@ -55,6 +62,9 @@ public class AuthController {
     private final MfaService mfaService;
     private final EmailService emailService;
     private final EmailProperties emailProperties;
+    private final AuthVerificationService authVerificationService;
+    private final FcmDeviceTokenService fcmDeviceTokenService;
+    private final FirebaseUtils firebaseUtils;
 
     @PostMapping("/login")
     @RateLimit(limit = 10, window = 60)
@@ -189,7 +199,7 @@ public class AuthController {
             throw new BusinessException(ErrorCode.EMAIL_NOT_REGISTERED);
         }
 
-        String code = authService.createPasswordResetCode(user);
+        String code = authVerificationService.issueCode(user, AuthVerificationType.PASSWORD_RESET, user.getEmail(), authService.getPasswordResetExpireMinutes());
         emailService.sendPasswordResetCode(user.getEmail(), code, authService.getPasswordResetExpireMinutes());
         auditLogService.log(user.getUuid(), "REQUEST_PASSWORD_RESET", "AUTH", user.getUuid(), true, request, "Password reset code issued");
         return BasicResponse.noContent();
@@ -208,9 +218,9 @@ public class AuthController {
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         if (emailProperties.isEnabled()) {
-            authService.validatePasswordResetCode(user, dto.getVerificationCode());
+            authVerificationService.verifyCode(user, AuthVerificationType.PASSWORD_RESET, dto.getVerificationCode());
             authService.changePassword(user, passwordEncoder.encode(dto.getNewPassword()));
-            authService.clearPasswordResetCode(user);
+            authVerificationService.clear(user, AuthVerificationType.PASSWORD_RESET);
             auditLogService.log(user.getUuid(), "CONFIRM_PASSWORD_RESET", "AUTH", user.getUuid(), true, request, "Password reset by email verification");
             return BasicResponse.noContent();
         }
@@ -291,7 +301,7 @@ public class AuthController {
     public ResponseEntity<BasicResponse<Void>> adminLogoutAll(@PathVariable String uuid, HttpServletRequest request) {
         AuthEntity admin = assertAdmin(request);
         authService.logoutAll(uuid);
-        auditLogService.log(admin.getUuid(), "ADMIN_LOGOUT_ALL", "AUTH", uuid, true, request, "Admin revoked all sessions");
+        auditLogService.logAdmin(admin.getUuid(), "ADMIN_LOGOUT_ALL", "AUTH", uuid, true, request, "Admin revoked all sessions");
         return BasicResponse.noContent();
     }
 
@@ -304,8 +314,110 @@ public class AuthController {
         AuthEntity target = authService.findManagedUserByUuid(uuid)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         authService.forceLockUser(target, minutes);
-        auditLogService.log(admin.getUuid(), "ADMIN_LOCK_USER", "AUTH", uuid, true, request, "User locked for " + minutes + " minutes");
+        auditLogService.logAdmin(admin.getUuid(), "ADMIN_LOCK_USER", "AUTH", uuid, true, request, "User locked for " + minutes + " minutes");
         return BasicResponse.noContent();
+    }
+
+    @PostMapping("/admin/users/{uuid}/unlock")
+    @Operation(summary = "관리자용 사용자 잠금 해제")
+    public ResponseEntity<BasicResponse<Void>> adminUnlockUser(@PathVariable String uuid, HttpServletRequest request) {
+        AuthEntity admin = assertAdmin(request);
+        AuthEntity target = authService.findManagedUserByUuid(uuid)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        target.setLockedUntil(null);
+        target.setFailedLoginCount(0);
+        authService.authSave(target);
+        auditLogService.logAdmin(admin.getUuid(), "ADMIN_UNLOCK_USER", "AUTH", uuid, true, request, "User unlocked");
+        return BasicResponse.noContent();
+    }
+
+    @PostMapping("/admin/users/{uuid}/mfa/reset")
+    @Operation(summary = "관리자용 사용자 MFA 초기화")
+    public ResponseEntity<BasicResponse<Void>> adminResetUserMfa(@PathVariable String uuid, HttpServletRequest request) {
+        AuthEntity admin = assertAdmin(request);
+        AuthEntity target = authService.findManagedUserByUuid(uuid)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        mfaService.disable(target);
+        auditLogService.logAdmin(admin.getUuid(), "ADMIN_RESET_MFA", "AUTH", uuid, true, request, "User MFA reset");
+        return BasicResponse.noContent();
+    }
+
+    @GetMapping("/fcm/tokens")
+    @Operation(summary = "내 FCM 디바이스 토큰 목록")
+    public ResponseEntity<BasicResponse<List<FcmDeviceTokenDto>>> myFcmTokens(HttpServletRequest request) {
+        AuthEntity user = (AuthEntity) request.getAttribute("user");
+        return BasicResponse.ok(fcmDeviceTokenService.getMyTokens(user.getUuid()).stream()
+                .map(token -> FcmDeviceTokenDto.builder()
+                        .id(token.getId())
+                        .deviceLabel(token.getDeviceLabel())
+                        .userAgent(token.getUserAgent())
+                        .lastIpAddress(token.getLastIpAddress())
+                        .lastUsedAt(token.getLastUsedAt())
+                        .enabled(token.isEnabled())
+                        .build())
+                .toList());
+    }
+
+    @PostMapping("/fcm/tokens")
+    @Operation(summary = "내 FCM 디바이스 토큰 등록")
+    public ResponseEntity<BasicResponse<FcmDeviceTokenDto>> registerFcmToken(@RequestBody @Valid FcmDeviceTokenRequestDto dto,
+                                                                             HttpServletRequest request) {
+        AuthEntity user = (AuthEntity) request.getAttribute("user");
+        var token = fcmDeviceTokenService.register(user, dto.getDeviceToken(), dto.getDeviceLabel(), request.getHeader("User-Agent"), IpUtils.getClientIp(request));
+        return BasicResponse.created(FcmDeviceTokenDto.builder()
+                .id(token.getId())
+                .deviceLabel(token.getDeviceLabel())
+                .userAgent(token.getUserAgent())
+                .lastIpAddress(token.getLastIpAddress())
+                .lastUsedAt(token.getLastUsedAt())
+                .enabled(token.isEnabled())
+                .build());
+    }
+
+    @DeleteMapping("/fcm/tokens/{id}")
+    @Operation(summary = "내 FCM 디바이스 토큰 비활성화")
+    public ResponseEntity<BasicResponse<Void>> deleteMyFcmToken(@PathVariable Long id, HttpServletRequest request) {
+        AuthEntity user = (AuthEntity) request.getAttribute("user");
+        fcmDeviceTokenService.disableMyToken(user.getUuid(), id);
+        return BasicResponse.noContent();
+    }
+
+    @GetMapping("/admin/users/{uuid}/fcm/tokens")
+    @Operation(summary = "관리자용 사용자 FCM 토큰 조회")
+    public ResponseEntity<BasicResponse<List<FcmDeviceTokenDto>>> adminUserFcmTokens(@PathVariable String uuid, HttpServletRequest request) {
+        assertAdmin(request);
+        return BasicResponse.ok(fcmDeviceTokenService.getTokensForUser(uuid).stream()
+                .map(token -> FcmDeviceTokenDto.builder()
+                        .id(token.getId())
+                        .deviceLabel(token.getDeviceLabel())
+                        .userAgent(token.getUserAgent())
+                        .lastIpAddress(token.getLastIpAddress())
+                        .lastUsedAt(token.getLastUsedAt())
+                        .enabled(token.isEnabled())
+                        .build())
+                .toList());
+    }
+
+    @PostMapping("/admin/users/{uuid}/fcm/push")
+    @Operation(summary = "관리자용 사용자 FCM 푸시 발송")
+    public ResponseEntity<BasicResponse<List<String>>> adminPushToUser(@PathVariable String uuid,
+                                                                       @RequestBody @Valid FcmPushRequestDto dto,
+                                                                       HttpServletRequest request) throws Exception {
+        AuthEntity admin = assertAdmin(request);
+        if (!firebaseUtils.isEnabled()) {
+            throw new BusinessException(ErrorCode.FIREBASE_DISABLED);
+        }
+        List<String> messageIds = fcmDeviceTokenService.getTokensForUser(uuid).stream()
+                .map(token -> {
+                    try {
+                        return firebaseUtils.sendNotification(token.getDeviceToken(), dto.getTitle(), dto.getBody(), dto.getData());
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .toList();
+        auditLogService.logAdmin(admin.getUuid(), "ADMIN_SEND_FCM_PUSH", "FCM", uuid, true, request, "Admin sent FCM push to user devices");
+        return BasicResponse.ok(messageIds);
     }
 
     @GetMapping("/admin/audit-logs")
