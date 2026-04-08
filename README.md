@@ -12,6 +12,8 @@
 - 로그인 실패 횟수 제한 및 계정 잠금
 - 최근 로그인 시간/IP 기록
 - 선택적 MFA(TOTP)
+- 이메일 유틸 및 비밀번호 재설정
+- Firebase 유틸
 - 감사 로그
 - 민감정보 로그 마스킹
 - XSS 방어 및 HTML 허용 예외 정책
@@ -144,6 +146,8 @@ spring:
 - `GET /api/v1/auth/sessions`
 - `DELETE /api/v1/auth/sessions/{tokenId}`
 - `POST /api/v1/auth/password/change`
+- `POST /api/v1/auth/password/reset/request`
+- `POST /api/v1/auth/password/reset/confirm`
 - `GET /api/v1/auth/@me`
 
 ### 관리자 API
@@ -171,6 +175,7 @@ spring:
 - `tokenId`, `familyId` 기반 세션/rotation 관리
 - 재사용 감지 시 family revoke 가능
 - 세션 수 제한 설정 가능
+- 세션별 `issuedAt`, `lastUsedAt`, `userAgent`, `deviceLabel`, `ipAddress` 관리
 
 관련 설정:
 
@@ -210,6 +215,30 @@ app:
 
 - `lastLoginAt`
 - `lastLoginIp`
+
+### 비밀번호 재설정
+
+이 프로젝트는 이메일 기능 on/off에 따라 비밀번호 재설정 정책이 달라집니다.
+
+- `app.email.enabled=true`
+  - 재설정 요청 시 인증 코드를 발급하고 이메일로 전송합니다.
+  - 재설정 완료 시 이메일 인증 코드를 검증한 뒤 새 비밀번호를 저장합니다.
+- `app.email.enabled=false`
+  - 재설정 완료 시 현재 비밀번호를 검증한 뒤 새 비밀번호를 저장합니다.
+
+관련 API:
+
+- `POST /api/v1/auth/password/reset/request`
+- `POST /api/v1/auth/password/reset/confirm`
+
+관련 설정:
+
+```yml
+app:
+  auth:
+    password-reset:
+      code-expire-minutes: 10
+```
 
 ### MFA
 
@@ -272,6 +301,66 @@ app:
 - `app.privacy.mask-audit-ip`
 - `app.privacy.include-user-agent`
 - `app.privacy.audit-retention-days`
+
+## 이메일 유틸리티
+
+대표 클래스:
+
+- `common/properties/app/email/EmailProperties`
+- `common/configs/EmailConfig`
+- `common/utils/email/EmailService`
+
+기능:
+
+- SMTP 메일 발송
+- 텍스트 메일 발송
+- HTML 메일 발송
+- 비밀번호 재설정 인증 코드 발송
+- on/off 설정 지원
+- on 인데 필수 설정이 비어 있으면 시작 시 강제 종료
+
+필수 설정:
+
+- `app.email.host`
+- `app.email.port`
+- `app.email.username`
+- `app.email.password`
+- `app.email.from-address`
+
+사용 예시:
+
+```java
+emailService.sendText("user@example.com", "Subject", "Body");
+emailService.sendHtml("user@example.com", "Subject", "<b>Body</b>");
+```
+
+## Firebase 유틸리티
+
+대표 클래스:
+
+- `common/properties/app/firebase/FirebaseProperties`
+- `common/configs/FirebaseConfig`
+- `common/utils/firebase/FirebaseUtils`
+
+기능:
+
+- Firebase Admin SDK 초기화
+- Firebase ID 토큰 검증
+- FCM push 전송
+- on/off 설정 지원
+- on 인데 필수 설정이 비어 있으면 시작 시 강제 종료
+
+필수 설정:
+
+- `app.firebase.project-id`
+- `app.firebase.credentials-path` 또는 `app.firebase.credentials-json`
+
+사용 예시:
+
+```java
+firebaseUtils.verifyIdToken(idToken);
+firebaseUtils.sendNotification(targetToken, "title", "body", Map.of("type", "notice"));
+```
 
 ## 웹/MVC 기능
 
@@ -417,6 +506,23 @@ public class NoticeCreateDto {
 - validation field error 응답
 - path, timestamp, correlationId 포함
 - 메시지 국제화 연동
+
+### 인증 응답 노출 정책
+
+인증 관련 응답은 JPA 엔티티를 그대로 반환하지 않고 안전한 DTO로 제한합니다.
+
+- 회원가입 응답: `AuthProfileDto`
+- 내 정보 조회 응답: `AuthProfileDto`
+
+즉 아래 내부 인증 필드는 외부 응답에서 직접 노출하지 않습니다.
+
+- `password`
+- `salt`
+- `passwordResetCodeHash`
+- `passwordResetCodeExpiry`
+- `failedLoginCount`
+- `lockedUntil`
+- `lastLoginIp`
 
 ## 캐시
 

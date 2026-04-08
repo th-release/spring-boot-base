@@ -45,6 +45,7 @@ public class AuthEntity extends BaseEntity {
     @Column(length = 255)
     private String passwordResetCodeHash;
 
+    @JsonIgnore
     private LocalDateTime passwordResetCodeExpiry;
 
     @Column(nullable = false)

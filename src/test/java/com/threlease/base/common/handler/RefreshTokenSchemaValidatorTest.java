@@ -25,7 +25,6 @@ class RefreshTokenSchemaValidatorTest {
         databaseProperties.setJpaSchema("public");
 
         JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
-        when(jdbcTemplate.queryForObject("select current_schema()", String.class)).thenReturn("public");
         when(jdbcTemplate.queryForList(
                 """
                 select table_name
@@ -50,7 +49,8 @@ class RefreshTokenSchemaValidatorTest {
         ))
                 .thenReturn(List.of(
                         "id", "userUuid", "tokenId", "familyId", "tokenHash",
-                        "expiryDate", "revoked", "replacedByTokenId",
+                        "expiryDate", "userAgent", "deviceLabel", "ipAddress", "lastUsedAt",
+                        "revoked", "replacedByTokenId",
                         "createdAt", "updatedAt", "deletedAt"
                 ));
         when(jdbcTemplate.queryForList(
@@ -70,6 +70,10 @@ class RefreshTokenSchemaValidatorTest {
                         Map.of("column_name", "familyId", "data_type", "character varying", "is_nullable", "NO"),
                         Map.of("column_name", "tokenHash", "data_type", "character varying", "is_nullable", "NO"),
                         Map.of("column_name", "expiryDate", "data_type", "timestamp without time zone", "is_nullable", "NO"),
+                        Map.of("column_name", "userAgent", "data_type", "character varying", "is_nullable", "NO"),
+                        Map.of("column_name", "deviceLabel", "data_type", "character varying", "is_nullable", "NO"),
+                        Map.of("column_name", "ipAddress", "data_type", "character varying", "is_nullable", "NO"),
+                        Map.of("column_name", "lastUsedAt", "data_type", "timestamp without time zone", "is_nullable", "NO"),
                         Map.of("column_name", "revoked", "data_type", "boolean", "is_nullable", "NO"),
                         Map.of("column_name", "replacedByTokenId", "data_type", "character varying", "is_nullable", "YES"),
                         Map.of("column_name", "createdAt", "data_type", "timestamp without time zone", "is_nullable", "NO"),
@@ -108,7 +112,6 @@ class RefreshTokenSchemaValidatorTest {
         databaseProperties.setJpaSchema("public");
 
         JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
-        when(jdbcTemplate.queryForObject("select current_schema()", String.class)).thenReturn("public");
         when(jdbcTemplate.queryForList(
                 """
                 select table_name

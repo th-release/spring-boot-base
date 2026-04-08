@@ -28,6 +28,10 @@ public class RefreshTokenSchemaValidator {
             "familyId",
             "tokenHash",
             "expiryDate",
+            "userAgent",
+            "deviceLabel",
+            "ipAddress",
+            "lastUsedAt",
             "revoked",
             "replacedByTokenId",
             "createdAt",
@@ -193,6 +197,10 @@ public class RefreshTokenSchemaValidator {
         types.put("familyId", Set.of("character varying", "varchar", "text"));
         types.put("tokenHash", Set.of("character varying", "varchar", "text"));
         types.put("expiryDate", Set.of("timestamp without time zone", "timestamp with time zone"));
+        types.put("userAgent", Set.of("character varying", "varchar", "text"));
+        types.put("deviceLabel", Set.of("character varying", "varchar", "text"));
+        types.put("ipAddress", Set.of("character varying", "varchar", "text"));
+        types.put("lastUsedAt", Set.of("timestamp without time zone", "timestamp with time zone"));
         types.put("revoked", Set.of("boolean"));
         types.put("replacedByTokenId", Set.of("character varying", "varchar", "text"));
         types.put("createdAt", Set.of("timestamp without time zone", "timestamp with time zone"));

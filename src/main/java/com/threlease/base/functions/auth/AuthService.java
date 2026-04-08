@@ -13,6 +13,7 @@ import com.threlease.base.common.utils.random.RandomComponent;
 import com.threlease.base.entities.AuthEntity;
 import com.threlease.base.entities.RefreshTokenEntity;
 import com.threlease.base.functions.auth.dto.AdminUserSummaryDto;
+import com.threlease.base.functions.auth.dto.AuthProfileDto;
 import com.threlease.base.functions.auth.dto.RefreshTokenSessionDto;
 import com.threlease.base.functions.auth.dto.TokenResponseDto;
 import com.threlease.base.repositories.auth.AuthRepository;
@@ -575,6 +576,17 @@ public class AuthService {
                 .lockedUntil(auth.getLockedUntil())
                 .lastLoginAt(auth.getLastLoginAt())
                 .lastLoginIp(auth.getLastLoginIp())
+                .mfaEnabled(auth.isMfaEnabled())
+                .build();
+    }
+
+    public AuthProfileDto toAuthProfile(AuthEntity auth) {
+        return AuthProfileDto.builder()
+                .uuid(auth.getUuid())
+                .username(auth.getUsername())
+                .nickname(auth.getNickname())
+                .email(auth.getEmail())
+                .role(auth.getRole())
                 .mfaEnabled(auth.isMfaEnabled())
                 .build();
     }

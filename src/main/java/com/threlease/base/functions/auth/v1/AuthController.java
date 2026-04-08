@@ -15,6 +15,7 @@ import com.threlease.base.functions.auth.AuthService;
 import com.threlease.base.functions.auth.AuditLogService;
 import com.threlease.base.functions.auth.MfaService;
 import com.threlease.base.functions.auth.dto.AdminUserSummaryDto;
+import com.threlease.base.functions.auth.dto.AuthProfileDto;
 import com.threlease.base.functions.auth.dto.AuditLogDto;
 import com.threlease.base.functions.auth.dto.ChangePasswordDto;
 import com.threlease.base.functions.auth.dto.LoginDto;
@@ -133,7 +134,7 @@ public class AuthController {
     @PostMapping("/signup")
     @RateLimit(limit = 5, window = 60)
     @Operation(summary = "회원가입")
-    public ResponseEntity<BasicResponse<AuthEntity>> signUp(@RequestBody @Valid SignUpDto dto) {
+    public ResponseEntity<BasicResponse<AuthProfileDto>> signUp(@RequestBody @Valid SignUpDto dto) {
         if (authService.findOneByUsername(dto.getUsername()).isPresent()) {
             throw new BusinessException(ErrorCode.USER_DUPLICATE);
         }
@@ -153,7 +154,7 @@ public class AuthController {
         authService.authSave(user);
         auditLogService.log(user.getUuid(), "SIGNUP", "AUTH", user.getUuid(), true, null, "User signup completed");
 
-        return BasicResponse.created(user);
+        return BasicResponse.created(authService.toAuthProfile(user));
     }
 
     @PostMapping("/password/change")
@@ -259,11 +260,11 @@ public class AuthController {
 
     @GetMapping("/@me")
     @Operation(summary = "내 정보 조회")
-    public ResponseEntity<BasicResponse<AuthEntity>> me(@RequestHeader(HttpConstants.HEADER_AUTHORIZATION) String token) {
+    public ResponseEntity<BasicResponse<AuthProfileDto>> me(@RequestHeader(HttpConstants.HEADER_AUTHORIZATION) String token) {
         AuthEntity user = authService.findOneByToken(token)
                 .orElseThrow(() -> new BusinessException(ErrorCode.TOKEN_INVALID));
 
-        return BasicResponse.ok(user);
+        return BasicResponse.ok(authService.toAuthProfile(user));
     }
 
     @GetMapping("/admin/users")
