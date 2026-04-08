@@ -7,9 +7,6 @@ import com.threlease.base.entities.AuthEntity;
 import com.threlease.base.functions.auth.AuthFlowService;
 import com.threlease.base.functions.auth.dto.AuthProfileDto;
 import com.threlease.base.functions.auth.dto.ChangePasswordDto;
-import com.threlease.base.functions.auth.dto.MfaDisableDto;
-import com.threlease.base.functions.auth.dto.MfaEnableDto;
-import com.threlease.base.functions.auth.dto.MfaSetupResponseDto;
 import com.threlease.base.functions.auth.dto.RefreshTokenSessionDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -64,26 +61,6 @@ public class AuthAccountController {
     public ResponseEntity<BasicResponse<Void>> changePassword(@RequestBody @Valid ChangePasswordDto dto,
                                                               HttpServletRequest request) {
         authFlowService.changePassword((AuthEntity) request.getAttribute("user"), dto, request);
-        return BasicResponse.noContent();
-    }
-
-    @GetMapping("/mfa/setup")
-    @Operation(summary = "MFA 설정 정보 조회")
-    public ResponseEntity<BasicResponse<MfaSetupResponseDto>> setupMfa(HttpServletRequest request) {
-        return BasicResponse.ok(authFlowService.setupMfa((AuthEntity) request.getAttribute("user")));
-    }
-
-    @PostMapping("/mfa/enable")
-    @Operation(summary = "MFA 활성화")
-    public ResponseEntity<BasicResponse<Void>> enableMfa(@RequestBody @Valid MfaEnableDto dto, HttpServletRequest request) {
-        authFlowService.enableMfa((AuthEntity) request.getAttribute("user"), dto, request);
-        return BasicResponse.noContent();
-    }
-
-    @PostMapping("/mfa/disable")
-    @Operation(summary = "MFA 비활성화")
-    public ResponseEntity<BasicResponse<Void>> disableMfa(@RequestBody @Valid MfaDisableDto dto, HttpServletRequest request) {
-        authFlowService.disableMfa((AuthEntity) request.getAttribute("user"), dto, request);
         return BasicResponse.noContent();
     }
 

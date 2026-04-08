@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,6 +23,7 @@ import java.util.List;
 @RequestMapping("/auth/fcm")
 @Tag(name = "Auth FCM API (v1)")
 @RequiredArgsConstructor
+@ConditionalOnProperty(prefix = "app.firebase", name = "enabled", havingValue = "true")
 public class AuthFcmController {
     private final AuthFcmService authFcmService;
 

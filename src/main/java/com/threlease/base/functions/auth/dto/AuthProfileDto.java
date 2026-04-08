@@ -12,5 +12,7 @@ public class AuthProfileDto {
     private String nickname;
     private String email;
     private Roles role;
+    private boolean mfaGloballyEnabled;
     private boolean mfaEnabled;
+    private boolean mfaEnrollmentRequired;
 }

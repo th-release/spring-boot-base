@@ -1,8 +1,0 @@
-package com.threlease.base.functions.auth.dto;
-
-import lombok.Data;
-
-@Data
-public class MfaEnableDto {
-    private String otpCode;
-}

@@ -9,7 +9,6 @@ import com.threlease.base.functions.auth.AuthFlowService;
 import com.threlease.base.functions.auth.dto.AuthProfileDto;
 import com.threlease.base.functions.auth.dto.LoginDto;
 import com.threlease.base.functions.auth.dto.PasswordResetConfirmDto;
-import com.threlease.base.functions.auth.dto.PasswordResetRequestDto;
 import com.threlease.base.functions.auth.dto.SignUpDto;
 import com.threlease.base.functions.auth.dto.TokenResponseDto;
 import io.swagger.v3.oas.annotations.Operation;
@@ -48,15 +47,6 @@ public class AuthPublicController {
     @Operation(summary = "회원가입")
     public ResponseEntity<BasicResponse<AuthProfileDto>> signUp(@RequestBody @Valid SignUpDto dto) {
         return BasicResponse.created(authFlowService.signUp(dto));
-    }
-
-    @PostMapping("/password/reset/request")
-    @RateLimit(limit = 5, window = 300)
-    @Operation(summary = "비밀번호 재설정 요청")
-    public ResponseEntity<BasicResponse<Void>> requestPasswordReset(@RequestBody @Valid PasswordResetRequestDto dto,
-                                                                    HttpServletRequest request) {
-        authFlowService.requestPasswordReset(dto, request);
-        return BasicResponse.noContent();
     }
 
     @PostMapping("/password/reset/confirm")

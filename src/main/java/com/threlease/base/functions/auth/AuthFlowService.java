@@ -9,8 +9,7 @@ import com.threlease.base.entities.AuthEntity;
 import com.threlease.base.functions.auth.dto.AuthProfileDto;
 import com.threlease.base.functions.auth.dto.ChangePasswordDto;
 import com.threlease.base.functions.auth.dto.LoginDto;
-import com.threlease.base.functions.auth.dto.MfaDisableDto;
-import com.threlease.base.functions.auth.dto.MfaEnableDto;
+import com.threlease.base.functions.auth.dto.MfaRegisterDto;
 import com.threlease.base.functions.auth.dto.MfaSetupResponseDto;
 import com.threlease.base.functions.auth.dto.PasswordResetConfirmDto;
 import com.threlease.base.functions.auth.dto.PasswordResetRequestDto;
@@ -58,7 +57,10 @@ public class AuthFlowService {
         mfaService.verifyLogin(auth, dto.getOtpCode());
         authService.recordSuccessfulLogin(auth, clientIp);
         auditLogService.log(auth.getUuid(), "LOGIN", "AUTH", auth.getUuid(), true, request, "User login succeeded");
-        return authService.issueTokens(auth, userAgent, clientIp);
+        TokenResponseDto response = authService.issueTokens(auth, userAgent, clientIp);
+        response.setMfaEnabled(auth.isMfaEnabled());
+        response.setMfaEnrollmentRequired(mfaService.isEnrollmentRequired(auth));
+        return response;
     }
 
     public TokenResponseDto refresh(String refreshToken, String userAgent, String clientIp) {
@@ -171,20 +173,9 @@ public class AuthFlowService {
         return mfaService.setup(user);
     }
 
-    public void enableMfa(AuthEntity user, MfaEnableDto dto, HttpServletRequest request) {
-        mfaService.enable(user, dto.getOtpCode());
-        auditLogService.log(user.getUuid(), "ENABLE_MFA", "AUTH", user.getUuid(), true, request, "MFA enabled");
-    }
-
-    public void disableMfa(AuthEntity user, MfaDisableDto dto, HttpServletRequest request) {
-        if (!passwordEncoder.matches(dto.getPassword(), user.getPassword())) {
-            throw new BusinessException(ErrorCode.WRONG_PASSWORD);
-        }
-        if (user.isMfaEnabled()) {
-            mfaService.verifyLogin(user, dto.getOtpCode());
-        }
-        mfaService.disable(user);
-        auditLogService.log(user.getUuid(), "DISABLE_MFA", "AUTH", user.getUuid(), true, request, "MFA disabled");
+    public void registerMfa(AuthEntity user, MfaRegisterDto dto, HttpServletRequest request) {
+        mfaService.completeEnrollment(user, dto.getOtpCode());
+        auditLogService.log(user.getUuid(), "REGISTER_MFA", "AUTH", user.getUuid(), true, request, "MFA enrollment completed");
     }
 
     public AuthProfileDto getMyProfile(String token) {

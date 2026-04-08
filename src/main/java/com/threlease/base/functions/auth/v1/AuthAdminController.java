@@ -4,17 +4,13 @@ import com.threlease.base.common.annotation.ApiVersion;
 import com.threlease.base.common.utils.responses.BasicResponse;
 import com.threlease.base.entities.AuthEntity;
 import com.threlease.base.functions.auth.AuthAdminService;
-import com.threlease.base.functions.auth.AuthFcmService;
 import com.threlease.base.functions.auth.AuthService;
 import com.threlease.base.functions.auth.dto.AdminUserSummaryDto;
 import com.threlease.base.functions.auth.dto.AuditLogDto;
-import com.threlease.base.functions.auth.dto.FcmDeviceTokenDto;
-import com.threlease.base.functions.auth.dto.FcmPushRequestDto;
 import com.threlease.base.functions.auth.dto.RefreshTokenSessionDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -29,7 +25,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AuthAdminController {
     private final AuthAdminService authAdminService;
-    private final AuthFcmService authFcmService;
 
     @GetMapping("/users")
     @Operation(summary = "관리자용 사용자 목록")
@@ -75,20 +70,6 @@ public class AuthAdminController {
     public ResponseEntity<BasicResponse<Void>> resetUserMfa(@PathVariable String uuid, HttpServletRequest request) {
         authAdminService.resetUserMfa((AuthEntity) request.getAttribute("user"), uuid, request);
         return BasicResponse.noContent();
-    }
-
-    @GetMapping("/users/{uuid}/fcm/tokens")
-    @Operation(summary = "관리자용 사용자 FCM 토큰 조회")
-    public ResponseEntity<BasicResponse<List<FcmDeviceTokenDto>>> userFcmTokens(@PathVariable String uuid, HttpServletRequest request) {
-        return BasicResponse.ok(authFcmService.getUserTokens((AuthEntity) request.getAttribute("user"), uuid));
-    }
-
-    @PostMapping("/users/{uuid}/fcm/push")
-    @Operation(summary = "관리자용 사용자 FCM 푸시 발송")
-    public ResponseEntity<BasicResponse<List<String>>> pushToUser(@PathVariable String uuid,
-                                                                  @RequestBody @Valid FcmPushRequestDto dto,
-                                                                  HttpServletRequest request) throws Exception {
-        return BasicResponse.ok(authFcmService.pushToUser((AuthEntity) request.getAttribute("user"), uuid, dto, request));
     }
 
     @GetMapping("/audit-logs")

@@ -17,5 +17,7 @@ public class AdminUserSummaryDto {
     private LocalDateTime lockedUntil;
     private LocalDateTime lastLoginAt;
     private String lastLoginIp;
+    private boolean mfaGloballyEnabled;
     private boolean mfaEnabled;
+    private boolean mfaEnrollmentRequired;
 }

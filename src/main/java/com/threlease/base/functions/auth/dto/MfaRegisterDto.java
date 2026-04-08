@@ -3,7 +3,6 @@ package com.threlease.base.functions.auth.dto;
 import lombok.Data;
 
 @Data
-public class MfaDisableDto {
-    private String password;
+public class MfaRegisterDto {
     private String otpCode;
 }

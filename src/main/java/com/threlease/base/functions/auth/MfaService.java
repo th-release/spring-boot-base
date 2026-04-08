@@ -35,10 +35,7 @@ public class MfaService {
 
     public MfaSetupResponseDto setup(AuthEntity user) {
         assertMfaEnabled();
-        String secret = generateBase32Secret();
-        user.setMfaSecret(aesComponent.encrypt(secret));
-        user.setMfaEnabled(false);
-        authRepository.save(user);
+        String secret = resolveOrCreateSecret(user);
 
         String issuer = authSecurityProperties.getMfa().getIssuer();
         String otpAuthUri = "otpauth://totp/" + issuer + ":" + user.getUsername()
@@ -62,14 +59,14 @@ public class MfaService {
         }
     }
 
-    public void enable(AuthEntity user, String otpCode) {
+    public void completeEnrollment(AuthEntity user, String otpCode) {
         assertMfaEnabled();
         validateOtp(user, otpCode);
         user.setMfaEnabled(true);
         authRepository.save(user);
     }
 
-    public void disable(AuthEntity user) {
+    public void reset(AuthEntity user) {
         user.setMfaEnabled(false);
         user.setMfaSecret(null);
         authRepository.save(user);
@@ -89,9 +86,11 @@ public class MfaService {
         if (user.isMfaEnabled()) {
             return true;
         }
-        return authSecurityProperties.getMfa().getRequiredRoles().stream()
-                .map(value -> value.toUpperCase(Locale.ROOT))
-                .anyMatch(role -> role.equals(user.getRole().name()));
+        return false;
+    }
+
+    public boolean isEnrollmentRequired(AuthEntity user) {
+        return authSecurityProperties.getMfa().isEnabled() && !user.isMfaEnabled();
     }
 
     private void validateOtp(AuthEntity user, String otpCode) {
@@ -145,6 +144,17 @@ public class MfaService {
     private String generateBase32Secret() {
         byte[] randomBytes = Base64.getDecoder().decode(Base64.getEncoder().encodeToString(java.security.SecureRandom.getSeed(20)));
         return encodeBase32(randomBytes);
+    }
+
+    private String resolveOrCreateSecret(AuthEntity user) {
+        if (user.getMfaSecret() != null && !user.getMfaSecret().isBlank()) {
+            return aesComponent.decrypt(user.getMfaSecret());
+        }
+        String secret = generateBase32Secret();
+        user.setMfaSecret(aesComponent.encrypt(secret));
+        user.setMfaEnabled(false);
+        authRepository.save(user);
+        return secret;
     }
 
     private String encodeBase32(byte[] data) {

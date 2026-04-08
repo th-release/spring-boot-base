@@ -547,7 +547,9 @@ public class AuthService {
                 .lockedUntil(auth.getLockedUntil())
                 .lastLoginAt(auth.getLastLoginAt())
                 .lastLoginIp(auth.getLastLoginIp())
+                .mfaGloballyEnabled(authSecurityProperties.getMfa().isEnabled())
                 .mfaEnabled(auth.isMfaEnabled())
+                .mfaEnrollmentRequired(authSecurityProperties.getMfa().isEnabled() && !auth.isMfaEnabled())
                 .build();
     }
 
@@ -558,7 +560,9 @@ public class AuthService {
                 .nickname(auth.getNickname())
                 .email(auth.getEmail())
                 .role(auth.getRole())
+                .mfaGloballyEnabled(authSecurityProperties.getMfa().isEnabled())
                 .mfaEnabled(auth.isMfaEnabled())
+                .mfaEnrollmentRequired(authSecurityProperties.getMfa().isEnabled() && !auth.isMfaEnabled())
                 .build();
     }
 

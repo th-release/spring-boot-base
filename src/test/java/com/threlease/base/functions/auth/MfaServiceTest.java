@@ -68,7 +68,7 @@ class MfaServiceTest {
     }
 
     @Test
-    void setupAndEnableMfaWork() {
+    void setupAndCompleteEnrollmentWork() {
         MfaSetupResponseDto setup = mfaService.setup(user);
 
         assertNotNull(setup.getSecret());
@@ -76,7 +76,7 @@ class MfaServiceTest {
         assertFalse(user.isMfaEnabled());
 
         String otpCode = generateTotp(setup.getSecret(), 30, 6);
-        assertDoesNotThrow(() -> mfaService.enable(user, otpCode));
+        assertDoesNotThrow(() -> mfaService.completeEnrollment(user, otpCode));
     }
 
     @Test
@@ -84,7 +84,14 @@ class MfaServiceTest {
         MfaSetupResponseDto setup = mfaService.setup(user);
         assertNotNull(setup.getSecret());
 
-        assertThrows(BusinessException.class, () -> mfaService.enable(user, "000000"));
+        assertThrows(BusinessException.class, () -> mfaService.completeEnrollment(user, "000000"));
+    }
+
+    @Test
+    void verifyLoginDoesNotBlockUnenrolledUserWhenGloballyEnabled() {
+        MfaSetupResponseDto setup = mfaService.setup(user);
+        assertNotNull(setup.getSecret());
+        assertDoesNotThrow(() -> mfaService.verifyLogin(user, null));
     }
 
     private String generateTotp(String base32Secret, long timestep, int digits) {

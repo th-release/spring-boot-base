@@ -67,7 +67,7 @@ public class AuthAdminService {
         assertAdmin(admin);
         AuthEntity target = authService.findManagedUserByUuid(uuid)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
-        mfaService.disable(target);
+        mfaService.reset(target);
         auditLogService.logAdmin(admin.getUuid(), "ADMIN_RESET_MFA", "AUTH", uuid, true, request, "User MFA reset");
     }
 
