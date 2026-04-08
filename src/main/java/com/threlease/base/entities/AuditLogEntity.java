@@ -17,7 +17,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import jakarta.persistence.EntityListeners;
 
 @Entity
-@Table(name = "audit_log")
+@Table(name = "tb_audit_log")
 @Getter
 @Setter
 @Builder

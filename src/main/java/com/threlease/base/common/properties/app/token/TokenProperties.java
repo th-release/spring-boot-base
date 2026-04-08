@@ -12,5 +12,4 @@ import org.springframework.context.annotation.Configuration;
 public class TokenProperties {
     private String storage; //cache or rdb
     private int maxSessionsPerUser = 5;
-    private boolean validateSchema = true;
 }

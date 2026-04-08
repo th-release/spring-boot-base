@@ -7,9 +7,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.regex.Pattern;
+
 @Service
 @RequiredArgsConstructor
 public class FileUploadSecurityService {
+    private static final Pattern DIR_NAME_PATTERN = Pattern.compile("^[A-Za-z0-9/_-]+$");
     private final UploadSecurityProperties uploadSecurityProperties;
 
     public void validate(MultipartFile file) {
@@ -33,5 +36,20 @@ public class FileUploadSecurityService {
     public String sanitizeFilename(String originalFilename) {
         String sanitized = originalFilename == null ? "file" : originalFilename.replaceAll("[^A-Za-z0-9._-]", "_");
         return sanitized.length() > 120 ? sanitized.substring(sanitized.length() - 120) : sanitized;
+    }
+
+    public String validateDirName(String dirName) {
+        if (dirName == null || dirName.isBlank()) {
+            throw new BusinessException(ErrorCode.FILE_UPLOAD_INVALID, "저장 디렉토리명이 비어 있습니다.");
+        }
+
+        String normalized = dirName.trim().replace('\\', '/');
+        if (normalized.startsWith("/") || normalized.endsWith("/") || normalized.contains("..") || normalized.contains("//")) {
+            throw new BusinessException(ErrorCode.FILE_UPLOAD_INVALID, "유효하지 않은 저장 디렉토리명입니다.");
+        }
+        if (!DIR_NAME_PATTERN.matcher(normalized).matches()) {
+            throw new BusinessException(ErrorCode.FILE_UPLOAD_INVALID, "허용되지 않은 저장 디렉토리명입니다.");
+        }
+        return normalized;
     }
 }

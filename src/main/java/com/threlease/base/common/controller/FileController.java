@@ -39,8 +39,12 @@ public class FileController {
 
     @GetMapping("/content/**")
     @Operation(summary = "파일 정적 서빙", description = "DB에 저장된 파일 메타데이터를 기준으로 로컬 파일을 서빙하거나 S3 URL로 리다이렉트합니다.")
-    public ResponseEntity<?> serve(HttpServletRequest request) {
-        return fileService.serve(extractFilePath(request));
+    public ResponseEntity<?> serve(
+            HttpServletRequest request,
+            @RequestParam("token") String token,
+            @RequestParam(value = "download", defaultValue = "false") boolean download
+    ) {
+        return fileService.serve(extractFilePath(request), token, download);
     }
 
     @GetMapping("/{id}/download")

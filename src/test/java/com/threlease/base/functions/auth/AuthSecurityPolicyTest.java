@@ -43,7 +43,6 @@ class AuthSecurityPolicyTest {
 
         TokenProperties tokenProperties = new TokenProperties();
         tokenProperties.setStorage("rdb");
-        tokenProperties.setValidateSchema(false);
 
         AuthSecurityProperties authSecurityProperties = new AuthSecurityProperties();
         authSecurityProperties.getLoginFailure().setEnabled(true);

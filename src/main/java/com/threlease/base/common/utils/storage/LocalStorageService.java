@@ -24,11 +24,12 @@ public class LocalStorageService implements StorageService {
     private final FileUploadSecurityService fileUploadSecurityService;
 
     @Override
-    public FileEntity upload(MultipartFile file, String dirName) throws IOException {
+    public FileEntity upload(MultipartFile file, String dirName, String ownerUuid) throws IOException {
         fileUploadSecurityService.validate(file);
+        String normalizedDirName = fileUploadSecurityService.validateDirName(dirName);
         String rootPath = storageProperties.getLocal().getPath();
         String fileName = UUID.randomUUID() + "_" + fileUploadSecurityService.sanitizeFilename(file.getOriginalFilename());
-        Path targetDir = Paths.get(rootPath, dirName);
+        Path targetDir = Paths.get(rootPath, normalizedDirName);
 
         if (!Files.exists(targetDir)) {
             Files.createDirectories(targetDir);
@@ -37,14 +38,15 @@ public class LocalStorageService implements StorageService {
         Path targetPath = targetDir.resolve(fileName);
         file.transferTo(targetPath.toFile());
 
-        String filePath = dirName + "/" + fileName;
+        String filePath = normalizedDirName + "/" + fileName;
 
         FileEntity fileEntity = FileEntity.builder()
                 .filePath(filePath)
                 .originalFileName(file.getOriginalFilename())
                 .contentType(file.getContentType())
                 .fileSize(file.getSize())
-                .dirName(dirName)
+                .dirName(normalizedDirName)
+                .ownerUuid(ownerUuid)
                 .storageType(FileEntity.StorageType.LOCAL)
                 .url(getUrl(filePath))
                 .build();

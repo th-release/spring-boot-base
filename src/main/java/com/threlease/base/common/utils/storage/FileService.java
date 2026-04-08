@@ -2,6 +2,7 @@ package com.threlease.base.common.utils.storage;
 
 import com.threlease.base.common.exception.BusinessException;
 import com.threlease.base.common.exception.ErrorCode;
+import com.threlease.base.common.enums.Roles;
 import com.threlease.base.common.properties.storage.StorageProperties;
 import com.threlease.base.common.utils.storage.dto.FileDownloadUrlDto;
 import com.threlease.base.common.utils.storage.dto.FileUploadResponseDto;
@@ -35,36 +36,44 @@ public class FileService {
     private final FileRepository fileRepository;
     private final StorageService storageService;
     private final StorageProperties storageProperties;
+    private final FileDownloadTokenService fileDownloadTokenService;
 
     @Transactional
     public FileUploadResponseDto upload(MultipartFile file, String dirName, AuthEntity user) throws IOException {
-        FileEntity fileEntity = storageService.upload(file, dirName);
-        return FileUploadResponseDto.from(fileEntity);
+        FileEntity fileEntity = storageService.upload(file, dirName, user.getUuid());
+        return FileUploadResponseDto.builder()
+                .id(fileEntity.getId())
+                .originalFileName(fileEntity.getOriginalFileName())
+                .filePath(fileEntity.getFilePath())
+                .url(resolveImmediateAccessUrl(fileEntity))
+                .contentType(fileEntity.getContentType())
+                .fileSize(fileEntity.getFileSize())
+                .dirName(fileEntity.getDirName())
+                .storageType(fileEntity.getStorageType().name())
+                .build();
     }
 
     @Transactional
     public void delete(Long id, AuthEntity user) {
-        FileEntity fileEntity = fileRepository.findActiveById(id)
-                .orElseThrow(() -> new BusinessException(ErrorCode.FILE_NOT_FOUND));
+        FileEntity fileEntity = findOwnedFile(id, user);
         storageService.delete(fileEntity.getFilePath());
     }
 
     @Transactional(readOnly = true)
     public FileDownloadUrlDto createDownloadUrl(Long id, AuthEntity user) {
-        FileEntity fileEntity = fileRepository.findActiveById(id)
-                .orElseThrow(() -> new BusinessException(ErrorCode.FILE_NOT_FOUND));
+        FileEntity fileEntity = findOwnedFile(id, user);
 
         return FileDownloadUrlDto.builder()
                 .id(fileEntity.getId())
                 .fileName(fileEntity.getOriginalFileName())
                 .storageType(fileEntity.getStorageType().name())
-                .downloadUrl(storageService.getDownloadUrl(fileEntity))
+                .downloadUrl(resolveDownloadUrl(fileEntity))
                 .expiresAt(fileEntity.getStorageType() == FileEntity.StorageType.S3 ? LocalDateTime.now().plusMinutes(10) : null)
                 .build();
     }
 
     @Transactional(readOnly = true)
-    public ResponseEntity<?> serve(String filePath) {
+    public ResponseEntity<?> serve(String filePath, String token, boolean download) {
         FileEntity fileEntity = fileRepository.findByFilePathAndDeletedFalse(filePath)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FILE_NOT_FOUND));
 
@@ -74,10 +83,11 @@ public class FileService {
                     .build();
         }
 
-        return buildLocalFileResponse(fileEntity);
+        validateLocalDownloadToken(fileEntity, token);
+        return buildLocalFileResponse(fileEntity, download);
     }
 
-    private ResponseEntity<Resource> buildLocalFileResponse(FileEntity fileEntity) {
+    private ResponseEntity<Resource> buildLocalFileResponse(FileEntity fileEntity, boolean download) {
         try {
             Path file = Paths.get(storageProperties.getLocal().getPath(), fileEntity.getFilePath());
             if (!Files.exists(file) || !Files.isReadable(file)) {
@@ -95,7 +105,7 @@ public class FileService {
 
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(contentType))
-                    .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.inline()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, (download ? ContentDisposition.attachment() : ContentDisposition.inline())
                             .filename(fileEntity.getOriginalFileName())
                             .build()
                             .toString())
@@ -105,6 +115,42 @@ public class FileService {
             throw new BusinessException(ErrorCode.INTERNAL_ERROR, "파일 경로를 해석할 수 없습니다.");
         } catch (IOException e) {
             throw new BusinessException(ErrorCode.INTERNAL_ERROR, "파일을 읽는 중 오류가 발생했습니다.");
+        }
+    }
+
+    private FileEntity findOwnedFile(Long id, AuthEntity user) {
+        if (user.getRole() == Roles.ROLE_ADMIN) {
+            return fileRepository.findActiveById(id)
+                    .orElseThrow(() -> new BusinessException(ErrorCode.FILE_NOT_FOUND));
+        }
+
+        return fileRepository.findActiveByIdAndOwnerUuid(id, user.getUuid())
+                .orElseThrow(() -> new BusinessException(ErrorCode.FORBIDDEN));
+    }
+
+    private String resolveImmediateAccessUrl(FileEntity fileEntity) {
+        if (fileEntity.getStorageType() == FileEntity.StorageType.S3) {
+            return fileEntity.getUrl();
+        }
+        String token = fileDownloadTokenService.createToken(fileEntity.getId(), fileEntity.getFilePath(), 10);
+        return fileEntity.getUrl() + "?token=" + token;
+    }
+
+    private String resolveDownloadUrl(FileEntity fileEntity) {
+        if (fileEntity.getStorageType() == FileEntity.StorageType.S3) {
+            return storageService.getDownloadUrl(fileEntity);
+        }
+
+        String token = fileDownloadTokenService.createToken(fileEntity.getId(), fileEntity.getFilePath(), 10);
+        return fileEntity.getUrl() + "?token=" + token + "&download=true";
+    }
+
+    private void validateLocalDownloadToken(FileEntity fileEntity, String token) {
+        FileDownloadTokenService.FileDownloadClaims claims = fileDownloadTokenService.verify(token)
+                .orElseThrow(() -> new BusinessException(ErrorCode.FORBIDDEN));
+
+        if (!fileEntity.getId().equals(claims.fileId()) || !fileEntity.getFilePath().equals(claims.filePath())) {
+            throw new BusinessException(ErrorCode.FORBIDDEN);
         }
     }
 }

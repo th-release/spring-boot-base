@@ -56,7 +56,6 @@ app:
     # refresh token 저장 방식
     storage: rdb
     max-sessions-per-user: 5
-    validate-schema: true
   auth:
     # 인증/보안 관련 기능 스위치와 정책
     audit:

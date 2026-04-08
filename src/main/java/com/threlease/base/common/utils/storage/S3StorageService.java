@@ -29,11 +29,12 @@ public class S3StorageService implements StorageService {
     private final ObjectProvider<S3Presigner> s3PresignerProvider;
 
     @Override
-    public FileEntity upload(MultipartFile file, String dirName) throws IOException {
+    public FileEntity upload(MultipartFile file, String dirName, String ownerUuid) throws IOException {
         fileUploadSecurityService.validate(file);
+        String normalizedDirName = fileUploadSecurityService.validateDirName(dirName);
         String bucket = s3Properties.getBucket();
         String fileName = UUID.randomUUID() + "_" + fileUploadSecurityService.sanitizeFilename(file.getOriginalFilename());
-        String filePath = dirName + "/" + fileName;
+        String filePath = normalizedDirName + "/" + fileName;
 
         s3Template.upload(bucket, filePath, file.getInputStream());
 
@@ -42,7 +43,8 @@ public class S3StorageService implements StorageService {
                 .originalFileName(file.getOriginalFilename())
                 .contentType(file.getContentType())
                 .fileSize(file.getSize())
-                .dirName(dirName)
+                .dirName(normalizedDirName)
+                .ownerUuid(ownerUuid)
                 .storageType(FileEntity.StorageType.S3)
                 .url(getUrl(filePath))
                 .build();

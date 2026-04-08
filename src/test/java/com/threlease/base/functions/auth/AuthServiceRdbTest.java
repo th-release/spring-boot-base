@@ -49,7 +49,6 @@ class AuthServiceRdbTest {
         TokenProperties tokenProperties = new TokenProperties();
         tokenProperties.setStorage("rdb");
         tokenProperties.setMaxSessionsPerUser(5);
-        tokenProperties.setValidateSchema(false);
 
         AuthSecurityProperties authSecurityProperties = new AuthSecurityProperties();
 

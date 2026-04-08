@@ -76,7 +76,6 @@ app:
     # refresh token 저장 방식
     storage: ${TOKEN_STORAGE:rdb}
     max-sessions-per-user: ${TOKEN_MAX_SESSIONS_PER_USER:5}
-    validate-schema: ${TOKEN_VALIDATE_SCHEMA:true}
   outbound:
     connect-timeout-seconds: ${OUTBOUND_CONNECT_TIMEOUT_SECONDS:5}
     read-timeout-seconds: ${OUTBOUND_READ_TIMEOUT_SECONDS:5}

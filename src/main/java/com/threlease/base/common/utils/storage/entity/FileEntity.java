@@ -8,7 +8,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "files")
+@Table(name = "tb_files")
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -37,6 +37,10 @@ public class FileEntity {
     /** 저장 디렉토리 구분 (예: "profile", "post") */
     @Column(nullable = false)
     private String dirName;
+
+    /** 파일 소유자 UUID */
+    @Column(length = 36)
+    private String ownerUuid;
 
     /** 스토리지 종류 */
     @Enumerated(EnumType.STRING)

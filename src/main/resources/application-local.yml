@@ -62,7 +62,6 @@ app:
     # refresh token 저장 방식
     storage: rdb
     max-sessions-per-user: 5
-    validate-schema: true
   auth:
     # 로그인 실패 제한, 감사 로그, MFA on/off
     audit:
