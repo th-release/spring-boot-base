@@ -7,19 +7,27 @@ server:
 spring:
   # 기본 활성 프로필. 별도 지정이 없으면 local 사용
   profiles:
+    # 기본 실행 프로필 선택
     active: ${SPRING_PROFILES_ACTIVE:local}
   jackson:
     serialization:
+      # Java 시간 타입을 timestamp 숫자 대신 ISO 문자열로 직렬화
       write-dates-as-timestamps: false
   datasource:
-    # 공통 DB 연결 정보. 실제 스키마는 JPA_SCHEMA/currentSchema 로 제어
+    # JDBC 드라이버 클래스명
     driver-class-name: org.postgresql.Driver
+    # 공통 DB 연결 URL. currentSchema는 JPA_SCHEMA 값을 사용
     url: jdbc:postgresql://${DATABASE_HOST:127.0.0.1}:${DATABASE_PORT:5432}/${DATABASE_DATABASE:base}?characterEncoding=UTF-8&allowMultiQueries=true&allowMultiQueries=true&currentSchema=${JPA_SCHEMA:public}
+    # DB 접속 계정
     username: ${DATABASE_USERNAME:root}
+    # DB 접속 비밀번호
     password: ${DATABASE_PASSWORD:root}
     hikari:
+      # 커넥션 풀 최대 크기
       maximum-pool-size: ${DATABASE_MAXIMUM_POOL_SIZE:50}
+      # 커넥션 획득 타임아웃(ms)
       connection-timeout: ${DATABASE_CONNECTION_TIMEOUT:2000}
+      # 커넥션 유효성 검사 타임아웃(ms)
       validation-timeout: ${DATABASE_VALIDATION_TIMEOUT:5000}
   jpa:
     hibernate:
@@ -27,18 +35,26 @@ spring:
       ddl-auto: none
     properties:
       hibernate:
+        # SQL pretty print 여부
         format_sql: true
+        # Hibernate 기본 schema
         default_schema: ${JPA_SCHEMA:public}
   flyway:
-    # Flyway와 JPA는 서로 다른 schema를 보도록 분리 가능
+    # Flyway 실행 여부
     enabled: ${FLYWAY_ENABLED:true}
+    # 기존 DB에 flyway_schema_history가 없을 때 baseline 생성 허용
     baseline-on-migrate: true
+    # baseline 버전
     baseline-version: 0
+    # 마이그레이션 SQL 경로
     locations: classpath:db/migration
+    # Flyway 기본 schema
     default-schema: ${FLYWAY_SCHEMA:${DATABASE_SCHEMA:public}}
+    # Flyway가 관리할 schema 목록
     schemas: ${FLYWAY_SCHEMAS:${FLYWAY_SCHEMA:${DATABASE_SCHEMA:public}}}
   mvc:
     pathmatch:
+      # Swagger/구버전 매핑 호환용 path matcher 전략
       matching-strategy: ant_path_matcher
   # Redis 자동 설정을 완전히 제외 (우리가 CacheConfig에서 직접 제어함)
   autoconfigure:
@@ -53,20 +69,29 @@ crypto:
 springdoc:
   # Swagger UI와 OpenAPI 문서 경로 설정
   api-docs:
+    # OpenAPI 문서 노출 여부
     enabled: ${SWAGGER_API_DOCS_ENABLED:true}
   swagger-ui:
+    # Swagger UI 노출 여부
     enabled: ${SWAGGER_UI_ENABLED:true}
+    # Swagger UI 접근 경로
     path: /api/swagger
+    # Swagger 그룹 정렬 순서
     groups-order: DESC
+    # 태그 정렬 기준
     tags-sorter: alpha
+    # 오퍼레이션 정렬 기준
     operations-sorter: method
+  # Swagger가 스캔할 API 경로 패턴
   paths-to-match:
     - /**
 
 decorator:
   datasource:
     p6spy:
-      # SQL 확인용 p6spy 설정
+      # p6spy SQL 로깅 활성화 여부
       enable-logging: true
+      # 멀티라인 SQL 출력 여부
       multiline: true
+      # p6spy 로그 출력 방식
       logging: slf4j

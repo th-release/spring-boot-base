@@ -100,6 +100,7 @@ public class LoggingFilter extends OncePerRequestFilter {
         }
 
         long startTime = System.currentTimeMillis();
+        boolean fileApi = isFileApi(request.getRequestURI());
 
         try {
             filterChain.doFilter(requestToUse, responseToUse);
@@ -107,11 +108,11 @@ public class LoggingFilter extends OncePerRequestFilter {
             long duration = System.currentTimeMillis() - startTime;
             
             if (isRequestLoggingEnabled && requestToUse instanceof ContentCachingRequestWrapper) {
-                logRequest((ContentCachingRequestWrapper) requestToUse, responseToUse.getStatus(), duration);
+                logRequest((ContentCachingRequestWrapper) requestToUse, responseToUse.getStatus(), duration, fileApi);
             }
             
             if (isResponseLoggingEnabled && responseToUse instanceof ContentCachingResponseWrapper) {
-                logResponse((ContentCachingResponseWrapper) responseToUse);
+                logResponse((ContentCachingResponseWrapper) responseToUse, fileApi);
                 ((ContentCachingResponseWrapper) responseToUse).copyBodyToResponse();
             }
             
@@ -119,13 +120,14 @@ public class LoggingFilter extends OncePerRequestFilter {
         }
     }
 
-    private void logRequest(ContentCachingRequestWrapper request, int status, long duration) throws UnsupportedEncodingException {
+    private void logRequest(ContentCachingRequestWrapper request, int status, long duration, boolean fileApi) throws UnsupportedEncodingException {
         String queryString = request.getQueryString();
         String uri = queryString == null
                 ? request.getRequestURI()
                 : request.getRequestURI() + "?" + maskQueryString(queryString, loggingProperties.getSensitiveFields());
-        String contentType = request.getContentType();
-        String payload = getContent(request.getContentAsByteArray(), contentType, request.getCharacterEncoding());
+        String payload = fileApi
+                ? "[File Payload Omitted]"
+                : getContent(request.getContentAsByteArray(), request.getContentType(), request.getCharacterEncoding());
 
         log.info("API Request - ID: [{}], Method: [{}], URI: [{}], Status: [{}], Duration: [{}ms], Payload: [{}]",
                 MDC.get(MDC_KEY_CORRELATION_ID),
@@ -137,9 +139,10 @@ public class LoggingFilter extends OncePerRequestFilter {
         );
     }
 
-    private void logResponse(ContentCachingResponseWrapper response) throws UnsupportedEncodingException {
-        String contentType = response.getContentType();
-        String payload = getContent(response.getContentAsByteArray(), contentType, response.getCharacterEncoding());
+    private void logResponse(ContentCachingResponseWrapper response, boolean fileApi) throws UnsupportedEncodingException {
+        String payload = fileApi
+                ? "[File Response Omitted]"
+                : getContent(response.getContentAsByteArray(), response.getContentType(), response.getCharacterEncoding());
         log.info("API Response - ID: [{}], Status: [{}], Payload: [{}]",
                 MDC.get(MDC_KEY_CORRELATION_ID),
                 response.getStatus(),
@@ -249,5 +252,9 @@ public class LoggingFilter extends OncePerRequestFilter {
             maskedValue = Pattern.compile(regex).matcher(maskedValue).replaceAll(MASK_VALUE);
         }
         return maskedValue;
+    }
+
+    private boolean isFileApi(String uri) {
+        return uri != null && uri.startsWith("/api/v1/files");
     }
 }
