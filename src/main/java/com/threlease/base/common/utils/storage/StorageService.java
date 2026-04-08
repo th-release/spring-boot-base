@@ -20,4 +20,9 @@ public interface StorageService {
      * 저장된 파일의 풀 경로(또는 URL)를 반환합니다.
      */
     String getUrl(String filePath);
+
+    /**
+     * 다운로드용 URL을 생성합니다.
+     */
+    String getDownloadUrl(FileEntity fileEntity);
 }

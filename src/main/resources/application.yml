@@ -18,13 +18,13 @@ spring:
     username: ${DATABASE_USERNAME:root}
     password: ${DATABASE_PASSWORD:root}
     hikari:
-      maximum-pool-size: 50
-      connection-timeout: 2000
-      validation-timeout: 5000
+      maximum-pool-size: ${DATABASE_MAXIMUM_POOL_SIZE:50}
+      connection-timeout: ${DATABASE_CONNECTION_TIMEOUT:2000}
+      validation-timeout: ${DATABASE_VALIDATION_TIMEOUT:5000}
   jpa:
     hibernate:
       # 베이스 프로젝트 기본값. 운영에서는 migration 중심 관리 권장
-      ddl-auto: update
+      ddl-auto: none
     properties:
       hibernate:
         format_sql: true
@@ -45,82 +45,10 @@ spring:
     exclude:
       - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
       - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
-  servlet:
-    multipart:
-      # 공통 multipart 업로드 한도
-      max-file-size: 10MB
-      max-request-size: 10MB
-
-app:
-  cors:
-    # 공통 CORS 정책. 실제 허용 origin은 환경별 값으로 조정
-    allowedOrigins:
-      - ${CORS_ALLOWED_ORIGIN_1:http://localhost:3000}
-      - ${CORS_ALLOWED_ORIGIN_2:http://localhost:8080}
-    allowedMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"]
-    allowedHeaders: ["*"]
-    exposedHeaders: ["Authorization", "Refresh-Token"]
-    allowCredentials: true
-    maxAge: 3600
-  database:
-    # JPA/Flyway schema 분리용 공통 app 설정
-    jpa-schema: ${JPA_SCHEMA:${DATABASE_SCHEMA:public}}
-    flyway-schema: ${FLYWAY_SCHEMA:${DATABASE_SCHEMA:public}}
-  logging:
-    # 요청/응답 로깅과 민감정보 마스킹 정책
-    request: true
-    response: false
-    exclude-urls:
-      - /api/actuator
-      - /api/swagger
-      - /api/swagger-ui
-      - /api/v3/api-docs
-    sensitive-fields:
-      - password
-      - newPassword
-      - confirmPassword
-      - accessToken
-      - refreshToken
-      - token
-      - authorization
-      - refresh_token
-      - access_token
-      - idToken
-      - session
-      - sessionid
-      - sessiontoken
-      - clientSecret
-      - secret
-      - secretkey
-      - apiKey
-      - api_key
-      - privatekey
-      - credential
-      - credentials
-      - otp
-      - code
-      - authcode
-      - setcookie
-      - cookie
-    sensitive-value-patterns:
-      - '(?i)Bearer\s+[A-Za-z0-9._~+/\-=]+'
-      - '\b[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b'
-      - '(?i)(sk|rk)_[A-Za-z0-9]{16,}'
-      - '(?i)AKIA[0-9A-Z]{16}'
-    max-payload-size: 1024
-  swagger:
-    # Swagger/OpenAPI 문서 기본 메타 정보
-    scheme: bearer
-    title: title
-    description: description
-    version: 1.0.0
-  i18n:
-    # 다국어 기능 on/off. false이면 Accept-Language를 무시하고 default-locale만 사용
-    enabled: ${I18N_ENABLED:true}
-    # 서버 기본 언어. 예: ko, en
-    default-locale: ${I18N_DEFAULT_LOCALE:ko}
-    # 허용 언어 목록. 요청 언어가 여기 없으면 default-locale로 fallback
-    supported-locales: [ko, en]
+crypto:
+  aes:
+    # AES 암복호화 키
+    secret-key: ${AES_SECRET_KEY:R3zmKTgCnAp1m0zRd5DCVmTA3GQhYPYd+iJsbk1+l9c=}
 
 springdoc:
   # Swagger UI와 OpenAPI 문서 경로 설정
@@ -134,31 +62,6 @@ springdoc:
     operations-sorter: method
   paths-to-match:
     - /**
-
-management:
-  # Actuator/metrics/prometheus 공통 노출 설정
-  endpoints:
-    web:
-      exposure:
-        include: health, metrics, prometheus
-  endpoint:
-    health:
-      show-details: always
-    prometheus:
-      enabled: true
-    metrics:
-      enabled: true
-  # Redis 헬스 체크도 비활성화 (연결 시도 방지)
-  health:
-    redis:
-      enabled: false
-  metrics:
-    tags:
-      application: ${spring.application.name:spring-boot-base}
-  prometheus:
-    metrics:
-      export:
-        enabled: true
 
 decorator:
   datasource:

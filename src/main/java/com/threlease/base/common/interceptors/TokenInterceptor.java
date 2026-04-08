@@ -19,6 +19,10 @@ public class TokenInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        if ("GET".equalsIgnoreCase(request.getMethod()) && request.getRequestURI().startsWith("/api/v1/files/content/")) {
+            return true;
+        }
+
         String token = request.getHeader("Authorization");
 
         if (token == null || token.isBlank()) {

@@ -8,10 +8,13 @@ import com.threlease.base.common.properties.app.firebase.FirebaseProperties;
 import com.threlease.base.common.properties.app.i18n.I18nProperties;
 import com.threlease.base.common.properties.cors.CorsProperties;
 import com.threlease.base.common.properties.app.jwt.JwtProperties;
+import com.threlease.base.common.properties.app.logging.LoggingProperties;
 import com.threlease.base.common.properties.app.outbound.OutboundProperties;
 import com.threlease.base.common.properties.app.privacy.PrivacyProperties;
+import com.threlease.base.common.properties.app.qr.QrCodeProperties;
 import com.threlease.base.common.properties.app.redis.RedisProperties;
 import com.threlease.base.common.properties.app.security.SecurityProperties;
+import com.threlease.base.common.properties.app.swagger.redis.SwaggerProperties;
 import com.threlease.base.common.properties.app.token.TokenProperties;
 import lombok.Getter;
 import lombok.Setter;
@@ -33,7 +36,10 @@ public class AppProperties {
     private CachePolicyProperties cache;
     private PrivacyProperties privacy;
     private DatabaseProperties database;
+    private LoggingProperties logging;
     private EmailProperties email;
     private FirebaseProperties firebase;
     private I18nProperties i18n;
+    private QrCodeProperties qr;
+    private SwaggerProperties swagger;
 }

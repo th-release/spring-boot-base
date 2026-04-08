@@ -10,6 +10,9 @@ import java.util.List;
 import java.util.Optional;
 
 public interface FileRepository extends JpaRepository<FileEntity, Long> {
+    @Query("SELECT f FROM FileEntity f WHERE f.id = :id AND f.deleted = false")
+    Optional<FileEntity> findActiveById(@Param("id") Long id);
+
     /** 경로로 활성 파일 조회 */
     @Query("SELECT f FROM FileEntity f WHERE f.filePath = :filePath AND f.deleted = false")
     Optional<FileEntity> findByFilePathAndDeletedFalse(@Param("filePath") String filePath);

@@ -79,4 +79,9 @@ public class LocalStorageService implements StorageService {
         String prefix = storageProperties.getLocal().getPrefix();
         return prefix + "/" + filePath;
     }
+
+    @Override
+    public String getDownloadUrl(FileEntity fileEntity) {
+        return getUrl(fileEntity.getFilePath());
+    }
 }

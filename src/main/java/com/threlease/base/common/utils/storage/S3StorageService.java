@@ -6,10 +6,15 @@ import com.threlease.base.common.utils.storage.repository.FileRepository;
 import io.awspring.cloud.s3.S3Template;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.UUID;
 
 @Slf4j
@@ -21,6 +26,7 @@ public class S3StorageService implements StorageService {
     private final FileRepository fileRepository;
     private final S3Properties s3Properties;
     private final FileUploadSecurityService fileUploadSecurityService;
+    private final ObjectProvider<S3Presigner> s3PresignerProvider;
 
     @Override
     public FileEntity upload(MultipartFile file, String dirName) throws IOException {
@@ -69,5 +75,26 @@ public class S3StorageService implements StorageService {
     public String getUrl(String filePath) {
         String bucket = s3Properties.getBucket();
         return "https://" + bucket + ".s3.amazonaws.com/" + filePath;
+    }
+
+    @Override
+    public String getDownloadUrl(FileEntity fileEntity) {
+        S3Presigner presigner = s3PresignerProvider.getIfAvailable();
+        if (presigner == null) {
+            return getUrl(fileEntity.getFilePath());
+        }
+
+        GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                .bucket(s3Properties.getBucket())
+                .key(fileEntity.getFilePath())
+                .responseContentDisposition("attachment; filename=\"" + fileEntity.getOriginalFileName() + "\"")
+                .build();
+
+        GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+                .signatureDuration(Duration.ofMinutes(10))
+                .getObjectRequest(getObjectRequest)
+                .build();
+
+        return presigner.presignGetObject(presignRequest).url().toString();
     }
 }

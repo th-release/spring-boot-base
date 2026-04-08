@@ -13,28 +13,47 @@ spring:
         access-key: prod-access-key
         secret-key: prod-secret-key
 
-crypto:
-  aes:
-    # prod 프로필용 AES 키
-    secret-key: "R3zmKTgCnAp1m0zRd5DCVmTA3GQhYPYd+iJsbk1+l9c="
-
 app:
+  cors:
+    allowedOrigins: [http://localhost:3000, http://localhost:8080]
+    allowedMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"]
+    allowedHeaders: ["*"]
+    exposedHeaders: ["Authorization", "Refresh-Token"]
+    allowCredentials: true
+    maxAge: 3600
+  database:
+    jpa-schema: public
+    flyway-schema: public
+  logging:
+    request: true
+    response: false
+    exclude-urls: [/api/actuator, /api/swagger, /api/swagger-ui, /api/v3/api-docs]
+    sensitive-fields: [password, newPassword, confirmPassword, accessToken, refreshToken, token, authorization, refresh_token, access_token, idToken, session, sessionid, sessiontoken, clientSecret, secret, secretkey, apiKey, api_key, privatekey, credential, credentials, otp, code, authcode, setcookie, cookie]
+    sensitive-value-patterns: ['(?i)Bearer\s+[A-Za-z0-9._~+/\-=]+', '\b[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b', '(?i)(sk|rk)_[A-Za-z0-9]{16,}', '(?i)AKIA[0-9A-Z]{16}']
+    max-payload-size: 1024
+  swagger:
+    scheme: bearer
+    title: title
+    description: description
+    version: 1.0.0
+  i18n:
+    enabled: true
+    default-locale: ko
+    supported-locales: [ko, en]
   redis:
     # prod 캐시/토큰 저장 관련 Redis 설정
     enabled: true
     host: prod-redis.internal
     port: "6379"
     cache-prefix: v1
-  cache:
-    # 캐시 기본 TTL과 캐시 이름
-    default-ttl-seconds: 3600
-    names:
-      - user
   jwt:
     # prod 프로필용 JWT 서명 키
     secret-key: "4zB0ZR7iYAfapSSkFfQKP33FYQHJx3o/frfaL2oZNvM9OvWt5IPUZaTH+3imbJGaNDN68VHWaCmB+IdyQHmWKQ=="
+  cache:
+    default-ttl-seconds: 3600
+    names: [user]
   token:
-    # refresh token 저장 방식과 세션 정책
+    # refresh token 저장 방식
     storage: rdb
     max-sessions-per-user: 5
     validate-schema: true
@@ -57,7 +76,6 @@ app:
       allowed-windows: 1
       required-roles: []
   outbound:
-    # 외부 API 호출 정책
     connect-timeout-seconds: 5
     read-timeout-seconds: 5
     retry:
@@ -67,12 +85,10 @@ app:
       forward-correlation-id: true
       add-idempotency-key: true
   privacy:
-    # 개인정보 보호 정책
     mask-audit-ip: true
     include-user-agent: true
     audit-retention-days: 90
   qr:
-    # QR 코드 생성 옵션
     margin: 1
     charset: UTF-8
     format: PNG
@@ -112,20 +128,33 @@ management:
     web:
       exposure:
         include: health, prometheus
+  endpoint:
+    health:
+      show-details: always
+    prometheus:
+      enabled: true
+    metrics:
+      enabled: true
+  health:
+    redis:
+      enabled: false
+  metrics:
+    tags:
+      application: spring-boot-base
+  prometheus:
+    metrics:
+      export:
+        enabled: true
 
 storage:
   local:
     # 로컬 스토리지 fallback 경로
     path: ./uploads
-    prefix: /api/files
+    prefix: /api/v1/files/content
   upload:
-    # 운영 업로드 보안 정책
     enabled: true
-    max-file-size-bytes: 10485760
+    max-file-size: 10MB
     block-double-extension: true
-    allowed-extensions: [jpg, jpeg, png, gif, pdf, txt, csv]
-    allowed-content-types: [image/jpeg, image/png, image/gif, application/pdf, text/plain, text/csv]
   cleanup:
-    # 고아 파일 정리 배치
     cron: "0 0 3 * * *"
     chunk-size: 100

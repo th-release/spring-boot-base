@@ -13,28 +13,49 @@ spring:
         access-key: ${AWS_ACCESS_KEY:}
         secret-key: ${AWS_SECRET_KEY:}
 
-crypto:
-  aes:
-    # AES 암복호화 키
-    secret-key: ${AES_SECRET_KEY:R3zmKTgCnAp1m0zRd5DCVmTA3GQhYPYd+iJsbk1+l9c=}
-
 app:
+  cors:
+    allowedOrigins:
+      - ${CORS_ALLOWED_ORIGIN_1:http://localhost:3000}
+      - ${CORS_ALLOWED_ORIGIN_2:http://localhost:8080}
+    allowedMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"]
+    allowedHeaders: ["*"]
+    exposedHeaders: ["Authorization", "Refresh-Token"]
+    allowCredentials: true
+    maxAge: 3600
+  database:
+    jpa-schema: ${JPA_SCHEMA:${DATABASE_SCHEMA:public}}
+    flyway-schema: ${FLYWAY_SCHEMA:${DATABASE_SCHEMA:public}}
+  logging:
+    request: true
+    response: false
+    exclude-urls: [/api/actuator, /api/swagger, /api/swagger-ui, /api/v3/api-docs]
+    sensitive-fields: [password, newPassword, confirmPassword, accessToken, refreshToken, token, authorization, refresh_token, access_token, idToken, session, sessionid, sessiontoken, clientSecret, secret, secretkey, apiKey, api_key, privatekey, credential, credentials, otp, code, authcode, setcookie, cookie]
+    sensitive-value-patterns: ['(?i)Bearer\s+[A-Za-z0-9._~+/\-=]+', '\b[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b', '(?i)(sk|rk)_[A-Za-z0-9]{16,}', '(?i)AKIA[0-9A-Z]{16}']
+    max-payload-size: 1024
+  swagger:
+    scheme: bearer
+    title: title
+    description: description
+    version: 1.0.0
+  i18n:
+    enabled: ${I18N_ENABLED:true}
+    default-locale: ${I18N_DEFAULT_LOCALE:ko}
+    supported-locales: [ko, en]
   redis:
     # Redis 캐시 및 토큰 저장 설정
     enabled: ${REDIS_ENABLED:false}
     host: ${REDIS_HOST:localhost}
     port: ${REDIS_PORT:6379}
     cache-prefix: ${REDIS_CACHE_PREFIX:v1}
-  cache:
-    # 캐시 기본 TTL과 캐시 이름
-    default-ttl-seconds: ${CACHE_DEFAULT_TTL_SECONDS:3600}
-    names:
-      - user
   jwt:
     # JWT 서명 키
     secret-key: ${JWT_SECRET_KEY:4zB0ZR7iYAfapSSkFfQKP33FYQHJx3o/frfaL2oZNvM9OvWt5IPUZaTH+3imbJGaNDN68VHWaCmB+IdyQHmWKQ==}
+  cache:
+    default-ttl-seconds: ${CACHE_DEFAULT_TTL_SECONDS:3600}
+    names: [user]
   auth:
-    # 인증/보안 기능 on/off 및 정책
+    # 인증/보안 기능 on/off
     audit:
       enabled: ${AUTH_AUDIT_ENABLED:true}
       include-user-agent: ${AUTH_AUDIT_INCLUDE_USER_AGENT:true}
@@ -52,12 +73,11 @@ app:
       allowed-windows: ${AUTH_MFA_ALLOWED_WINDOWS:1}
       required-roles: []
   token:
-    # refresh token 저장 방식과 세션 정책
+    # refresh token 저장 방식
     storage: ${TOKEN_STORAGE:rdb}
     max-sessions-per-user: ${TOKEN_MAX_SESSIONS_PER_USER:5}
     validate-schema: ${TOKEN_VALIDATE_SCHEMA:true}
   outbound:
-    # 외부 API 호출 timeout/retry/header 정책
     connect-timeout-seconds: ${OUTBOUND_CONNECT_TIMEOUT_SECONDS:5}
     read-timeout-seconds: ${OUTBOUND_READ_TIMEOUT_SECONDS:5}
     retry:
@@ -67,12 +87,17 @@ app:
       forward-correlation-id: ${OUTBOUND_FORWARD_CORRELATION_ID:true}
       add-idempotency-key: ${OUTBOUND_ADD_IDEMPOTENCY_KEY:true}
   privacy:
-    # 개인정보 마스킹/감사로그 보존 정책
     mask-audit-ip: ${PRIVACY_MASK_AUDIT_IP:true}
     include-user-agent: ${PRIVACY_INCLUDE_USER_AGENT:true}
     audit-retention-days: ${PRIVACY_AUDIT_RETENTION_DAYS:90}
+  qr:
+    margin: ${QR_MARGIN:1}
+    charset: ${QR_CHARSET:UTF-8}
+    format: ${QR_FORMAT:PNG}
+    height: ${QR_HEIGHT:300}
+    width: ${QR_WIDTH:300}
   security:
-    # 보안 헤더 설정
+    # 보안 헤더 환경별 on/off
     headers:
       hsts-enabled: ${SECURITY_HSTS_ENABLED:true}
       content-security-policy: ${SECURITY_CSP:default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'}
@@ -99,26 +124,39 @@ app:
     credentials-path: ${FIREBASE_CREDENTIALS_PATH:}
     credentials-json: ${FIREBASE_CREDENTIALS_JSON:}
     database-url: ${FIREBASE_DATABASE_URL:}
-  qr:
-    # QR 코드 생성 옵션
-    margin: ${QR_MARGIN:1}
-    charset: ${QR_CHARSET:UTF-8}
-    format: ${QR_FORMAT:PNG}
-    height: ${QR_HEIGHT:300}
-    width: ${QR_WIDTH:300}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, metrics, prometheus
+  endpoint:
+    health:
+      show-details: always
+    prometheus:
+      enabled: true
+    metrics:
+      enabled: true
+  health:
+    redis:
+      enabled: false
+  metrics:
+    tags:
+      application: ${SPRING_APPLICATION_NAME:spring-boot-base}
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
 storage:
   local:
     # 로컬 스토리지 fallback 경로
-    path: ./uploads
-    prefix: /api/files
+    path: ${STORAGE_LOCAL_PATH:./uploads}
+    prefix: /api/v1/files/content
   upload:
-    # 파일 업로드 보안 정책
     enabled: ${STORAGE_UPLOAD_ENABLED:true}
-    max-file-size-bytes: ${STORAGE_UPLOAD_MAX_FILE_SIZE_BYTES:10485760}
+    max-file-size: ${STORAGE_UPLOAD_MAX_FILE_SIZE:10MB}
     block-double-extension: ${STORAGE_UPLOAD_BLOCK_DOUBLE_EXTENSION:true}
-    allowed-extensions: [jpg, jpeg, png, gif, pdf, txt, csv]
-    allowed-content-types: [image/jpeg, image/png, image/gif, application/pdf, text/plain, text/csv]
   cleanup:
-    # 고아 파일 정리 배치 설정
     cron: "0 0 3 * * *"
     chunk-size: 100

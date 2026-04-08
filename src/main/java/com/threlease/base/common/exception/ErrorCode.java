@@ -40,7 +40,8 @@ public enum ErrorCode {
     TOO_MANY_REQUESTS(429, "너무 많은 요청이 발생했습니다. 잠시 후 다시 시도해 주세요."),
 
     // 파일
-    FILE_UPLOAD_INVALID(400, "허용되지 않은 파일 업로드 요청입니다.");
+    FILE_UPLOAD_INVALID(400, "허용되지 않은 파일 업로드 요청입니다."),
+    FILE_NOT_FOUND(404, "해당 파일을 찾을 수 없습니다.");
 
     private final int status;
     private final String message;
