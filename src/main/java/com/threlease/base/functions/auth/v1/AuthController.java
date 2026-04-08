@@ -7,8 +7,6 @@ import com.threlease.base.common.exception.BusinessException;
 import com.threlease.base.common.exception.ErrorCode;
 import com.threlease.base.common.enums.Roles;
 import com.threlease.base.common.utils.IpUtils;
-import com.threlease.base.common.utils.crypto.HashComponent;
-import com.threlease.base.common.utils.random.RandomComponent;
 import com.threlease.base.common.utils.responses.BasicResponse;
 import com.threlease.base.entities.AuthEntity;
 import com.threlease.base.functions.auth.AuthService;
@@ -47,8 +45,6 @@ import java.util.List;
 @AllArgsConstructor
 public class AuthController {
     private final AuthService authService;
-    private final HashComponent hashComponent;
-    private final RandomComponent randomComponent;
     private final PasswordEncoder passwordEncoder;
     private final AuditLogService auditLogService;
     private final MfaService mfaService;
@@ -135,13 +131,11 @@ public class AuthController {
             throw new BusinessException(ErrorCode.USER_DUPLICATE);
         }
 
-        String salt = randomComponent.generateAlphanumeric(32);
-
         AuthEntity user = AuthEntity.builder()
                 .username(dto.getUsername())
                 .nickname(dto.getNickname())
                 .password(passwordEncoder.encode(dto.getPassword()))
-                .salt(salt)
+                .salt("")
                 .role(com.threlease.base.common.enums.Roles.ROLE_USER)
                 .build();
 
@@ -259,19 +253,7 @@ public class AuthController {
     }
 
     private boolean isPasswordValid(String rawPassword, AuthEntity auth) {
-        if (passwordEncoder.matches(rawPassword, auth.getPassword())) {
-            return true;
-        }
-
-        String legacyHash = hashComponent.generateSHA512(rawPassword + auth.getSalt());
-        if (!legacyHash.equals(auth.getPassword())) {
-            return false;
-        }
-
-        auth.setPassword(passwordEncoder.encode(rawPassword));
-        auth.setSalt(randomComponent.generateAlphanumeric(32));
-        authService.authSave(auth);
-        return true;
+        return passwordEncoder.matches(rawPassword, auth.getPassword());
     }
 
     private AuthEntity assertAdmin(HttpServletRequest request) {
