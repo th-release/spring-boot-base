@@ -114,6 +114,13 @@ app:
     title: title
     description: description
     version: 1.0.0
+  i18n:
+    # 다국어 기능 on/off. false이면 Accept-Language를 무시하고 default-locale만 사용
+    enabled: ${I18N_ENABLED:true}
+    # 서버 기본 언어. 예: ko, en
+    default-locale: ${I18N_DEFAULT_LOCALE:ko}
+    # 허용 언어 목록. 요청 언어가 여기 없으면 default-locale로 fallback
+    supported-locales: [ko, en]
 
 springdoc:
   # Swagger UI와 OpenAPI 문서 경로 설정

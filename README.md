@@ -1027,6 +1027,18 @@ public class SignUpDto {
 ## 메시지/로깅 리소스
 
 - `messages.properties`
+
+### I18N
+
+- `application.yml`의 `app.i18n.enabled`로 다국어 기능을 켜고 끌 수 있습니다.
+- `app.i18n.default-locale`로 서버 기본 언어를 선택합니다. 예: `ko`, `en`
+- `app.i18n.supported-locales`에 없는 언어가 들어오면 기본 언어로 자동 fallback 됩니다.
+- `enabled=false`이면 `Accept-Language` 헤더를 무시하고 항상 기본 언어만 사용합니다.
+- 메시지 번들은 아래 파일을 사용합니다.
+  - `src/main/resources/messages.properties`
+  - `src/main/resources/messages_ko.properties`
+  - `src/main/resources/messages_en.properties`
+- 비즈니스 예외와 검증 메시지는 같은 message source를 사용합니다.
   - 다국어/메시지 코드 리소스
 - `logback-spring.xml`
   - 로깅 설정

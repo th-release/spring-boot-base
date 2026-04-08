@@ -17,7 +17,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Target({FIELD, PARAMETER})
 @Retention(RUNTIME)
 public @interface ValidPhoneNumber {
-    String message() default "Invalid phone number format";
+    String message() default "{validation.phone.invalid}";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
     String region() default "KR"; // Default region for parsing, e.g., "KR" for Korea

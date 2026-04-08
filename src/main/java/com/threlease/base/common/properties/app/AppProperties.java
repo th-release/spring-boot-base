@@ -5,6 +5,7 @@ import com.threlease.base.common.properties.app.cache.CachePolicyProperties;
 import com.threlease.base.common.properties.app.database.DatabaseProperties;
 import com.threlease.base.common.properties.app.email.EmailProperties;
 import com.threlease.base.common.properties.app.firebase.FirebaseProperties;
+import com.threlease.base.common.properties.app.i18n.I18nProperties;
 import com.threlease.base.common.properties.cors.CorsProperties;
 import com.threlease.base.common.properties.app.jwt.JwtProperties;
 import com.threlease.base.common.properties.app.outbound.OutboundProperties;
@@ -34,4 +35,5 @@ public class AppProperties {
     private DatabaseProperties database;
     private EmailProperties email;
     private FirebaseProperties firebase;
+    private I18nProperties i18n;
 }

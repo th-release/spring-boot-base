@@ -20,7 +20,15 @@ import java.util.TreeSet;
 public class RefreshTokenSchemaValidator {
     private static final String TABLE_NAME = "RefreshTokenEntity";
     private static final String EXPECTED_TOKEN_ID_COLUMN = "tokenId";
-    private static final Set<String> NULLABLE_COLUMNS = Set.of("replacedByTokenId", "updatedAt", "deletedAt");
+    private static final Set<String> NULLABLE_COLUMNS = Set.of(
+            "userAgent",
+            "deviceLabel",
+            "ipAddress",
+            "lastUsedAt",
+            "replacedByTokenId",
+            "updatedAt",
+            "deletedAt"
+    );
     private static final Set<String> REQUIRED_COLUMNS = Set.of(
             "id",
             "userUuid",
