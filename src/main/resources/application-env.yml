@@ -252,6 +252,6 @@ storage:
     block-double-extension: ${STORAGE_UPLOAD_BLOCK_DOUBLE_EXTENSION:true}
   cleanup:
     # soft delete된 파일 정리 cron
-    cron: "0 0 3 * * *"
+    cron: ${STORAGE_ORGANIZE_CRON:0 0 3 * * *}
     # 한 번에 정리할 파일 수
-    chunk-size: 100
+    chunk-size: ${STORAGE_CHUNK_SIZE:1000}
