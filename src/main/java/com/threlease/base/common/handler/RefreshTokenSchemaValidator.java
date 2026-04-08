@@ -1,5 +1,6 @@
 package com.threlease.base.common.handler;
 
+import com.threlease.base.common.properties.app.database.DatabaseProperties;
 import com.threlease.base.common.properties.app.token.TokenProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -35,6 +36,7 @@ public class RefreshTokenSchemaValidator {
     );
     private static final Map<String, Set<String>> EXPECTED_COLUMN_TYPES = createExpectedColumnTypes();
 
+    private final DatabaseProperties databaseProperties;
     private final TokenProperties tokenProperties;
     private final JdbcTemplate jdbcTemplate;
 
@@ -44,7 +46,7 @@ public class RefreshTokenSchemaValidator {
             return;
         }
 
-        String schema = jdbcTemplate.queryForObject("select current_schema()", String.class);
+        String schema = databaseProperties.getJpaSchema();
         String resolvedTableName = resolveTableName(schema);
         List<String> columns = jdbcTemplate.queryForList(
                 """

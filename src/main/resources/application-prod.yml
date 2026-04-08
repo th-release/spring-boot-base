@@ -1,0 +1,92 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+  cloud:
+    aws:
+      s3:
+        bucket: prod-bucket
+      region:
+        static: ap-northeast-2
+      credentials:
+        access-key: prod-access-key
+        secret-key: prod-secret-key
+
+crypto:
+  aes:
+    secret-key: "R3zmKTgCnAp1m0zRd5DCVmTA3GQhYPYd+iJsbk1+l9c="
+
+app:
+  redis:
+    enabled: true
+    host: prod-redis.internal
+    port: "6379"
+    cache-prefix: v1
+  cache:
+    default-ttl-seconds: 3600
+    names:
+      - user
+  jwt:
+    secret-key: "4zB0ZR7iYAfapSSkFfQKP33FYQHJx3o/frfaL2oZNvM9OvWt5IPUZaTH+3imbJGaNDN68VHWaCmB+IdyQHmWKQ=="
+  token:
+    storage: rdb
+    max-sessions-per-user: 5
+    validate-schema: true
+  auth:
+    audit:
+      enabled: true
+      include-user-agent: true
+    login-failure:
+      enabled: true
+      max-attempts: 5
+      lock-minutes: 15
+    mfa:
+      enabled: true
+      issuer: spring-boot-base
+      code-digits: 6
+      time-step-seconds: 30
+      allowed-windows: 1
+      required-roles: []
+  outbound:
+    connect-timeout-seconds: 5
+    read-timeout-seconds: 5
+    retry:
+      max-attempts: 3
+      delay-millis: 1000
+    headers:
+      forward-correlation-id: true
+      add-idempotency-key: true
+  privacy:
+    mask-audit-ip: true
+    include-user-agent: true
+    audit-retention-days: 90
+  qr:
+    margin: 1
+    charset: UTF-8
+    format: PNG
+    height: 300
+    width: 300
+  security:
+    headers:
+      hsts-enabled: true
+      content-security-policy: "default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
+      referrer-policy: strict-origin-when-cross-origin
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, prometheus
+
+storage:
+  local:
+    path: ./uploads
+    prefix: /api/files
+  upload:
+    enabled: true
+    max-file-size-bytes: 10485760
+    block-double-extension: true
+    allowed-extensions: [jpg, jpeg, png, gif, pdf, txt, csv]
+    allowed-content-types: [image/jpeg, image/png, image/gif, application/pdf, text/plain, text/csv]
+  cleanup:
+    cron: "0 0 3 * * *"
+    chunk-size: 100

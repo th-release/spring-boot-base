@@ -1,5 +1,6 @@
 package com.threlease.base.common.handler;
 
+import com.threlease.base.common.properties.app.database.DatabaseProperties;
 import com.threlease.base.common.properties.app.token.TokenProperties;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -20,6 +21,8 @@ class RefreshTokenSchemaValidatorTest {
         TokenProperties properties = new TokenProperties();
         properties.setStorage("rdb");
         properties.setValidateSchema(true);
+        DatabaseProperties databaseProperties = new DatabaseProperties();
+        databaseProperties.setJpaSchema("public");
 
         JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
         when(jdbcTemplate.queryForObject("select current_schema()", String.class)).thenReturn("public");
@@ -91,7 +94,7 @@ class RefreshTokenSchemaValidatorTest {
         ))
                 .thenReturn(List.of("tokenId"));
 
-        RefreshTokenSchemaValidator validator = new RefreshTokenSchemaValidator(properties, jdbcTemplate);
+        RefreshTokenSchemaValidator validator = new RefreshTokenSchemaValidator(databaseProperties, properties, jdbcTemplate);
 
         assertDoesNotThrow(validator::validateSchema);
     }
@@ -101,6 +104,8 @@ class RefreshTokenSchemaValidatorTest {
         TokenProperties properties = new TokenProperties();
         properties.setStorage("rdb");
         properties.setValidateSchema(true);
+        DatabaseProperties databaseProperties = new DatabaseProperties();
+        databaseProperties.setJpaSchema("public");
 
         JdbcTemplate jdbcTemplate = mock(JdbcTemplate.class);
         when(jdbcTemplate.queryForObject("select current_schema()", String.class)).thenReturn("public");
@@ -128,7 +133,7 @@ class RefreshTokenSchemaValidatorTest {
         ))
                 .thenReturn(List.of("id", "userUuid"));
 
-        RefreshTokenSchemaValidator validator = new RefreshTokenSchemaValidator(properties, jdbcTemplate);
+        RefreshTokenSchemaValidator validator = new RefreshTokenSchemaValidator(databaseProperties, properties, jdbcTemplate);
 
         assertThrows(IllegalStateException.class, validator::validateSchema);
     }

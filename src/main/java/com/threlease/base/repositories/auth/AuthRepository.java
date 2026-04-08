@@ -17,4 +17,6 @@ public interface AuthRepository extends JpaRepository<AuthEntity, String>, UserC
 
     @Query(value = "SELECT u FROM AuthEntity u")
     Page<AuthEntity> findByPagination(Pageable pageable);
+
+    Page<AuthEntity> findByUsernameContainingIgnoreCaseOrNicknameContainingIgnoreCase(String username, String nickname, Pageable pageable);
 }

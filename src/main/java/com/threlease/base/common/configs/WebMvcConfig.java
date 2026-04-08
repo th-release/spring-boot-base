@@ -1,6 +1,7 @@
 package com.threlease.base.common.configs;
 
 import com.threlease.base.common.annotation.ApiVersion;
+import com.threlease.base.common.interceptors.ApiVersionInterceptor;
 import com.threlease.base.common.interceptors.TokenInterceptor;
 import com.threlease.base.common.properties.app.AppProperties;
 import com.threlease.base.common.properties.cors.CorsProperties;
@@ -17,6 +18,7 @@ import org.springframework.web.servlet.config.annotation.*;
 @AllArgsConstructor
 public class WebMvcConfig implements WebMvcConfigurer {
     private final TokenInterceptor tokenInterceptor;
+    private final ApiVersionInterceptor apiVersionInterceptor;
     private final AppProperties appProperties;
 
     /**
@@ -49,7 +51,10 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         String apiV1 = "/api/v1";
-        
+
+        registry.addInterceptor(apiVersionInterceptor)
+                .addPathPatterns("/api/**");
+
         registry.addInterceptor(tokenInterceptor)
                 .addPathPatterns(apiV1 + "/**")
                 .excludePathPatterns(

@@ -20,11 +20,13 @@ public class S3StorageService implements StorageService {
     private final S3Template s3Template;
     private final FileRepository fileRepository;
     private final S3Properties s3Properties;
+    private final FileUploadSecurityService fileUploadSecurityService;
 
     @Override
     public FileEntity upload(MultipartFile file, String dirName) throws IOException {
+        fileUploadSecurityService.validate(file);
         String bucket = s3Properties.getBucket();
-        String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+        String fileName = UUID.randomUUID() + "_" + fileUploadSecurityService.sanitizeFilename(file.getOriginalFilename());
         String filePath = dirName + "/" + fileName;
 
         s3Template.upload(bucket, filePath, file.getInputStream());

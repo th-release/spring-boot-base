@@ -3,6 +3,7 @@ package com.threlease.base.common.configs;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
+import com.threlease.base.common.properties.app.cache.CachePolicyProperties;
 import com.threlease.base.common.properties.app.redis.RedisProperties;
 import lombok.RequiredArgsConstructor;
 import org.redisson.Redisson;
@@ -31,6 +32,7 @@ import java.time.Duration;
 public class CacheConfig {
 
     private final RedisProperties redisProperties;
+    private final CachePolicyProperties cachePolicyProperties;
     private final ObjectMapper objectMapper;
 
     /**
@@ -40,7 +42,10 @@ public class CacheConfig {
     @Primary
     @ConditionalOnProperty(name = "app.redis.enabled", havingValue = "false", matchIfMissing = true)
     public CacheManager localCacheManager() {
-        return new ConcurrentMapCacheManager();
+        ConcurrentMapCacheManager cacheManager = new ConcurrentMapCacheManager();
+        cacheManager.setCacheNames(cachePolicyProperties.getNames());
+        cacheManager.setAllowNullValues(false);
+        return cacheManager;
     }
 
     /**
@@ -62,7 +67,7 @@ public class CacheConfig {
                 new GenericJackson2JsonRedisSerializer(redisObjectMapper());
 
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofHours(1))
+                .entryTtl(Duration.ofSeconds(cachePolicyProperties.getDefaultTtlSeconds()))
                 .computePrefixWith(cacheName -> redisCachePrefix(cacheName))
                 .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
                 .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(redisSerializer));

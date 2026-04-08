@@ -1,5 +1,6 @@
 package com.threlease.base.functions.auth;
 
+import com.threlease.base.common.properties.app.auth.AuthSecurityProperties;
 import com.threlease.base.common.properties.app.jwt.JwtProperties;
 import com.threlease.base.common.properties.app.redis.RedisProperties;
 import com.threlease.base.common.properties.app.token.TokenProperties;
@@ -48,6 +49,8 @@ class AuthServiceRdbTest {
         tokenProperties.setMaxSessionsPerUser(5);
         tokenProperties.setValidateSchema(false);
 
+        AuthSecurityProperties authSecurityProperties = new AuthSecurityProperties();
+
         ObjectProvider<StringRedisTemplate> objectProvider = mock(ObjectProvider.class);
         when(objectProvider.getIfAvailable()).thenReturn(null);
 
@@ -58,7 +61,8 @@ class AuthServiceRdbTest {
                 objectProvider,
                 hashComponent,
                 redisProperties,
-                tokenProperties
+                tokenProperties,
+                authSecurityProperties
         );
     }
 

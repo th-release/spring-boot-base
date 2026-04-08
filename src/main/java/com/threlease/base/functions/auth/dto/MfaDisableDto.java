@@ -1,12 +1,9 @@
 package com.threlease.base.functions.auth.dto;
 
 import lombok.Data;
-import lombok.Getter;
 
 @Data
-@Getter
-public class LoginDto {
-    private String username;
+public class MfaDisableDto {
     private String password;
     private String otpCode;
 }

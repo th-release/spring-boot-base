@@ -3,20 +3,14 @@ server:
   port: ${PORT:8080}
 
 spring:
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
   jackson:
     serialization:
       write-dates-as-timestamps: false
-  mvc:
-    pathmatch:
-      matching-strategy: ant_path_matcher
-  # Redis 자동 설정을 완전히 제외 (우리가 CacheConfig에서 직접 제어함)
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
-      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://${DATABASE_HOST:127.0.0.1}:${DATABASE_PORT:5432}/${DATABASE_DATABASE:base}?characterEncoding=UTF-8&allowMultiQueries=true&allowMultiQueries=true&currentSchema=${DATABASE_SCHEMA:public}
+    url: jdbc:postgresql://${DATABASE_HOST:127.0.0.1}:${DATABASE_PORT:5432}/${DATABASE_DATABASE:base}?characterEncoding=UTF-8&allowMultiQueries=true&allowMultiQueries=true&currentSchema=${JPA_SCHEMA:public}
     username: ${DATABASE_USERNAME:root}
     password: ${DATABASE_PASSWORD:root}
     hikari:
@@ -29,52 +23,40 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        default_schema: ${JPA_SCHEMA:public}
+  flyway:
+    enabled: ${FLYWAY_ENABLED:true}
+    baseline-on-migrate: true
+    baseline-version: 0
+    locations: classpath:db/migration
+    default-schema: ${FLYWAY_SCHEMA:${DATABASE_SCHEMA:public}}
+    schemas: ${FLYWAY_SCHEMAS:${FLYWAY_SCHEMA:${DATABASE_SCHEMA:public}}}
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+  # Redis 자동 설정을 완전히 제외 (우리가 CacheConfig에서 직접 제어함)
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
   servlet:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
-  cloud:
-    aws:
-      s3:
-        bucket: ${AWS_S3_BUCKET:}
-      region:
-        static: ${AWS_REGION:ap-northeast-2}
-      credentials:
-        access-key: ${AWS_ACCESS_KEY:}
-        secret-key: ${AWS_SECRET_KEY:}
-
-crypto:
-  aes:
-    # 32 bytes (256 bits) Base64 encoded key
-    secret-key: ${AES_SECRET_KEY:R3zmKTgCnAp1m0zRd5DCVmTA3GQhYPYd+iJsbk1+l9c=}
 
 app:
   cors:
     allowedOrigins:
-      - "http://localhost:3000"
-      - "http://localhost:8080"
+      - ${CORS_ALLOWED_ORIGIN_1:http://localhost:3000}
+      - ${CORS_ALLOWED_ORIGIN_2:http://localhost:8080}
     allowedMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"]
     allowedHeaders: ["*"]
     exposedHeaders: ["Authorization", "Refresh-Token"]
     allowCredentials: true
     maxAge: 3600
-  redis:
-    enabled: ${REDIS_ENABLED:false}
-    host: ${REDIS_HOST:localhost}
-    port: ${REDIS_PORT:6379}
-    cache-prefix: ${REDIS_CACHE_PREFIX:v1}
-  jwt:
-    secret-key: ${JWT_SECRET_KEY:4zB0ZR7iYAfapSSkFfQKP33FYQHJx3o/frfaL2oZNvM9OvWt5IPUZaTH+3imbJGaNDN68VHWaCmB+IdyQHmWKQ==}
-  token:
-    storage: ${TOKEN_STORAGE:rdb} # cache (Redis/Local), rdb (Database)
-    max-sessions-per-user: ${TOKEN_MAX_SESSIONS_PER_USER:5}
-    validate-schema: ${TOKEN_VALIDATE_SCHEMA:true}
-  qr:
-    margin: ${QR_MARGIN:1}
-    charset: ${QR_CHARSET:UTF-8}
-    format: ${QR_FORMAT:PNG}
-    height: ${QR_HEIGHT:300}
-    width: ${QR_WIDTH:300}
+  database:
+    jpa-schema: ${JPA_SCHEMA:${DATABASE_SCHEMA:public}}
+    flyway-schema: ${FLYWAY_SCHEMA:${DATABASE_SCHEMA:public}}
   logging:
     request: true
     response: false
@@ -115,6 +97,7 @@ app:
       - '\b[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b'
       - '(?i)(sk|rk)_[A-Za-z0-9]{16,}'
       - '(?i)AKIA[0-9A-Z]{16}'
+    max-payload-size: 1024
   swagger:
     scheme: bearer
     title: title
@@ -122,7 +105,10 @@ app:
     version: 1.0.0
 
 springdoc:
+  api-docs:
+    enabled: ${SWAGGER_API_DOCS_ENABLED:true}
   swagger-ui:
+    enabled: ${SWAGGER_UI_ENABLED:true}
     path: /api/swagger
     groups-order: DESC
     tags-sorter: alpha
@@ -160,12 +146,3 @@ decorator:
       enable-logging: true
       multiline: true
       logging: slf4j
-
-storage:
-  local:
-    path: ./uploads
-    prefix: /api/files
-  cleanup:
-    cron: "0 0 3 * * *"  # 매일 새벽 3시 / 비활성화: "-"
-    # fixed-rate: 21600000 # ms 단위, 사용하려면 주석 해제 (예: 6시간)
-    chunk-size: 100

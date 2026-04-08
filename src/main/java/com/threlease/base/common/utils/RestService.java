@@ -2,6 +2,7 @@ package com.threlease.base.common.utils;
 
 import com.threlease.base.common.exception.BusinessException;
 import com.threlease.base.common.exception.ErrorCode;
+import com.threlease.base.common.properties.app.outbound.OutboundProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
@@ -24,11 +25,12 @@ import java.util.Map;
 public class RestService {
 
     private final RestTemplate restTemplate;
+    private final OutboundProperties outboundProperties;
 
     /**
      * GET 요청 (Query Params 지원, 3회 재시도)
      */
-    @Retryable(value = Exception.class, maxAttempts = 3, backoff = @Backoff(delay = 2000))
+    @Retryable(value = Exception.class, maxAttemptsExpression = "#{@outboundProperties.retry.maxAttempts}", backoff = @Backoff(delayExpression = "#{@outboundProperties.retry.delayMillis}"))
     public <T> T get(String url, Map<String, Object> params, Class<T> responseType) {
         String finalUrl = buildUrl(url, params);
         log.debug("RestService GET: {}", finalUrl);
@@ -38,7 +40,7 @@ public class RestService {
     /**
      * POST 요청 (Body 지원, 3회 재시도)
      */
-    @Retryable(value = Exception.class, maxAttempts = 3, backoff = @Backoff(delay = 2000))
+    @Retryable(value = Exception.class, maxAttemptsExpression = "#{@outboundProperties.retry.maxAttempts}", backoff = @Backoff(delayExpression = "#{@outboundProperties.retry.delayMillis}"))
     public <T> T post(String url, Object body, Class<T> responseType) {
         log.debug("RestService POST: {}", url);
         return restTemplate.postForObject(url, body, responseType);
@@ -47,7 +49,7 @@ public class RestService {
     /**
      * PUT 요청
      */
-    @Retryable(value = Exception.class, maxAttempts = 2, backoff = @Backoff(delay = 1000))
+    @Retryable(value = Exception.class, maxAttemptsExpression = "#{@outboundProperties.retry.maxAttempts}", backoff = @Backoff(delayExpression = "#{@outboundProperties.retry.delayMillis}"))
     public void put(String url, Object body) {
         restTemplate.put(url, body);
     }
@@ -55,7 +57,7 @@ public class RestService {
     /**
      * DELETE 요청
      */
-    @Retryable(value = Exception.class, maxAttempts = 2, backoff = @Backoff(delay = 1000))
+    @Retryable(value = Exception.class, maxAttemptsExpression = "#{@outboundProperties.retry.maxAttempts}", backoff = @Backoff(delayExpression = "#{@outboundProperties.retry.delayMillis}"))
     public void delete(String url) {
         restTemplate.delete(url);
     }
@@ -63,7 +65,7 @@ public class RestService {
     /**
      * 상세 설정이 필요한 경우 (Header 등)
      */
-    @Retryable(value = Exception.class, maxAttempts = 3, backoff = @Backoff(delay = 2000))
+    @Retryable(value = Exception.class, maxAttemptsExpression = "#{@outboundProperties.retry.maxAttempts}", backoff = @Backoff(delayExpression = "#{@outboundProperties.retry.delayMillis}"))
     public <T> ResponseEntity<T> exchange(String url, HttpMethod method, Object body, Map<String, String> headers, Class<T> responseType) {
         HttpHeaders httpHeaders = new HttpHeaders();
         if (headers != null) {
@@ -77,7 +79,7 @@ public class RestService {
     /**
      * List 형태의 응답을 받을 때 사용 (제네릭 타입 보존)
      */
-    @Retryable(value = Exception.class, maxAttempts = 3, backoff = @Backoff(delay = 2000))
+    @Retryable(value = Exception.class, maxAttemptsExpression = "#{@outboundProperties.retry.maxAttempts}", backoff = @Backoff(delayExpression = "#{@outboundProperties.retry.delayMillis}"))
     public <T> T getList(String url, ParameterizedTypeReference<T> responseType) {
         return restTemplate.exchange(url, HttpMethod.GET, null, responseType).getBody();
     }

@@ -1,5 +1,6 @@
 package com.threlease.base.common.configs;
 
+import com.threlease.base.common.properties.app.security.SecurityProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,6 +20,7 @@ import static org.springframework.security.config.Customizer.withDefaults;
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class WebSecurityConfig {
+    private final SecurityProperties securityProperties;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -37,11 +39,19 @@ public class WebSecurityConfig {
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .csrf(AbstractHttpConfigurer::disable)
                 .headers(headers -> headers
-                        .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"))
+                        .contentSecurityPolicy(csp -> csp.policyDirectives(securityProperties.getHeaders().getContentSecurityPolicy()))
                         .frameOptions(frame -> frame.deny())
                         .contentTypeOptions(withDefaults())
-                        .referrerPolicy(referrer -> referrer.policy(org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
-                        .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31536000))
+                        .referrerPolicy(referrer -> referrer.policy(org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.valueOf(
+                                securityProperties.getHeaders().getReferrerPolicy().replace('-', '_').toUpperCase()
+                        )))
+                        .httpStrictTransportSecurity(hsts -> {
+                            if (securityProperties.getHeaders().isHstsEnabled()) {
+                                hsts.includeSubDomains(true).maxAgeInSeconds(31536000);
+                            } else {
+                                hsts.disable();
+                            }
+                        })
                 )
                 .sessionManagement(management ->
                         management.sessionCreationPolicy(SessionCreationPolicy.STATELESS)

@@ -21,11 +21,13 @@ public class LocalStorageService implements StorageService {
 
     private final FileRepository fileRepository;
     private final StorageProperties storageProperties;
+    private final FileUploadSecurityService fileUploadSecurityService;
 
     @Override
     public FileEntity upload(MultipartFile file, String dirName) throws IOException {
+        fileUploadSecurityService.validate(file);
         String rootPath = storageProperties.getLocal().getPath();
-        String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+        String fileName = UUID.randomUUID() + "_" + fileUploadSecurityService.sanitizeFilename(file.getOriginalFilename());
         Path targetDir = Paths.get(rootPath, dirName);
 
         if (!Files.exists(targetDir)) {

@@ -2,6 +2,7 @@ package com.threlease.base.functions.auth;
 
 import com.threlease.base.common.exception.BusinessException;
 import com.threlease.base.common.exception.ErrorCode;
+import com.threlease.base.common.properties.app.auth.AuthSecurityProperties;
 import com.threlease.base.common.properties.app.redis.RedisProperties;
 import com.threlease.base.common.properties.app.token.TokenProperties;
 import com.threlease.base.common.provider.JwtProvider;
@@ -9,6 +10,7 @@ import com.threlease.base.common.provider.JwtProvider.RefreshTokenClaims;
 import com.threlease.base.common.utils.crypto.HashComponent;
 import com.threlease.base.entities.AuthEntity;
 import com.threlease.base.entities.RefreshTokenEntity;
+import com.threlease.base.functions.auth.dto.AdminUserSummaryDto;
 import com.threlease.base.functions.auth.dto.RefreshTokenSessionDto;
 import com.threlease.base.functions.auth.dto.TokenResponseDto;
 import com.threlease.base.repositories.auth.AuthRepository;
@@ -25,6 +27,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
@@ -44,6 +47,7 @@ public class AuthService {
     private final ObjectProvider<StringRedisTemplate> stringRedisTemplateProvider;
     private final HashComponent hashComponent;
     private final TokenProperties tokenProperties;
+    private final AuthSecurityProperties authSecurityProperties;
     private final boolean redisEnabled;
 
     public AuthService(AuthRepository authRepository, 
@@ -52,13 +56,15 @@ public class AuthService {
                        ObjectProvider<StringRedisTemplate> stringRedisTemplateProvider,
                        HashComponent hashComponent,
                        RedisProperties redisProperties,
-                       TokenProperties tokenProperties) {
+                       TokenProperties tokenProperties,
+                       AuthSecurityProperties authSecurityProperties) {
         this.authRepository = authRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.jwtProvider = jwtProvider;
         this.stringRedisTemplateProvider = stringRedisTemplateProvider;
         this.hashComponent = hashComponent;
         this.tokenProperties = tokenProperties;
+        this.authSecurityProperties = authSecurityProperties;
         this.redisEnabled = Boolean.TRUE.equals(redisProperties.getEnabled());
 
         if (!isRdbStorage() && !redisEnabled) {
@@ -80,6 +86,36 @@ public class AuthService {
     })
     public void authSave(AuthEntity auth) {
         authRepository.save(auth);
+    }
+
+    public void ensureLoginAllowed(AuthEntity auth) {
+        if (auth.getLockedUntil() != null && auth.getLockedUntil().isAfter(LocalDateTime.now())) {
+            throw new BusinessException(ErrorCode.ACCOUNT_LOCKED);
+        }
+    }
+
+    public void recordFailedLogin(AuthEntity auth) {
+        if (auth == null || !authSecurityProperties.getLoginFailure().isEnabled()) {
+            return;
+        }
+        auth.setFailedLoginCount(auth.getFailedLoginCount() + 1);
+        if (auth.getFailedLoginCount() >= authSecurityProperties.getLoginFailure().getMaxAttempts()) {
+            auth.setLockedUntil(LocalDateTime.now().plusMinutes(authSecurityProperties.getLoginFailure().getLockMinutes()));
+        }
+        authSave(auth);
+    }
+
+    public void recordSuccessfulLogin(AuthEntity auth, String clientIp) {
+        auth.setFailedLoginCount(0);
+        auth.setLockedUntil(null);
+        auth.setLastLoginAt(LocalDateTime.now());
+        auth.setLastLoginIp(clientIp);
+        authSave(auth);
+    }
+
+    public void changePassword(AuthEntity auth, String encodedPassword) {
+        auth.setPassword(encodedPassword);
+        authSave(auth);
     }
 
     @Cacheable(value = "user", key = "#uuid", unless = "#result == null")
@@ -191,6 +227,35 @@ public class AuthService {
                         .current(record.tokenId().equals(currentTokenId))
                         .build())
                 .toList();
+    }
+
+    public List<RefreshTokenSessionDto> getSessionsForUser(String userUuid) {
+        return getSessions(userUuid, null);
+    }
+
+    public PageResult<AdminUserSummaryDto> getUsers(String query, int page, int size) {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(Math.max(page, 0), Math.max(size, 1));
+        org.springframework.data.domain.Page<AuthEntity> pageResult =
+                (query == null || query.isBlank())
+                        ? authRepository.findByPagination(pageable)
+                        : authRepository.findByUsernameContainingIgnoreCaseOrNicknameContainingIgnoreCase(query, query, pageable);
+
+        return new PageResult<>(
+                pageResult.getContent().stream().map(this::toAdminUserSummary).toList(),
+                pageResult.getNumber(),
+                pageResult.getSize(),
+                pageResult.getTotalElements(),
+                pageResult.getTotalPages()
+        );
+    }
+
+    public Optional<AuthEntity> findManagedUserByUuid(String uuid) {
+        return authRepository.findOneByUUID(uuid);
+    }
+
+    public void forceLockUser(AuthEntity auth, long minutes) {
+        auth.setLockedUntil(LocalDateTime.now().plusMinutes(Math.max(minutes, 1)));
+        authSave(auth);
     }
 
     private void saveRefreshToken(String uuid, String tokenId, String familyId, String refreshToken) {
@@ -408,5 +473,22 @@ public class AuthService {
             RefreshTokenRecord record = activeSessions.get(i);
             revokeRefreshToken(record.tokenId(), record.familyId(), "SESSION_LIMIT");
         }
+    }
+
+    private AdminUserSummaryDto toAdminUserSummary(AuthEntity auth) {
+        return AdminUserSummaryDto.builder()
+                .uuid(auth.getUuid())
+                .username(auth.getUsername())
+                .nickname(auth.getNickname())
+                .role(auth.getRole())
+                .failedLoginCount(auth.getFailedLoginCount())
+                .lockedUntil(auth.getLockedUntil())
+                .lastLoginAt(auth.getLastLoginAt())
+                .lastLoginIp(auth.getLastLoginIp())
+                .mfaEnabled(auth.isMfaEnabled())
+                .build();
+    }
+
+    public record PageResult<T>(List<T> content, int page, int size, long totalElements, int totalPages) {
     }
 }

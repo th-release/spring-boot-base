@@ -1,0 +1,86 @@
+spring:
+  config:
+    activate:
+      on-profile: env
+  cloud:
+    aws:
+      s3:
+        bucket: ${AWS_S3_BUCKET:}
+      region:
+        static: ${AWS_REGION:ap-northeast-2}
+      credentials:
+        access-key: ${AWS_ACCESS_KEY:}
+        secret-key: ${AWS_SECRET_KEY:}
+
+crypto:
+  aes:
+    secret-key: ${AES_SECRET_KEY:R3zmKTgCnAp1m0zRd5DCVmTA3GQhYPYd+iJsbk1+l9c=}
+
+app:
+  redis:
+    enabled: ${REDIS_ENABLED:false}
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    cache-prefix: ${REDIS_CACHE_PREFIX:v1}
+  cache:
+    default-ttl-seconds: ${CACHE_DEFAULT_TTL_SECONDS:3600}
+    names:
+      - user
+  jwt:
+    secret-key: ${JWT_SECRET_KEY:4zB0ZR7iYAfapSSkFfQKP33FYQHJx3o/frfaL2oZNvM9OvWt5IPUZaTH+3imbJGaNDN68VHWaCmB+IdyQHmWKQ==}
+  auth:
+    audit:
+      enabled: ${AUTH_AUDIT_ENABLED:true}
+      include-user-agent: ${AUTH_AUDIT_INCLUDE_USER_AGENT:true}
+    login-failure:
+      enabled: ${AUTH_LOGIN_FAILURE_ENABLED:true}
+      max-attempts: ${AUTH_LOGIN_FAILURE_MAX_ATTEMPTS:5}
+      lock-minutes: ${AUTH_LOGIN_FAILURE_LOCK_MINUTES:15}
+    mfa:
+      enabled: ${AUTH_MFA_ENABLED:false}
+      issuer: ${AUTH_MFA_ISSUER:spring-boot-base}
+      code-digits: ${AUTH_MFA_CODE_DIGITS:6}
+      time-step-seconds: ${AUTH_MFA_TIME_STEP_SECONDS:30}
+      allowed-windows: ${AUTH_MFA_ALLOWED_WINDOWS:1}
+      required-roles: []
+  token:
+    storage: ${TOKEN_STORAGE:rdb}
+    max-sessions-per-user: ${TOKEN_MAX_SESSIONS_PER_USER:5}
+    validate-schema: ${TOKEN_VALIDATE_SCHEMA:true}
+  outbound:
+    connect-timeout-seconds: ${OUTBOUND_CONNECT_TIMEOUT_SECONDS:5}
+    read-timeout-seconds: ${OUTBOUND_READ_TIMEOUT_SECONDS:5}
+    retry:
+      max-attempts: ${OUTBOUND_RETRY_MAX_ATTEMPTS:3}
+      delay-millis: ${OUTBOUND_RETRY_DELAY_MILLIS:1000}
+    headers:
+      forward-correlation-id: ${OUTBOUND_FORWARD_CORRELATION_ID:true}
+      add-idempotency-key: ${OUTBOUND_ADD_IDEMPOTENCY_KEY:true}
+  privacy:
+    mask-audit-ip: ${PRIVACY_MASK_AUDIT_IP:true}
+    include-user-agent: ${PRIVACY_INCLUDE_USER_AGENT:true}
+    audit-retention-days: ${PRIVACY_AUDIT_RETENTION_DAYS:90}
+  security:
+    headers:
+      hsts-enabled: ${SECURITY_HSTS_ENABLED:true}
+      content-security-policy: ${SECURITY_CSP:default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'}
+      referrer-policy: ${SECURITY_REFERRER_POLICY:strict-origin-when-cross-origin}
+  qr:
+    margin: ${QR_MARGIN:1}
+    charset: ${QR_CHARSET:UTF-8}
+    format: ${QR_FORMAT:PNG}
+    height: ${QR_HEIGHT:300}
+    width: ${QR_WIDTH:300}
+storage:
+  local:
+    path: ./uploads
+    prefix: /api/files
+  upload:
+    enabled: ${STORAGE_UPLOAD_ENABLED:true}
+    max-file-size-bytes: ${STORAGE_UPLOAD_MAX_FILE_SIZE_BYTES:10485760}
+    block-double-extension: ${STORAGE_UPLOAD_BLOCK_DOUBLE_EXTENSION:true}
+    allowed-extensions: [jpg, jpeg, png, gif, pdf, txt, csv]
+    allowed-content-types: [image/jpeg, image/png, image/gif, application/pdf, text/plain, text/csv]
+  cleanup:
+    cron: "0 0 3 * * *"
+    chunk-size: 100

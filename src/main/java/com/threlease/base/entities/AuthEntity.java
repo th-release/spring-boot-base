@@ -3,9 +3,12 @@ package com.threlease.base.entities;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.threlease.base.common.entity.BaseEntity;
 import com.threlease.base.common.enums.Roles;
+import jakarta.persistence.Convert;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import java.time.LocalDateTime;
 
 @Builder
 @Entity
@@ -34,6 +37,25 @@ public class AuthEntity extends BaseEntity {
     @JsonIgnore
     @Column(length = 32, nullable = false)
     private String salt;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private int failedLoginCount = 0;
+
+    private LocalDateTime lockedUntil;
+
+    private LocalDateTime lastLoginAt;
+
+    @Column(length = 64)
+    private String lastLoginIp;
+
+    @JsonIgnore
+    @Column(columnDefinition = "text")
+    private String mfaSecret;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean mfaEnabled = false;
 
     @Enumerated(EnumType.STRING)
     private Roles role;

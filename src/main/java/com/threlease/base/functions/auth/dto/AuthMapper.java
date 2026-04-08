@@ -10,6 +10,7 @@ public interface AuthMapper {
     AuthMapper INSTANCE = Mappers.getMapper(AuthMapper.class);
 
     // AuthEntity -> LoginDto
+    @Mapping(target = "otpCode", ignore = true)
     LoginDto toLoginDto(AuthEntity entity);
 
     // AuthEntity -> SignUpDto
@@ -19,5 +20,11 @@ public interface AuthMapper {
     @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "salt", ignore = true)
     @Mapping(target = "role", ignore = true)
+    @Mapping(target = "failedLoginCount", ignore = true)
+    @Mapping(target = "lockedUntil", ignore = true)
+    @Mapping(target = "lastLoginAt", ignore = true)
+    @Mapping(target = "lastLoginIp", ignore = true)
+    @Mapping(target = "mfaSecret", ignore = true)
+    @Mapping(target = "mfaEnabled", ignore = true)
     AuthEntity toEntity(SignUpDto dto);
 }
