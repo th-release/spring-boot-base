@@ -40,6 +40,8 @@ app:
       enabled: true
       max-attempts: 5
       lock-minutes: 15
+    password-reset:
+      code-expire-minutes: 10
     mfa:
       enabled: true
       issuer: spring-boot-base
@@ -71,6 +73,26 @@ app:
       hsts-enabled: true
       content-security-policy: "default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
       referrer-policy: strict-origin-when-cross-origin
+  email:
+    enabled: false
+    host: smtp.prod.internal
+    port: 587
+    username: prod-user
+    password: prod-password
+    protocol: smtp
+    auth: true
+    starttls: true
+    from-address: no-reply@prod.base
+    from-name: spring-boot-base
+    connect-timeout-millis: 5000
+    read-timeout-millis: 5000
+    write-timeout-millis: 5000
+  firebase:
+    enabled: false
+    project-id: prod-project
+    credentials-path: ""
+    credentials-json: ""
+    database-url: ""
 management:
   endpoints:
     web:

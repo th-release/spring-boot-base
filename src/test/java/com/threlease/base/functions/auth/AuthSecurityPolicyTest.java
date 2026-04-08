@@ -7,6 +7,7 @@ import com.threlease.base.common.properties.app.redis.RedisProperties;
 import com.threlease.base.common.properties.app.token.TokenProperties;
 import com.threlease.base.common.provider.JwtProvider;
 import com.threlease.base.common.utils.crypto.HashComponent;
+import com.threlease.base.common.utils.random.RandomComponent;
 import com.threlease.base.entities.AuthEntity;
 import com.threlease.base.repositories.auth.AuthRepository;
 import com.threlease.base.repositories.auth.RefreshTokenRepository;
@@ -30,6 +31,7 @@ class AuthSecurityPolicyTest {
         AuthRepository authRepository = mock(AuthRepository.class);
         RefreshTokenRepository refreshTokenRepository = mock(RefreshTokenRepository.class);
         HashComponent hashComponent = new HashComponent();
+        RandomComponent randomComponent = new RandomComponent();
 
         JwtProperties jwtProperties = new JwtProperties();
         jwtProperties.setSecretKey("Nwzbu8o3Rkf0iOJj0wpY2i749zjM7kr6Hnnl6x/n4e+tJoAmn5wYJt/jeFX71cawaR4kQFTw1ACeJgsHAJ/AeA==");
@@ -57,6 +59,7 @@ class AuthSecurityPolicyTest {
                 jwtProvider,
                 objectProvider,
                 hashComponent,
+                randomComponent,
                 redisProperties,
                 tokenProperties,
                 authSecurityProperties

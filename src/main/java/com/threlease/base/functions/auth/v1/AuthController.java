@@ -7,7 +7,9 @@ import com.threlease.base.common.exception.BusinessException;
 import com.threlease.base.common.exception.ErrorCode;
 import com.threlease.base.common.enums.Roles;
 import com.threlease.base.common.utils.IpUtils;
+import com.threlease.base.common.properties.app.email.EmailProperties;
 import com.threlease.base.common.utils.responses.BasicResponse;
+import com.threlease.base.common.utils.email.EmailService;
 import com.threlease.base.entities.AuthEntity;
 import com.threlease.base.functions.auth.AuthService;
 import com.threlease.base.functions.auth.AuditLogService;
@@ -19,6 +21,8 @@ import com.threlease.base.functions.auth.dto.LoginDto;
 import com.threlease.base.functions.auth.dto.MfaDisableDto;
 import com.threlease.base.functions.auth.dto.MfaEnableDto;
 import com.threlease.base.functions.auth.dto.MfaSetupResponseDto;
+import com.threlease.base.functions.auth.dto.PasswordResetConfirmDto;
+import com.threlease.base.functions.auth.dto.PasswordResetRequestDto;
 import com.threlease.base.functions.auth.dto.RefreshTokenSessionDto;
 import com.threlease.base.functions.auth.dto.SignUpDto;
 import com.threlease.base.functions.auth.dto.TokenResponseDto;
@@ -48,6 +52,8 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
     private final AuditLogService auditLogService;
     private final MfaService mfaService;
+    private final EmailService emailService;
+    private final EmailProperties emailProperties;
 
     @PostMapping("/login")
     @RateLimit(limit = 10, window = 60)
@@ -76,13 +82,14 @@ public class AuthController {
         authService.recordSuccessfulLogin(auth, IpUtils.getClientIp(request));
         auditLogService.log(auth.getUuid(), "LOGIN", "AUTH", auth.getUuid(), true, request, "User login succeeded");
 
-        return BasicResponse.created(authService.issueTokens(auth));
+        return BasicResponse.created(authService.issueTokens(auth, request.getHeader("User-Agent"), IpUtils.getClientIp(request)));
     }
 
     @PostMapping("/refresh")
     @Operation(summary = "토큰 재발급")
-    public ResponseEntity<BasicResponse<TokenResponseDto>> refresh(@RequestHeader(HttpConstants.HEADER_REFRESH_TOKEN) String refreshToken) {
-        return BasicResponse.ok(authService.refresh(refreshToken));
+    public ResponseEntity<BasicResponse<TokenResponseDto>> refresh(@RequestHeader(HttpConstants.HEADER_REFRESH_TOKEN) String refreshToken,
+                                                                  HttpServletRequest request) {
+        return BasicResponse.ok(authService.refresh(refreshToken, request.getHeader("User-Agent"), IpUtils.getClientIp(request)));
     }
 
     @PostMapping("/logout")
@@ -130,10 +137,14 @@ public class AuthController {
         if (authService.findOneByUsername(dto.getUsername()).isPresent()) {
             throw new BusinessException(ErrorCode.USER_DUPLICATE);
         }
+        if (authService.findOneByEmail(dto.getEmail()).isPresent()) {
+            throw new BusinessException(ErrorCode.USER_DUPLICATE);
+        }
 
         AuthEntity user = AuthEntity.builder()
                 .username(dto.getUsername())
                 .nickname(dto.getNickname())
+                .email(dto.getEmail())
                 .password(passwordEncoder.encode(dto.getPassword()))
                 .salt("")
                 .role(com.threlease.base.common.enums.Roles.ROLE_USER)
@@ -158,6 +169,60 @@ public class AuthController {
         }
         authService.changePassword(user, passwordEncoder.encode(dto.getNewPassword()));
         auditLogService.log(user.getUuid(), "CHANGE_PASSWORD", "AUTH", user.getUuid(), true, request, "Password changed");
+        return BasicResponse.noContent();
+    }
+
+    @PostMapping("/password/reset/request")
+    @RateLimit(limit = 5, window = 300)
+    @Operation(summary = "비밀번호 재설정 요청")
+    public ResponseEntity<BasicResponse<Void>> requestPasswordReset(@RequestBody @Valid PasswordResetRequestDto dto,
+                                                                    HttpServletRequest request) {
+        if (!emailProperties.isEnabled()) {
+            throw new BusinessException(ErrorCode.EMAIL_DISABLED);
+        }
+
+        AuthEntity user = authService.findOneByIdentifier(dto.getIdentifier())
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        if (user.getEmail() == null || user.getEmail().isBlank()) {
+            throw new BusinessException(ErrorCode.EMAIL_NOT_REGISTERED);
+        }
+
+        String code = authService.createPasswordResetCode(user);
+        emailService.sendPasswordResetCode(user.getEmail(), code, authService.getPasswordResetExpireMinutes());
+        auditLogService.log(user.getUuid(), "REQUEST_PASSWORD_RESET", "AUTH", user.getUuid(), true, request, "Password reset code issued");
+        return BasicResponse.noContent();
+    }
+
+    @PostMapping("/password/reset/confirm")
+    @RateLimit(limit = 10, window = 300)
+    @Operation(summary = "비밀번호 재설정 완료")
+    public ResponseEntity<BasicResponse<Void>> confirmPasswordReset(@RequestBody @Valid PasswordResetConfirmDto dto,
+                                                                    HttpServletRequest request) {
+        if (!dto.getNewPassword().equals(dto.getConfirmPassword())) {
+            throw new BusinessException(ErrorCode.PASSWORD_CHANGE_MISMATCH);
+        }
+
+        AuthEntity user = authService.findOneByIdentifier(dto.getIdentifier())
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        if (emailProperties.isEnabled()) {
+            authService.validatePasswordResetCode(user, dto.getVerificationCode());
+            authService.changePassword(user, passwordEncoder.encode(dto.getNewPassword()));
+            authService.clearPasswordResetCode(user);
+            auditLogService.log(user.getUuid(), "CONFIRM_PASSWORD_RESET", "AUTH", user.getUuid(), true, request, "Password reset by email verification");
+            return BasicResponse.noContent();
+        }
+
+        if (dto.getCurrentPassword() == null || dto.getCurrentPassword().isBlank()) {
+            throw new BusinessException(ErrorCode.WRONG_PASSWORD);
+        }
+        if (!isPasswordValid(dto.getCurrentPassword(), user)) {
+            auditLogService.log(user.getUuid(), "CONFIRM_PASSWORD_RESET", "AUTH", user.getUuid(), false, request, "Wrong current password");
+            throw new BusinessException(ErrorCode.WRONG_PASSWORD);
+        }
+        authService.changePassword(user, passwordEncoder.encode(dto.getNewPassword()));
+        auditLogService.log(user.getUuid(), "CONFIRM_PASSWORD_RESET", "AUTH", user.getUuid(), true, request, "Password reset by current password");
         return BasicResponse.noContent();
     }
 

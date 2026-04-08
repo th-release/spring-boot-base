@@ -6,6 +6,7 @@ import com.threlease.base.common.properties.app.redis.RedisProperties;
 import com.threlease.base.common.properties.app.token.TokenProperties;
 import com.threlease.base.common.provider.JwtProvider;
 import com.threlease.base.common.utils.crypto.HashComponent;
+import com.threlease.base.common.utils.random.RandomComponent;
 import com.threlease.base.entities.AuthEntity;
 import com.threlease.base.entities.RefreshTokenEntity;
 import com.threlease.base.functions.auth.dto.RefreshTokenSessionDto;
@@ -31,6 +32,7 @@ class AuthServiceRdbTest {
     private final AuthRepository authRepository = mock(AuthRepository.class);
     private final RefreshTokenRepository refreshTokenRepository = mock(RefreshTokenRepository.class);
     private final HashComponent hashComponent = new HashComponent();
+    private final RandomComponent randomComponent = new RandomComponent();
     private AuthService authService;
 
     @BeforeEach
@@ -60,6 +62,7 @@ class AuthServiceRdbTest {
                 jwtProvider,
                 objectProvider,
                 hashComponent,
+                randomComponent,
                 redisProperties,
                 tokenProperties,
                 authSecurityProperties
@@ -129,5 +132,25 @@ class AuthServiceRdbTest {
 
         assertEquals(1, sessions.size());
         assertTrue(sessions.get(0).isCurrent());
+    }
+
+    @Test
+    void createPasswordResetCodeStoresHashAndExpiry() {
+        AuthEntity user = AuthEntity.builder()
+                .uuid("user-1")
+                .username("tester")
+                .nickname("tester")
+                .email("tester@example.com")
+                .password("encoded")
+                .salt("salt")
+                .build();
+
+        when(authRepository.save(any(AuthEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        String code = authService.createPasswordResetCode(user);
+
+        assertNotNull(code);
+        assertNotNull(user.getPasswordResetCodeHash());
+        assertNotNull(user.getPasswordResetCodeExpiry());
     }
 }

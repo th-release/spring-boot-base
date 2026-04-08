@@ -36,6 +36,8 @@ app:
       enabled: ${AUTH_LOGIN_FAILURE_ENABLED:true}
       max-attempts: ${AUTH_LOGIN_FAILURE_MAX_ATTEMPTS:5}
       lock-minutes: ${AUTH_LOGIN_FAILURE_LOCK_MINUTES:15}
+    password-reset:
+      code-expire-minutes: ${AUTH_PASSWORD_RESET_CODE_EXPIRE_MINUTES:10}
     mfa:
       enabled: ${AUTH_MFA_ENABLED:false}
       issuer: ${AUTH_MFA_ISSUER:spring-boot-base}
@@ -65,6 +67,26 @@ app:
       hsts-enabled: ${SECURITY_HSTS_ENABLED:true}
       content-security-policy: ${SECURITY_CSP:default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'}
       referrer-policy: ${SECURITY_REFERRER_POLICY:strict-origin-when-cross-origin}
+  email:
+    enabled: ${EMAIL_ENABLED:false}
+    host: ${EMAIL_HOST:localhost}
+    port: ${EMAIL_PORT:587}
+    username: ${EMAIL_USERNAME:}
+    password: ${EMAIL_PASSWORD:}
+    protocol: ${EMAIL_PROTOCOL:smtp}
+    auth: ${EMAIL_AUTH:true}
+    starttls: ${EMAIL_STARTTLS:true}
+    from-address: ${EMAIL_FROM_ADDRESS:}
+    from-name: ${EMAIL_FROM_NAME:spring-boot-base}
+    connect-timeout-millis: ${EMAIL_CONNECT_TIMEOUT_MILLIS:5000}
+    read-timeout-millis: ${EMAIL_READ_TIMEOUT_MILLIS:5000}
+    write-timeout-millis: ${EMAIL_WRITE_TIMEOUT_MILLIS:5000}
+  firebase:
+    enabled: ${FIREBASE_ENABLED:false}
+    project-id: ${FIREBASE_PROJECT_ID:}
+    credentials-path: ${FIREBASE_CREDENTIALS_PATH:}
+    credentials-json: ${FIREBASE_CREDENTIALS_JSON:}
+    database-url: ${FIREBASE_DATABASE_URL:}
   qr:
     margin: ${QR_MARGIN:1}
     charset: ${QR_CHARSET:UTF-8}

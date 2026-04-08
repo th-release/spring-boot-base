@@ -16,6 +16,7 @@ public class AuthSecurityProperties {
     private Audit audit = new Audit();
     private LoginFailure loginFailure = new LoginFailure();
     private Mfa mfa = new Mfa();
+    private PasswordReset passwordReset = new PasswordReset();
 
     @Getter
     @Setter
@@ -41,5 +42,11 @@ public class AuthSecurityProperties {
         private int timeStepSeconds = 30;
         private int allowedWindows = 1;
         private List<String> requiredRoles = new ArrayList<>();
+    }
+
+    @Getter
+    @Setter
+    public static class PasswordReset {
+        private int codeExpireMinutes = 10;
     }
 }

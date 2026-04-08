@@ -26,5 +26,7 @@ public interface AuthMapper {
     @Mapping(target = "lastLoginIp", ignore = true)
     @Mapping(target = "mfaSecret", ignore = true)
     @Mapping(target = "mfaEnabled", ignore = true)
+    @Mapping(target = "passwordResetCodeHash", ignore = true)
+    @Mapping(target = "passwordResetCodeExpiry", ignore = true)
     AuthEntity toEntity(SignUpDto dto);
 }

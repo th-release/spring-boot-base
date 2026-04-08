@@ -13,6 +13,13 @@ public class RefreshTokenSessionDto {
     private String tokenId;
     private String familyId;
     @JsonSerialize(using = LocalDateTimeSerializer.class)
+    private LocalDateTime issuedAt;
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    private LocalDateTime lastUsedAt;
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
     private LocalDateTime expiryDate;
+    private String userAgent;
+    private String deviceLabel;
+    private String ipAddress;
     private boolean current;
 }

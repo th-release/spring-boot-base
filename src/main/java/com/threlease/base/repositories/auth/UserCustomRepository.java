@@ -6,4 +6,6 @@ import java.util.Optional;
 
 public interface UserCustomRepository {
     Optional<AuthEntity> findOneByUsername(String username);
+    Optional<AuthEntity> findOneByEmail(String email);
+    Optional<AuthEntity> findOneByUsernameOrEmail(String identifier);
 }

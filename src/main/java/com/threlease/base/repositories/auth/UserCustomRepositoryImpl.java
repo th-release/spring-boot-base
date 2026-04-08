@@ -24,4 +24,25 @@ public class UserCustomRepositoryImpl implements UserCustomRepository {
                     .fetchOne()
         );
     }
+
+    @Override
+    public Optional<AuthEntity> findOneByEmail(String email) {
+        return Optional.ofNullable(
+                queryFactory
+                        .selectFrom(authEntity)
+                        .where(authEntity.email.eq(email))
+                        .fetchOne()
+        );
+    }
+
+    @Override
+    public Optional<AuthEntity> findOneByUsernameOrEmail(String identifier) {
+        return Optional.ofNullable(
+                queryFactory
+                        .selectFrom(authEntity)
+                        .where(authEntity.username.eq(identifier)
+                                .or(authEntity.email.eq(identifier)))
+                        .fetchOne()
+        );
+    }
 }

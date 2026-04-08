@@ -40,6 +40,8 @@ app:
       enabled: true
       max-attempts: 5
       lock-minutes: 15
+    password-reset:
+      code-expire-minutes: 10
     mfa:
       enabled: false
       issuer: spring-boot-base
@@ -71,6 +73,26 @@ app:
       hsts-enabled: false
       content-security-policy: "default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
       referrer-policy: strict-origin-when-cross-origin
+  email:
+    enabled: false
+    host: localhost
+    port: 587
+    username: local-user
+    password: local-password
+    protocol: smtp
+    auth: true
+    starttls: true
+    from-address: no-reply@local.base
+    from-name: spring-boot-base-local
+    connect-timeout-millis: 5000
+    read-timeout-millis: 5000
+    write-timeout-millis: 5000
+  firebase:
+    enabled: false
+    project-id: local-project
+    credentials-path: ""
+    credentials-json: ""
+    database-url: ""
 management:
   endpoints:
     web:

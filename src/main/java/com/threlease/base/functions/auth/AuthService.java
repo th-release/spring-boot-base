@@ -7,7 +7,9 @@ import com.threlease.base.common.properties.app.redis.RedisProperties;
 import com.threlease.base.common.properties.app.token.TokenProperties;
 import com.threlease.base.common.provider.JwtProvider;
 import com.threlease.base.common.provider.JwtProvider.RefreshTokenClaims;
+import com.threlease.base.common.utils.DeviceUtils;
 import com.threlease.base.common.utils.crypto.HashComponent;
+import com.threlease.base.common.utils.random.RandomComponent;
 import com.threlease.base.entities.AuthEntity;
 import com.threlease.base.entities.RefreshTokenEntity;
 import com.threlease.base.functions.auth.dto.AdminUserSummaryDto;
@@ -46,6 +48,7 @@ public class AuthService {
     private final JwtProvider jwtProvider;
     private final ObjectProvider<StringRedisTemplate> stringRedisTemplateProvider;
     private final HashComponent hashComponent;
+    private final RandomComponent randomComponent;
     private final TokenProperties tokenProperties;
     private final AuthSecurityProperties authSecurityProperties;
     private final boolean redisEnabled;
@@ -55,6 +58,7 @@ public class AuthService {
                        JwtProvider jwtProvider, 
                        ObjectProvider<StringRedisTemplate> stringRedisTemplateProvider,
                        HashComponent hashComponent,
+                       RandomComponent randomComponent,
                        RedisProperties redisProperties,
                        TokenProperties tokenProperties,
                        AuthSecurityProperties authSecurityProperties) {
@@ -63,6 +67,7 @@ public class AuthService {
         this.jwtProvider = jwtProvider;
         this.stringRedisTemplateProvider = stringRedisTemplateProvider;
         this.hashComponent = hashComponent;
+        this.randomComponent = randomComponent;
         this.tokenProperties = tokenProperties;
         this.authSecurityProperties = authSecurityProperties;
         this.redisEnabled = Boolean.TRUE.equals(redisProperties.getEnabled());
@@ -78,6 +83,14 @@ public class AuthService {
 
     public Optional<AuthEntity> findOneByUsername(String username) {
         return Optional.ofNullable(findCachedUserByUsername(username));
+    }
+
+    public Optional<AuthEntity> findOneByEmail(String email) {
+        return authRepository.findOneByEmail(email);
+    }
+
+    public Optional<AuthEntity> findOneByIdentifier(String identifier) {
+        return authRepository.findOneByUsernameOrEmail(identifier);
     }
 
     @Caching(evict = {
@@ -115,6 +128,8 @@ public class AuthService {
 
     public void changePassword(AuthEntity auth, String encodedPassword) {
         auth.setPassword(encodedPassword);
+        auth.setPasswordResetCodeHash(null);
+        auth.setPasswordResetCodeExpiry(null);
         authSave(auth);
     }
 
@@ -132,16 +147,24 @@ public class AuthService {
      * 로그인 - 토큰 세트 발급
      */
     public TokenResponseDto issueTokens(AuthEntity user) {
-        return issueTokens(user, UUID.randomUUID().toString());
+        return issueTokens(user, UUID.randomUUID().toString(), null, null);
     }
 
     public TokenResponseDto issueTokens(AuthEntity user, String familyId) {
+        return issueTokens(user, familyId, null, null);
+    }
+
+    public TokenResponseDto issueTokens(AuthEntity user, String userAgent, String ipAddress) {
+        return issueTokens(user, UUID.randomUUID().toString(), userAgent, ipAddress);
+    }
+
+    public TokenResponseDto issueTokens(AuthEntity user, String familyId, String userAgent, String ipAddress) {
         enforceSessionLimit(user.getUuid());
         String refreshTokenId = UUID.randomUUID().toString();
         String accessToken = jwtProvider.createAccessToken(user.getUuid());
         String refreshToken = jwtProvider.createRefreshToken(user.getUuid(), refreshTokenId, familyId);
 
-        saveRefreshToken(user.getUuid(), refreshTokenId, familyId, refreshToken);
+        saveRefreshToken(user.getUuid(), refreshTokenId, familyId, refreshToken, userAgent, ipAddress);
 
         return TokenResponseDto.builder()
                 .accessToken(accessToken)
@@ -152,7 +175,7 @@ public class AuthService {
     /**
      * 토큰 갱신 (Token Rotation 적용)
      */
-    public TokenResponseDto refresh(String refreshToken) {
+    public TokenResponseDto refresh(String refreshToken, String userAgent, String ipAddress) {
         RefreshTokenClaims claims = jwtProvider.getRefreshTokenClaims(refreshToken);
         if (claims == null) {
             throw new BusinessException(ErrorCode.TOKEN_INVALID);
@@ -173,7 +196,7 @@ public class AuthService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         rotateRefreshToken(storedToken);
-        return issueTokens(user, claims.familyId());
+        return issueTokens(user, claims.familyId(), userAgent, ipAddress);
     }
 
     public void logout(String refreshToken, String userUuid) {
@@ -223,7 +246,12 @@ public class AuthService {
                 .map(record -> RefreshTokenSessionDto.builder()
                         .tokenId(record.tokenId())
                         .familyId(record.familyId())
+                        .issuedAt(record.issuedAt())
+                        .lastUsedAt(record.lastUsedAt())
                         .expiryDate(record.expiryDate())
+                        .userAgent(record.userAgent())
+                        .deviceLabel(record.deviceLabel())
+                        .ipAddress(record.ipAddress())
                         .current(record.tokenId().equals(currentTokenId))
                         .build())
                 .toList();
@@ -258,9 +286,47 @@ public class AuthService {
         authSave(auth);
     }
 
-    private void saveRefreshToken(String uuid, String tokenId, String familyId, String refreshToken) {
+    public String createPasswordResetCode(AuthEntity auth) {
+        String code = randomComponent.generateOtp(6);
+        auth.setPasswordResetCodeHash(hashComponent.generateSHA256(code));
+        auth.setPasswordResetCodeExpiry(LocalDateTime.now().plusMinutes(Math.max(1, authSecurityProperties.getPasswordReset().getCodeExpireMinutes())));
+        authSave(auth);
+        return code;
+    }
+
+    public void validatePasswordResetCode(AuthEntity auth, String verificationCode) {
+        if (verificationCode == null || verificationCode.isBlank()) {
+            throw new BusinessException(ErrorCode.PASSWORD_RESET_CODE_INVALID);
+        }
+        if (auth.getPasswordResetCodeHash() == null || auth.getPasswordResetCodeExpiry() == null) {
+            throw new BusinessException(ErrorCode.PASSWORD_RESET_CODE_INVALID);
+        }
+        if (auth.getPasswordResetCodeExpiry().isBefore(LocalDateTime.now())) {
+            throw new BusinessException(ErrorCode.PASSWORD_RESET_CODE_EXPIRED);
+        }
+        String providedHash = hashComponent.generateSHA256(verificationCode);
+        if (!providedHash.equals(auth.getPasswordResetCodeHash())) {
+            throw new BusinessException(ErrorCode.PASSWORD_RESET_CODE_INVALID);
+        }
+    }
+
+    public void clearPasswordResetCode(AuthEntity auth) {
+        auth.setPasswordResetCodeHash(null);
+        auth.setPasswordResetCodeExpiry(null);
+        authSave(auth);
+    }
+
+    public int getPasswordResetExpireMinutes() {
+        return Math.max(1, authSecurityProperties.getPasswordReset().getCodeExpireMinutes());
+    }
+
+    private void saveRefreshToken(String uuid, String tokenId, String familyId, String refreshToken, String userAgent, String ipAddress) {
         String hashedToken = hashRefreshToken(refreshToken);
-        LocalDateTime expiryDate = LocalDateTime.now().plusSeconds(jwtProvider.getRefreshTokenExpSeconds());
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime expiryDate = now.plusSeconds(jwtProvider.getRefreshTokenExpSeconds());
+        String normalizedUserAgent = trim(userAgent, 512);
+        String deviceLabel = trim(DeviceUtils.describe(userAgent), 128);
+        String normalizedIp = trim(ipAddress, 64);
 
         if (isRdbStorage()) {
             refreshTokenRepository.save(RefreshTokenEntity.builder()
@@ -269,6 +335,10 @@ public class AuthService {
                     .familyId(familyId)
                     .tokenHash(hashedToken)
                     .token(hashedToken)
+                    .userAgent(normalizedUserAgent)
+                    .deviceLabel(deviceLabel)
+                    .ipAddress(normalizedIp)
+                    .lastUsedAt(now)
                     .expiryDate(expiryDate)
                     .revoked(false)
                     .build());
@@ -277,7 +347,7 @@ public class AuthService {
 
         StringRedisTemplate redisTemplate = getRedisTemplate();
         redisTemplate.opsForValue().set(buildRedisTokenKey(tokenId),
-                serializeRefreshTokenRecord(new RefreshTokenRecord(tokenId, familyId, uuid, hashedToken, expiryDate, false)),
+                serializeRefreshTokenRecord(new RefreshTokenRecord(tokenId, familyId, uuid, hashedToken, now, now, expiryDate, normalizedUserAgent, deviceLabel, normalizedIp, false)),
                 jwtProvider.getRefreshTokenExpSeconds(),
                 TimeUnit.SECONDS);
         redisTemplate.opsForSet().add(buildRedisFamilyKey(familyId), tokenId);
@@ -359,7 +429,12 @@ public class AuthService {
                 entity.getFamilyId(),
                 entity.getUserUuid(),
                 entity.getTokenHash(),
+                entity.getCreatedAt(),
+                entity.getLastUsedAt(),
                 entity.getExpiryDate(),
+                entity.getUserAgent(),
+                entity.getDeviceLabel(),
+                entity.getIpAddress(),
                 entity.isRevoked()
         );
     }
@@ -382,7 +457,12 @@ public class AuthService {
                 record.familyId(),
                 record.userUuid(),
                 record.tokenHash(),
+                String.valueOf(toEpochSecond(record.issuedAt())),
+                String.valueOf(toEpochSecond(record.lastUsedAt())),
                 String.valueOf(record.expiryDate().toEpochSecond(ZoneOffset.UTC)),
+                nullSafe(record.userAgent()),
+                nullSafe(record.deviceLabel()),
+                nullSafe(record.ipAddress()),
                 String.valueOf(record.revoked()));
     }
 
@@ -393,8 +473,13 @@ public class AuthService {
                 parts[1],
                 parts[2],
                 parts[3],
-                LocalDateTime.ofEpochSecond(Long.parseLong(parts[4]), 0, ZoneOffset.UTC),
-                Boolean.parseBoolean(parts[5])
+                fromEpochSecond(parts[4]),
+                fromEpochSecond(parts[5]),
+                LocalDateTime.ofEpochSecond(Long.parseLong(parts[6]), 0, ZoneOffset.UTC),
+                emptyToNull(parts[7]),
+                emptyToNull(parts[8]),
+                emptyToNull(parts[9]),
+                Boolean.parseBoolean(parts[10])
         );
     }
 
@@ -403,7 +488,12 @@ public class AuthService {
             String familyId,
             String userUuid,
             String tokenHash,
+            LocalDateTime issuedAt,
+            LocalDateTime lastUsedAt,
             LocalDateTime expiryDate,
+            String userAgent,
+            String deviceLabel,
+            String ipAddress,
             boolean revoked
     ) {
         private boolean isExpired() {
@@ -490,5 +580,31 @@ public class AuthService {
     }
 
     public record PageResult<T>(List<T> content, int page, int size, long totalElements, int totalPages) {
+    }
+
+    private long toEpochSecond(LocalDateTime dateTime) {
+        return (dateTime == null ? LocalDateTime.now() : dateTime).toEpochSecond(ZoneOffset.UTC);
+    }
+
+    private LocalDateTime fromEpochSecond(String epochSecond) {
+        if (epochSecond == null || epochSecond.isBlank()) {
+            return null;
+        }
+        return LocalDateTime.ofEpochSecond(Long.parseLong(epochSecond), 0, ZoneOffset.UTC);
+    }
+
+    private String nullSafe(String value) {
+        return value == null ? "" : value;
+    }
+
+    private String emptyToNull(String value) {
+        return value == null || value.isBlank() ? null : value;
+    }
+
+    private String trim(String value, int maxLength) {
+        if (value == null) {
+            return null;
+        }
+        return value.substring(0, Math.min(value.length(), maxLength));
     }
 }

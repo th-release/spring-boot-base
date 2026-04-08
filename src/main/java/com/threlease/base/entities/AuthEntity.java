@@ -30,6 +30,9 @@ public class AuthEntity extends BaseEntity {
     @Column(length = 36, nullable = false)
     private String nickname;
 
+    @Column(length = 255, unique = true)
+    private String email;
+
     @JsonIgnore
     @Column(columnDefinition = "text", nullable = false)
     private String password;
@@ -37,6 +40,12 @@ public class AuthEntity extends BaseEntity {
     @JsonIgnore
     @Column(length = 32, nullable = false)
     private String salt;
+
+    @JsonIgnore
+    @Column(length = 255)
+    private String passwordResetCodeHash;
+
+    private LocalDateTime passwordResetCodeExpiry;
 
     @Column(nullable = false)
     @Builder.Default
