@@ -25,10 +25,10 @@ public class JacksonConfig {
     }
 
     @Bean
-    public MappingJackson2HttpMessageConverter jsonEscapeConverter() {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.getFactory().setCharacterEscapes(new HtmlCharacterEscapes());
-        return new MappingJackson2HttpMessageConverter(objectMapper);
+    public MappingJackson2HttpMessageConverter jsonEscapeConverter(ObjectMapper objectMapper) {
+        ObjectMapper escapedObjectMapper = objectMapper.copy();
+        escapedObjectMapper.getFactory().setCharacterEscapes(new HtmlCharacterEscapes());
+        return new MappingJackson2HttpMessageConverter(escapedObjectMapper);
     }
 
     /**
