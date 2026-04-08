@@ -1,0 +1,195 @@
+package com.threlease.base.functions.auth;
+
+import com.threlease.base.common.enums.AuthVerificationType;
+import com.threlease.base.common.exception.BusinessException;
+import com.threlease.base.common.exception.ErrorCode;
+import com.threlease.base.common.properties.app.email.EmailProperties;
+import com.threlease.base.common.utils.email.EmailService;
+import com.threlease.base.entities.AuthEntity;
+import com.threlease.base.functions.auth.dto.AuthProfileDto;
+import com.threlease.base.functions.auth.dto.ChangePasswordDto;
+import com.threlease.base.functions.auth.dto.LoginDto;
+import com.threlease.base.functions.auth.dto.MfaDisableDto;
+import com.threlease.base.functions.auth.dto.MfaEnableDto;
+import com.threlease.base.functions.auth.dto.MfaSetupResponseDto;
+import com.threlease.base.functions.auth.dto.PasswordResetConfirmDto;
+import com.threlease.base.functions.auth.dto.PasswordResetRequestDto;
+import com.threlease.base.functions.auth.dto.RefreshTokenSessionDto;
+import com.threlease.base.functions.auth.dto.SignUpDto;
+import com.threlease.base.functions.auth.dto.TokenResponseDto;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class AuthFlowService {
+    private final AuthService authService;
+    private final PasswordEncoder passwordEncoder;
+    private final AuditLogService auditLogService;
+    private final MfaService mfaService;
+    private final EmailService emailService;
+    private final EmailProperties emailProperties;
+    private final AuthVerificationService authVerificationService;
+
+    public TokenResponseDto login(LoginDto dto, String userAgent, String clientIp, HttpServletRequest request) {
+        AuthEntity auth = authService.findOneByUsername(dto.getUsername())
+                .orElseThrow(() -> {
+                    auditLogService.log(null, "LOGIN", "AUTH", dto.getUsername(), false, request, "User not found");
+                    return new BusinessException(ErrorCode.USER_NOT_FOUND);
+                });
+
+        try {
+            authService.ensureLoginAllowed(auth);
+        } catch (BusinessException e) {
+            auditLogService.log(auth.getUuid(), "LOGIN", "AUTH", auth.getUuid(), false, request, "Account locked");
+            throw e;
+        }
+
+        if (!passwordEncoder.matches(dto.getPassword(), auth.getPassword())) {
+            authService.recordFailedLogin(auth);
+            auditLogService.log(auth.getUuid(), "LOGIN", "AUTH", auth.getUuid(), false, request, "Wrong password");
+            throw new BusinessException(ErrorCode.WRONG_PASSWORD);
+        }
+
+        mfaService.verifyLogin(auth, dto.getOtpCode());
+        authService.recordSuccessfulLogin(auth, clientIp);
+        auditLogService.log(auth.getUuid(), "LOGIN", "AUTH", auth.getUuid(), true, request, "User login succeeded");
+        return authService.issueTokens(auth, userAgent, clientIp);
+    }
+
+    public TokenResponseDto refresh(String refreshToken, String userAgent, String clientIp) {
+        return authService.refresh(refreshToken, userAgent, clientIp);
+    }
+
+    public void logout(AuthEntity user, String refreshToken, HttpServletRequest request) {
+        authService.logout(refreshToken, user.getUuid());
+        auditLogService.log(user.getUuid(), "LOGOUT", "AUTH", user.getUuid(), true, request, "Current session logout");
+    }
+
+    public void logoutAll(AuthEntity user, HttpServletRequest request) {
+        authService.logoutAll(user.getUuid());
+        auditLogService.log(user.getUuid(), "LOGOUT_ALL", "AUTH", user.getUuid(), true, request, "All sessions revoked");
+    }
+
+    public List<RefreshTokenSessionDto> getSessions(AuthEntity user, String currentRefreshToken) {
+        return authService.getSessions(user.getUuid(), currentRefreshToken);
+    }
+
+    public void revokeSession(AuthEntity user, String tokenId, HttpServletRequest request) {
+        authService.revokeSession(user.getUuid(), tokenId);
+        auditLogService.log(user.getUuid(), "REVOKE_SESSION", "REFRESH_TOKEN", tokenId, true, request, "Single session revoked");
+    }
+
+    public AuthProfileDto signUp(SignUpDto dto) {
+        if (authService.findOneByUsername(dto.getUsername()).isPresent()) {
+            throw new BusinessException(ErrorCode.USER_DUPLICATE);
+        }
+        if (authService.findOneByEmail(dto.getEmail()).isPresent()) {
+            throw new BusinessException(ErrorCode.USER_DUPLICATE);
+        }
+
+        AuthEntity user = AuthEntity.builder()
+                .username(dto.getUsername())
+                .nickname(dto.getNickname())
+                .email(dto.getEmail())
+                .password(passwordEncoder.encode(dto.getPassword()))
+                .salt("")
+                .role(com.threlease.base.common.enums.Roles.ROLE_USER)
+                .build();
+
+        authService.authSave(user);
+        auditLogService.log(user.getUuid(), "SIGNUP", "AUTH", user.getUuid(), true, null, "User signup completed");
+        return authService.toAuthProfile(user);
+    }
+
+    public void changePassword(AuthEntity user, ChangePasswordDto dto, HttpServletRequest request) {
+        if (!dto.getNewPassword().equals(dto.getConfirmPassword())) {
+            throw new BusinessException(ErrorCode.PASSWORD_CHANGE_MISMATCH);
+        }
+        if (!passwordEncoder.matches(dto.getCurrentPassword(), user.getPassword())) {
+            throw new BusinessException(ErrorCode.WRONG_PASSWORD);
+        }
+
+        authService.changePassword(user, passwordEncoder.encode(dto.getNewPassword()));
+        auditLogService.log(user.getUuid(), "CHANGE_PASSWORD", "AUTH", user.getUuid(), true, request, "Password changed");
+    }
+
+    public void requestPasswordReset(PasswordResetRequestDto dto, HttpServletRequest request) {
+        if (!emailProperties.isEnabled()) {
+            throw new BusinessException(ErrorCode.EMAIL_DISABLED);
+        }
+
+        AuthEntity user = authService.findOneByIdentifier(dto.getIdentifier())
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        if (user.getEmail() == null || user.getEmail().isBlank()) {
+            throw new BusinessException(ErrorCode.EMAIL_NOT_REGISTERED);
+        }
+
+        String code = authVerificationService.issueCode(
+                user,
+                AuthVerificationType.PASSWORD_RESET,
+                user.getEmail(),
+                authService.getPasswordResetExpireMinutes()
+        );
+        emailService.sendPasswordResetCode(user.getEmail(), code, authService.getPasswordResetExpireMinutes());
+        auditLogService.log(user.getUuid(), "REQUEST_PASSWORD_RESET", "AUTH", user.getUuid(), true, request, "Password reset code issued");
+    }
+
+    public void confirmPasswordReset(PasswordResetConfirmDto dto, HttpServletRequest request) {
+        if (!dto.getNewPassword().equals(dto.getConfirmPassword())) {
+            throw new BusinessException(ErrorCode.PASSWORD_CHANGE_MISMATCH);
+        }
+
+        AuthEntity user = authService.findOneByIdentifier(dto.getIdentifier())
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+
+        if (emailProperties.isEnabled()) {
+            authVerificationService.verifyCode(user, AuthVerificationType.PASSWORD_RESET, dto.getVerificationCode());
+            authService.changePassword(user, passwordEncoder.encode(dto.getNewPassword()));
+            authVerificationService.clear(user, AuthVerificationType.PASSWORD_RESET);
+            auditLogService.log(user.getUuid(), "CONFIRM_PASSWORD_RESET", "AUTH", user.getUuid(), true, request, "Password reset by email verification");
+            return;
+        }
+
+        if (dto.getCurrentPassword() == null || dto.getCurrentPassword().isBlank()) {
+            throw new BusinessException(ErrorCode.WRONG_PASSWORD);
+        }
+        if (!passwordEncoder.matches(dto.getCurrentPassword(), user.getPassword())) {
+            auditLogService.log(user.getUuid(), "CONFIRM_PASSWORD_RESET", "AUTH", user.getUuid(), false, request, "Wrong current password");
+            throw new BusinessException(ErrorCode.WRONG_PASSWORD);
+        }
+
+        authService.changePassword(user, passwordEncoder.encode(dto.getNewPassword()));
+        auditLogService.log(user.getUuid(), "CONFIRM_PASSWORD_RESET", "AUTH", user.getUuid(), true, request, "Password reset by current password");
+    }
+
+    public MfaSetupResponseDto setupMfa(AuthEntity user) {
+        return mfaService.setup(user);
+    }
+
+    public void enableMfa(AuthEntity user, MfaEnableDto dto, HttpServletRequest request) {
+        mfaService.enable(user, dto.getOtpCode());
+        auditLogService.log(user.getUuid(), "ENABLE_MFA", "AUTH", user.getUuid(), true, request, "MFA enabled");
+    }
+
+    public void disableMfa(AuthEntity user, MfaDisableDto dto, HttpServletRequest request) {
+        if (!passwordEncoder.matches(dto.getPassword(), user.getPassword())) {
+            throw new BusinessException(ErrorCode.WRONG_PASSWORD);
+        }
+        if (user.isMfaEnabled()) {
+            mfaService.verifyLogin(user, dto.getOtpCode());
+        }
+        mfaService.disable(user);
+        auditLogService.log(user.getUuid(), "DISABLE_MFA", "AUTH", user.getUuid(), true, request, "MFA disabled");
+    }
+
+    public AuthProfileDto getMyProfile(String token) {
+        AuthEntity user = authService.findOneByToken(token)
+                .orElseThrow(() -> new BusinessException(ErrorCode.TOKEN_INVALID));
+        return authService.toAuthProfile(user);
+    }
+}
