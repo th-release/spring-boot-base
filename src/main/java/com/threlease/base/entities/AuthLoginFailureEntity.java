@@ -19,19 +19,21 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.time.LocalDateTime;
+
 @Builder
 @Entity
 @Getter
 @Setter
-@Table(name = "tb_auth_login_history")
+@Table(name = "tb_auth_login_failure")
 @NoArgsConstructor
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
-public class AuthLoginHistoryEntity extends BaseEntity {
+public class AuthLoginFailureEntity extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    @ExcelColumn(headerName = "ID", order = 0)
+    @ExcelColumn(headerName = "ID")
     private Long id;
 
     @JsonIgnore
@@ -40,15 +42,12 @@ public class AuthLoginHistoryEntity extends BaseEntity {
     @ExcelColumn(headerName = "사용자")
     private AuthEntity user;
 
-    @Column(name = "username", length = 24)
-    @ExcelColumn(headerName = "아이디", order = 2)
-    private String username;
+    @Column(name = "failed_login_count", nullable = false)
+    @ExcelColumn(headerName = "누적 실패 횟수")
+    @Builder.Default
+    private int failedLoginCount = 0;
 
-    @Column(name = "client_ip", length = 64)
-    @ExcelColumn(headerName = "클라이언트 IP", order = 3)
-    private String clientIp;
-
-    @Column(name = "user_agent", length = 512)
-    @ExcelColumn(headerName = "User-Agent", order = 4)
-    private String userAgent;
+    @Column(name = "locked_until")
+    @ExcelColumn(headerName = "잠금 만료 시간")
+    private LocalDateTime lockedUntil;
 }

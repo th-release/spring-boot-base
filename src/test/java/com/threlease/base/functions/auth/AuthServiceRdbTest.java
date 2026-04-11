@@ -11,6 +11,7 @@ import com.threlease.base.entities.AuthEntity;
 import com.threlease.base.entities.RefreshTokenEntity;
 import com.threlease.base.functions.auth.dto.RefreshTokenSessionDto;
 import com.threlease.base.functions.auth.dto.TokenResponseDto;
+import com.threlease.base.repositories.auth.AuthLoginFailureRepository;
 import com.threlease.base.repositories.auth.AuthRepository;
 import com.threlease.base.repositories.auth.AuthLoginHistoryRepository;
 import com.threlease.base.repositories.auth.AuthMfaRepository;
@@ -32,6 +33,7 @@ import static org.mockito.Mockito.when;
 
 class AuthServiceRdbTest {
     private final AuthRepository authRepository = mock(AuthRepository.class);
+    private final AuthLoginFailureRepository authLoginFailureRepository = mock(AuthLoginFailureRepository.class);
     private final AuthLoginHistoryRepository authLoginHistoryRepository = mock(AuthLoginHistoryRepository.class);
     private final AuthMfaRepository authMfaRepository = mock(AuthMfaRepository.class);
     private final RefreshTokenRepository refreshTokenRepository = mock(RefreshTokenRepository.class);
@@ -61,6 +63,7 @@ class AuthServiceRdbTest {
 
         authService = new AuthService(
                 authRepository,
+                authLoginFailureRepository,
                 authLoginHistoryRepository,
                 authMfaRepository,
                 refreshTokenRepository,
