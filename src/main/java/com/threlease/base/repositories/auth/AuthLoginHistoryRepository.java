@@ -17,4 +17,14 @@ public interface AuthLoginHistoryRepository extends JpaRepository<AuthLoginHisto
             ORDER BY h.createdAt DESC, h.id DESC
             """)
     Page<AuthLoginHistoryEntity> findRecentByUser(@Param("user") AuthEntity user, Pageable pageable);
+
+    @Query("""
+            SELECT h
+            FROM AuthLoginHistoryEntity h
+            WHERE h.user = :user
+              AND h.success = true
+              AND h.deletedAt IS NULL
+            ORDER BY h.createdAt DESC, h.id DESC
+            """)
+    Page<AuthLoginHistoryEntity> findLatestSuccessfulByUser(@Param("user") AuthEntity user, Pageable pageable);
 }

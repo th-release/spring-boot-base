@@ -25,17 +25,21 @@ alter table tb_auth
 
 create table tb_auth_login_history
 (
-    id         bigserial
+    id                 bigserial
         primary key,
-    created_at timestamp(6) not null,
-    deleted_at timestamp(6),
-    updated_at timestamp(6),
-    user_uuid  varchar(36)
+    created_at         timestamp(6) not null,
+    deleted_at         timestamp(6),
+    updated_at         timestamp(6),
+    user_uuid          varchar(36)
         constraint fk_auth_login_history_user_uuid
             references tb_auth,
-    username   varchar(24),
-    client_ip  varchar(64),
-    user_agent varchar(512)
+    username           varchar(24),
+    client_ip          varchar(64),
+    user_agent         varchar(512),
+    success            boolean      not null,
+    failure_reason     varchar(100),
+    failed_login_count integer      not null,
+    locked_until       timestamp(6)
 );
 
 alter table tb_auth_login_history
@@ -43,26 +47,6 @@ alter table tb_auth_login_history
 
 create index idx_tb_auth_login_history_user_uuid
     on tb_auth_login_history (user_uuid);
-
-create table tb_auth_login_failure
-(
-    id                 bigserial
-        primary key,
-    created_at         timestamp(6) not null,
-    deleted_at         timestamp(6),
-    updated_at         timestamp(6),
-    user_uuid          varchar(36)  not null
-        constraint fk_auth_login_failure_user_uuid
-            references tb_auth,
-    failed_login_count integer      not null,
-    locked_until       timestamp(6)
-);
-
-alter table tb_auth_login_failure
-    owner to root;
-
-create index idx_tb_auth_login_failure_user_uuid
-    on tb_auth_login_failure (user_uuid);
 
 create table tb_auth_mfa
 (
