@@ -74,6 +74,13 @@ app:
       time-step-seconds: 30
       allowed-windows: 1
       required-types: []
+  admin:
+    # 초기 관리자 계정 자동 생성 설정. 운영에서는 배포 직후 반드시 비밀번호를 변경하세요.
+    enabled: true
+    username: admin
+    password: Admin1234!
+    nickname: 관리자
+    email: admin@prod.base
   outbound:
     connect-timeout-seconds: 5
     read-timeout-seconds: 5

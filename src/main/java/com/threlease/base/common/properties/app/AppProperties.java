@@ -1,5 +1,6 @@
 package com.threlease.base.common.properties.app;
 
+import com.threlease.base.common.properties.app.admin.AdminProperties;
 import com.threlease.base.common.properties.app.auth.AuthSecurityProperties;
 import com.threlease.base.common.properties.app.cache.CachePolicyProperties;
 import com.threlease.base.common.properties.app.database.DatabaseProperties;
@@ -42,4 +43,5 @@ public class AppProperties {
     private I18nProperties i18n;
     private QrCodeProperties qr;
     private SwaggerProperties swagger;
+    private AdminProperties admin;
 }

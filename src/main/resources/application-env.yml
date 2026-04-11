@@ -116,6 +116,17 @@ app:
       allowed-windows: ${AUTH_MFA_ALLOWED_WINDOWS:1}
       # MFA를 필수로 강제할 역할 목록
       required-types: []
+  admin:
+    # 초기 관리자 계정 자동 생성 활성화 여부
+    enabled: ${ADMIN_ENABLED:true}
+    # 초기 관리자 로그인 아이디
+    username: ${ADMIN_USERNAME:admin}
+    # 초기 관리자 비밀번호
+    password: ${ADMIN_PASSWORD:Admin1234!}
+    # 초기 관리자 표시 이름
+    nickname: ${ADMIN_NICKNAME:관리자}
+    # 초기 관리자 이메일
+    email: ${ADMIN_EMAIL:admin@base.local}
   token:
     # refresh token 저장 방식
     # refresh token 저장 위치(cache 또는 rdb)

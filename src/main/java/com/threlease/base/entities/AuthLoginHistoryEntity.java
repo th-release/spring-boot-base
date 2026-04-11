@@ -19,6 +19,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.time.LocalDateTime;
+
 @Builder
 @Entity
 @Getter
@@ -44,11 +46,28 @@ public class AuthLoginHistoryEntity extends BaseEntity {
     @ExcelColumn(headerName = "아이디", order = 2)
     private String username;
 
+    @Column(name = "success", nullable = false)
+    @ExcelColumn(headerName = "성공 여부", order = 3)
+    private boolean success;
+
+    @Column(name = "failure_reason", length = 120)
+    @ExcelColumn(headerName = "실패 사유", order = 4)
+    private String failureReason;
+
+    @Column(name = "failed_login_count", nullable = false)
+    @ExcelColumn(headerName = "누적 실패 횟수", order = 5)
+    @Builder.Default
+    private int failedLoginCount = 0;
+
+    @Column(name = "locked_until")
+    @ExcelColumn(headerName = "잠금 만료 시간", order = 6)
+    private LocalDateTime lockedUntil;
+
     @Column(name = "client_ip", length = 64)
-    @ExcelColumn(headerName = "클라이언트 IP", order = 3)
+    @ExcelColumn(headerName = "클라이언트 IP", order = 7)
     private String clientIp;
 
     @Column(name = "user_agent", length = 512)
-    @ExcelColumn(headerName = "User-Agent", order = 4)
+    @ExcelColumn(headerName = "User-Agent", order = 8)
     private String userAgent;
 }

@@ -36,6 +36,19 @@ public class AuthPermissionService {
     }
 
     @Transactional
+    public AuthPermissionEntity ensureSystemAdminPermission() {
+        return findActivePermission(SYSTEM_ADMIN)
+                .orElseGet(() -> authPermissionRepository.save(AuthPermissionEntity.builder()
+                        .code(SYSTEM_ADMIN)
+                        .name("시스템 관리자")
+                        .depth(1)
+                        .parent(null)
+                        .sortOrder(0)
+                        .description("운영/관리자 API 전체 권한")
+                        .build()));
+    }
+
+    @Transactional
     public AuthPermissionDto createPermission(AuthPermissionCreateDto dto) {
         AuthPermissionEntity parent = null;
         int depth = 1;

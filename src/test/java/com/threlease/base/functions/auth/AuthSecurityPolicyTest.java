@@ -9,9 +9,7 @@ import com.threlease.base.common.provider.JwtProvider;
 import com.threlease.base.common.utils.crypto.HashComponent;
 import com.threlease.base.common.utils.random.RandomComponent;
 import com.threlease.base.entities.AuthEntity;
-import com.threlease.base.entities.AuthLoginFailureEntity;
 import com.threlease.base.entities.AuthLoginHistoryEntity;
-import com.threlease.base.repositories.auth.AuthLoginFailureRepository;
 import com.threlease.base.repositories.auth.AuthRepository;
 import com.threlease.base.repositories.auth.AuthLoginHistoryRepository;
 import com.threlease.base.repositories.auth.AuthMfaRepository;
@@ -33,13 +31,11 @@ import static org.mockito.Mockito.when;
 
 class AuthSecurityPolicyTest {
     private AuthService authService;
-    private final List<AuthLoginFailureEntity> loginFailures = new ArrayList<>();
     private final List<AuthLoginHistoryEntity> loginHistories = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
         AuthRepository authRepository = mock(AuthRepository.class);
-        AuthLoginFailureRepository authLoginFailureRepository = mock(AuthLoginFailureRepository.class);
         AuthLoginHistoryRepository authLoginHistoryRepository = mock(AuthLoginHistoryRepository.class);
         AuthMfaRepository authMfaRepository = mock(AuthMfaRepository.class);
         RefreshTokenRepository refreshTokenRepository = mock(RefreshTokenRepository.class);
@@ -64,26 +60,26 @@ class AuthSecurityPolicyTest {
 
         ObjectProvider<StringRedisTemplate> objectProvider = mock(ObjectProvider.class);
         when(objectProvider.getIfAvailable()).thenReturn(null);
-        when(authLoginFailureRepository.save(any(AuthLoginFailureEntity.class))).thenAnswer(invocation -> {
-            AuthLoginFailureEntity failure = invocation.getArgument(0);
-            if (loginFailures.isEmpty()) {
-                loginFailures.add(failure);
-            } else {
-                loginFailures.set(0, failure);
-            }
-            return failure;
-        });
-        when(authLoginFailureRepository.findLatestByUser(any(AuthEntity.class), any())).thenAnswer(invocation -> new PageImpl<>(loginFailures));
         when(authLoginHistoryRepository.save(any(AuthLoginHistoryEntity.class))).thenAnswer(invocation -> {
             AuthLoginHistoryEntity history = invocation.getArgument(0);
             loginHistories.add(history);
             return history;
         });
-        when(authLoginHistoryRepository.findRecentByUser(any(AuthEntity.class), any())).thenAnswer(invocation -> new PageImpl<>(loginHistories));
+        when(authLoginHistoryRepository.findRecentByUser(any(AuthEntity.class), any())).thenAnswer(invocation -> {
+            if (loginHistories.isEmpty()) {
+                return new PageImpl<>(List.of());
+            }
+            return new PageImpl<>(List.of(loginHistories.get(loginHistories.size() - 1)));
+        });
+        when(authLoginHistoryRepository.findRecentSuccessfulByUser(any(AuthEntity.class), any())).thenAnswer(invocation -> loginHistories.stream()
+                .filter(AuthLoginHistoryEntity::isSuccess)
+                .reduce((previous, current) -> current)
+                .map(List::of)
+                .map(PageImpl::new)
+                .orElseGet(() -> new PageImpl<>(List.of())));
 
         authService = new AuthService(
                 authRepository,
-                authLoginFailureRepository,
                 authLoginHistoryRepository,
                 authMfaRepository,
                 refreshTokenRepository,

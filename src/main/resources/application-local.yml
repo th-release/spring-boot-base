@@ -80,6 +80,13 @@ app:
       time-step-seconds: 30
       allowed-windows: 1
       required-types: []
+  admin:
+    # 초기 관리자 계정 자동 생성 설정
+    enabled: true
+    username: admin
+    password: Admin1234!
+    nickname: 관리자
+    email: admin@local.base
   outbound:
     # 외부 API 호출 timeout/retry/header 정책
     connect-timeout-seconds: 5
