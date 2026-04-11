@@ -23,6 +23,7 @@
 - Redis/로컬 캐시 전략 표준화
 - 외부 연동 timeout/retry/idempotency 기본기
 - 운영/관리자 API
+- 초기 관리자 계정 자동 생성
 - Flyway 마이그레이션
 - 표준 에러 응답
 - Actuator 기반 운영 헬스체크
@@ -106,6 +107,7 @@ spring:
 - `app.jwt.*`
 - `app.token.*`
 - `app.auth.*`
+- `app.admin.*`
 - `app.outbound.*`
 - `app.privacy.*`
 - `app.security.*`
@@ -118,8 +120,14 @@ spring:
 
 대표 클래스:
 
-- `functions/auth/v1/AuthController`
+- `functions/auth/v1/AuthPublicController`
+- `functions/auth/v1/AuthSessionController`
+- `functions/auth/v1/AuthPasswordController`
+- `functions/auth/v1/AuthMfaController`
+- `functions/auth/v1/AuthAdminController`
 - `functions/auth/AuthService`
+- `functions/auth/AuthFlowService`
+- `functions/auth/AuthAdminBootstrap`
 - `common/provider/JwtProvider`
 - `entities/AuthEntity`
 - `entities/RefreshTokenEntity`
@@ -140,6 +148,7 @@ spring:
 - 관리자용 MFA 초기화
 - FCM 디바이스 토큰 등록/조회/비활성화
 - 관리자용 FCM 토큰 조회 및 푸시 발송
+- 애플리케이션 시작 시 초기 관리자 계정 자동 생성
 
 ### 인증 API
 
@@ -168,9 +177,45 @@ spring:
 - `POST /api/v1/auth/admin/users/{uuid}/mfa/reset`
 - `GET /api/v1/auth/admin/users/{uuid}/fcm/tokens`
 - `POST /api/v1/auth/admin/users/{uuid}/fcm/push`
-- `GET /api/v1/auth/admin/audit-logs`
 
-관리자 권한은 `ROLE_ADMIN` 이어야 합니다.
+관리자 권한은 `SYSTEM_ADMIN` 권한 코드로 판별합니다. 권한은 `tb_auth_permission`, `tb_auth_permission_grant` 기반으로 관리하며, 상위 권한을 부여하면 하위 권한이 함께 유효 권한으로 계산됩니다.
+
+### 초기 관리자 자동 생성
+
+대표 클래스:
+
+- `common/properties/app/admin/AdminProperties`
+- `functions/auth/AuthAdminBootstrap`
+- `functions/auth/AuthPermissionService`
+
+`app.admin.enabled=true`이면 애플리케이션 준비 완료 시점에 초기 관리자 계정을 생성합니다. 이미 같은 username의 계정이 있으면 비밀번호를 덮어쓰지 않고 `SYSTEM_ADMIN` 권한만 보장합니다.
+
+`SYSTEM_ADMIN` 권한 row가 없는 환경에서도 bootstrap 과정에서 자동 생성됩니다.
+
+관련 설정:
+
+```yml
+app:
+  admin:
+    enabled: true
+    username: admin
+    password: Admin1234!
+    nickname: 관리자
+    email: admin@local.base
+```
+
+운영에서는 `application-env.yml` 프로필을 사용해 아래 환경변수로 주입하는 것을 권장합니다.
+
+- `ADMIN_ENABLED`
+- `ADMIN_USERNAME`
+- `ADMIN_PASSWORD`
+- `ADMIN_NICKNAME`
+- `ADMIN_EMAIL`
+
+주의:
+
+- `enabled=true`인데 `username` 또는 `password`가 비어 있으면 부팅을 실패시킵니다.
+- 기본 예시 비밀번호는 운영 배포 직후 반드시 변경해야 합니다.
 
 ### 비밀번호 정책
 
@@ -193,7 +238,6 @@ spring:
 
 - `app.token.storage`
 - `app.token.max-sessions-per-user`
-- `app.token.validate-schema`
 
 ## 로그인 보안 기능
 
@@ -209,6 +253,7 @@ spring:
 - 제한 횟수 초과 시 계정 잠금
 - 성공 로그인 시 실패 횟수 초기화
 - 잠금 시간 설정 가능
+- 실패/잠금 상태는 `auth_login_history` 최신 기록을 기준으로 계산
 
 관련 설정:
 
@@ -223,10 +268,19 @@ app:
 
 ### 최근 로그인 기록
 
-`AuthEntity`에 아래 정보가 저장됩니다.
+성공 로그인 기록은 `AuthLoginHistoryEntity`에 저장됩니다.
 
 - `lastLoginAt`
 - `lastLoginIp`
+
+실제 저장 컬럼:
+
+- `success`
+- `failureReason`
+- `failedLoginCount`
+- `lockedUntil`
+- `clientIp`
+- `userAgent`
 
 ### 비밀번호 재설정
 
@@ -265,6 +319,8 @@ app:
 현재 사용 중인 타입:
 
 - `PASSWORD_RESET`
+- `EMAIL_VERIFICATION`
+- `LOGIN_CHALLENGE`
 
 향후 확장 예:
 
@@ -294,16 +350,14 @@ app:
       code-digits: 6
       time-step-seconds: 30
       allowed-windows: 1
-      required-roles: []
+      required-types: []
 ```
 
 ## 감사 로그
 
 대표 클래스:
 
-- `entities/AuditLogEntity`
 - `functions/auth/AuditLogService`
-- `repositories/auth/AuditLogRepository`
 
 기록 대상 예시:
 
@@ -331,8 +385,9 @@ app:
 
 참고:
 
-- 일반 사용자 인증 활동은 DB 적재 대신 콘솔 로그로만 남깁니다.
-- 관리자 관련 작업만 `audit_log` 테이블에 저장합니다.
+- 현재 감사 이벤트는 DB 적재 대신 구조화된 콘솔 로그로 남깁니다.
+- 세션 활동처럼 빈도가 높은 로그는 DB에 저장하지 않습니다.
+- 관리자 관련 작업은 `ADMIN EVENT` 로그로 구분해 운영 로그 수집기에서 분리할 수 있게 합니다.
 
 ## 이메일 유틸리티
 
@@ -439,15 +494,15 @@ firebaseUtils.sendNotification(targetToken, "title", "body", Map.of("type", "not
 ```java
 @RestController
 @ApiVersion(1)
-@RequestMapping("/auth")
-public class AuthController {
+@RequestMapping("/sample")
+public class SampleController {
 }
 ```
 
 실제 경로:
 
 ```text
-/api/v1/auth
+/api/v1/sample
 ```
 
 ### 토큰 인터셉터
@@ -576,11 +631,10 @@ public class NoticeCreateDto {
 
 - `password`
 - `salt`
-- `passwordResetCodeHash`
-- `passwordResetCodeExpiry`
-- `failedLoginCount`
-- `lockedUntil`
-- `lastLoginIp`
+- refresh token 원문
+- MFA secret
+- 인증 검증 hash
+- 내부 로그인 실패/잠금 상태
 
 ## 캐시
 
@@ -608,7 +662,6 @@ public class NoticeCreateDto {
 
 - `common/properties/app/database/DatabaseProperties`
 - `common/configs/CustomPhysicalNamingStrategy`
-- `common/handler/RefreshTokenSchemaValidator`
 
 기능:
 
@@ -616,7 +669,7 @@ public class NoticeCreateDto {
 - 테이블/컬럼 naming 전략
 - Flyway migration
 - JPA schema와 Flyway schema 분리 설정
-- refresh token RDB 스키마 검증
+- DB schema 변경은 Flyway migration으로 검증/관리
 
 설정 예시:
 
@@ -687,11 +740,18 @@ ResponseEntity<String> response = restService.exchange(
 - S3 저장
 - 스토리지 구현 자동 선택
 - 업로드 파일명 sanitize
-- 허용 확장자 검사
-- 허용 content-type 검사
 - 이중 확장자 차단
 - 파일 메타데이터 저장
+- DB 메타데이터 기반 파일 조회/삭제
+- 토큰 기반 다운로드 URL 발급
+- 로컬 파일 스트리밍 응답
+- S3 파일 presigned/redirect 기반 다운로드
 - 고아 파일 정리 스케줄
+
+참고:
+
+- 확장자/content-type allowlist는 베이스 프로젝트에서 강제하지 않습니다.
+- 서비스별 정책이 다르므로 실제 도메인에서 별도 검증 로직을 추가하는 것을 전제로 합니다.
 
 업로드 보안 설정 예시:
 
@@ -699,11 +759,16 @@ ResponseEntity<String> response = restService.exchange(
 storage:
   upload:
     enabled: true
-    max-file-size-bytes: 10485760
+    max-file-size: 10MB
     block-double-extension: true
-    allowed-extensions: [jpg, jpeg, png, gif, pdf, txt, csv]
-    allowed-content-types: [image/jpeg, image/png, image/gif, application/pdf, text/plain, text/csv]
 ```
+
+파일 API:
+
+- `POST /api/v1/files`
+- `DELETE /api/v1/files/{id}`
+- `GET /api/v1/files/{id}/download-url`
+- `GET /api/v1/files/content/**`
 
 ## 스케줄링/비동기/락
 
@@ -739,6 +804,16 @@ storage:
 Swagger 경로:
 
 - `/api/swagger`
+
+## Repository/Query 작성 규칙
+
+이 프로젝트는 repository 조회 의도를 명시하기 위해 다음 규칙을 따릅니다.
+
+- 단순 조회도 가급적 `@Query`로 JPQL을 명시합니다.
+- `default` 메서드에서 UUID를 entity reference로 감싸거나 리스트 조회 후 첫 건을 꺼내는 패턴은 사용하지 않습니다.
+- 사용자 참조 조건은 `userUuid` 같은 중복 FK 필드 대신 `entity.user = :user` 형태로 관계 필드를 기준으로 조회합니다.
+- update는 repository bulk update보다 entity를 조회한 뒤 값을 바꾸고 `repository.save()`로 저장하는 방식을 기본으로 합니다.
+- search처럼 조건이 복잡한 조회는 QueryDSL custom repository로 분리합니다.
 
 ## 공통 유틸리티
 
@@ -1030,7 +1105,7 @@ public class SignUpDto {
 
 ### I18N
 
-- `application.yml`의 `app.i18n.enabled`로 다국어 기능을 켜고 끌 수 있습니다.
+- 프로필 설정 파일의 `app.i18n.enabled`로 다국어 기능을 켜고 끌 수 있습니다.
 - `app.i18n.default-locale`로 서버 기본 언어를 선택합니다. 예: `ko`, `en`
 - `app.i18n.supported-locales`에 없는 언어가 들어오면 기본 언어로 자동 fallback 됩니다.
 - `enabled=false`이면 `Accept-Language` 헤더를 무시하고 항상 기본 언어만 사용합니다.
@@ -1054,9 +1129,11 @@ public class SignUpDto {
 현재 포함된 테스트:
 
 - `BaseApplicationTests`
-- `RefreshTokenSchemaValidatorTest`
+- `AuthVerificationServiceTest`
 - `AuthSecurityPolicyTest`
+- `AuthPermissionServiceTest`
 - `AuthServiceRdbTest`
+- `FcmDeviceTokenServiceTest`
 - `MfaServiceTest`
 
 검증 명령:
