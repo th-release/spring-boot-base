@@ -7,6 +7,7 @@ import com.threlease.base.entities.AuthEntity;
 import com.threlease.base.entities.FcmDeviceTokenEntity;
 import com.threlease.base.functions.auth.dto.FcmDeviceTokenDto;
 import com.threlease.base.functions.auth.dto.FcmDeviceTokenRequestDto;
+import com.threlease.base.functions.auth.dto.FcmNotificationDto;
 import com.threlease.base.functions.auth.dto.FcmPushRequestDto;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ public class AuthFcmService {
     private final FirebaseUtils firebaseUtils;
     private final AuditLogService auditLogService;
     private final AuthAdminService authAdminService;
+    private final FcmNotificationService fcmNotificationService;
 
     public List<FcmDeviceTokenDto> getMyTokens(AuthEntity user) {
         return fcmDeviceTokenService.getMyTokens(user.getUuid()).stream()
@@ -35,6 +37,14 @@ public class AuthFcmService {
 
     public void disableMyToken(AuthEntity user, Long id) {
         fcmDeviceTokenService.disableMyToken(user.getUuid(), id);
+    }
+
+    public List<FcmNotificationDto> getMyNotifications(AuthEntity user, int page, int size) {
+        return fcmNotificationService.getMyNotifications(user.getUuid(), page, size);
+    }
+
+    public FcmNotificationDto markMyNotificationRead(AuthEntity user, Long id) {
+        return fcmNotificationService.markMyNotificationRead(user.getUuid(), id);
     }
 
     public List<FcmDeviceTokenDto> getUserTokens(AuthEntity admin, String uuid) {
@@ -53,7 +63,9 @@ public class AuthFcmService {
         List<String> messageIds = fcmDeviceTokenService.getTokensForUser(uuid).stream()
                 .map(token -> {
                     try {
-                        return firebaseUtils.sendNotification(token.getDeviceToken(), dto.getTitle(), dto.getBody(), dto.getData());
+                        String messageId = firebaseUtils.sendNotification(token.getDeviceToken(), dto.getTitle(), dto.getBody(), dto.getData());
+                        fcmNotificationService.saveSentNotification(uuid, messageId, dto.getTitle(), dto.getBody(), dto.getData());
+                        return messageId;
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }

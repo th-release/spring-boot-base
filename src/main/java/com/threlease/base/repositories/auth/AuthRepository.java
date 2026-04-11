@@ -11,32 +11,25 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface AuthRepository extends JpaRepository<AuthEntity, String> {
-    @Query("SELECT u FROM AuthEntity u WHERE u.uuid = :uuid")
+public interface AuthRepository extends JpaRepository<AuthEntity, String>, AuthRepositoryCustom {
+    @Query("SELECT u FROM AuthEntity u WHERE u.uuid = :uuid AND u.deletedAt IS NULL")
     Optional<AuthEntity> findOneByUUID(@Param("uuid") String uuid);
 
-    @Query("SELECT u FROM AuthEntity u")
+    @Query("SELECT u FROM AuthEntity u WHERE u.deletedAt IS NULL ORDER BY u.createdAt DESC")
     Page<AuthEntity> findByPagination(Pageable pageable);
 
-    @Query("SELECT u FROM AuthEntity u WHERE LOWER(u.username) = LOWER(:username)")
+    @Query("SELECT u FROM AuthEntity u WHERE LOWER(u.username) = LOWER(:username) AND u.deletedAt IS NULL")
     Optional<AuthEntity> findOneByUsername(@Param("username") String username);
 
-    @Query("SELECT u FROM AuthEntity u WHERE LOWER(u.email) = LOWER(:email)")
+    @Query("SELECT u FROM AuthEntity u WHERE LOWER(u.email) = LOWER(:email) AND u.deletedAt IS NULL")
     Optional<AuthEntity> findOneByEmail(@Param("email") String email);
 
     @Query("""
             SELECT u
             FROM AuthEntity u
-            WHERE LOWER(u.username) = LOWER(:identifier)
-               OR LOWER(u.email) = LOWER(:identifier)
+            WHERE (LOWER(u.username) = LOWER(:identifier)
+               OR LOWER(u.email) = LOWER(:identifier))
+              AND u.deletedAt IS NULL
             """)
     Optional<AuthEntity> findOneByUsernameOrEmail(@Param("identifier") String identifier);
-
-    @Query("""
-            SELECT u
-            FROM AuthEntity u
-            WHERE LOWER(u.username) LIKE LOWER(CONCAT('%', :query, '%'))
-               OR LOWER(u.nickname) LIKE LOWER(CONCAT('%', :query, '%'))
-            """)
-    Page<AuthEntity> findByUsernameContainingIgnoreCaseOrNicknameContainingIgnoreCase(@Param("query") String query, Pageable pageable);
 }

@@ -1,8 +1,8 @@
 CREATE TABLE IF NOT EXISTS tb_auth (
     uuid VARCHAR(36) PRIMARY KEY,
-    username VARCHAR(24) NOT NULL UNIQUE,
+    username VARCHAR(24) NOT NULL,
     nickname VARCHAR(36) NOT NULL,
-    email VARCHAR(255) UNIQUE,
+    email VARCHAR(255),
     password TEXT NOT NULL,
     salt VARCHAR(32) NOT NULL,
     password_reset_code_hash VARCHAR(255),
@@ -19,10 +19,13 @@ CREATE TABLE IF NOT EXISTS tb_auth (
     deleted_at TIMESTAMP
 );
 
+CREATE INDEX IF NOT EXISTS idx_tb_auth_username ON tb_auth (username);
+CREATE INDEX IF NOT EXISTS idx_tb_auth_email ON tb_auth (email);
+
 CREATE TABLE IF NOT EXISTS tb_refresh_token (
     id BIGSERIAL PRIMARY KEY,
     user_uuid VARCHAR(36) NOT NULL,
-    token_id VARCHAR(64) NOT NULL UNIQUE,
+    token_id VARCHAR(64) NOT NULL,
     family_id VARCHAR(64) NOT NULL,
     token_hash VARCHAR(1024) NOT NULL,
     token VARCHAR(1024) NOT NULL,
@@ -40,6 +43,7 @@ CREATE TABLE IF NOT EXISTS tb_refresh_token (
 
 CREATE INDEX IF NOT EXISTS idx_tb_refresh_token_user_uuid ON tb_refresh_token (user_uuid);
 CREATE INDEX IF NOT EXISTS idx_tb_refresh_token_family_id ON tb_refresh_token (family_id);
+CREATE INDEX IF NOT EXISTS idx_tb_refresh_token_token_id ON tb_refresh_token (token_id);
 
 CREATE TABLE IF NOT EXISTS tb_audit_log (
     id BIGSERIAL PRIMARY KEY,
@@ -75,7 +79,7 @@ CREATE INDEX IF NOT EXISTS idx_tb_auth_verification_user_type ON tb_auth_verific
 CREATE TABLE IF NOT EXISTS tb_fcm_device_token (
     id BIGSERIAL PRIMARY KEY,
     user_uuid VARCHAR(36) NOT NULL,
-    device_token VARCHAR(512) NOT NULL UNIQUE,
+    device_token VARCHAR(512) NOT NULL,
     device_label VARCHAR(120),
     user_agent VARCHAR(512),
     last_ip_address VARCHAR(64),
@@ -87,6 +91,24 @@ CREATE TABLE IF NOT EXISTS tb_fcm_device_token (
 );
 
 CREATE INDEX IF NOT EXISTS idx_tb_fcm_device_token_user_uuid ON tb_fcm_device_token (user_uuid);
+CREATE INDEX IF NOT EXISTS idx_tb_fcm_device_token_device_token ON tb_fcm_device_token (device_token);
+
+CREATE TABLE IF NOT EXISTS tb_fcm_notification (
+    id BIGSERIAL PRIMARY KEY,
+    user_uuid VARCHAR(36) NOT NULL,
+    message_id VARCHAR(255),
+    title VARCHAR(255) NOT NULL,
+    body TEXT NOT NULL,
+    data TEXT,
+    read BOOLEAN NOT NULL DEFAULT FALSE,
+    read_at TIMESTAMP,
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP,
+    deleted_at TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_tb_fcm_notification_user_uuid ON tb_fcm_notification (user_uuid);
+CREATE INDEX IF NOT EXISTS idx_tb_fcm_notification_read ON tb_fcm_notification (read);
 
 CREATE TABLE IF NOT EXISTS tb_files (
     id BIGSERIAL PRIMARY KEY,

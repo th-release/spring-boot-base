@@ -1,5 +1,7 @@
 package com.threlease.base.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.threlease.base.common.annotation.ExcelColumn;
 import com.threlease.base.common.entity.BaseEntity;
 import com.threlease.base.common.enums.AuthVerificationType;
 import jakarta.persistence.*;
@@ -19,28 +21,41 @@ import java.time.LocalDateTime;
 public class AuthVerificationEntity extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    @ExcelColumn(headerName = "ID", order = 0)
     private Long id;
 
-    @Column(nullable = false, length = 36)
+    @Column(name = "user_uuid", nullable = false, length = 36)
+    @ExcelColumn(headerName = "사용자 UUID", order = 1)
     private String userUuid;
 
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_uuid", referencedColumnName = "uuid", insertable = false, updatable = false)
+    private AuthEntity user;
+
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 50)
+    @Column(name = "type", nullable = false, length = 50)
+    @ExcelColumn(headerName = "인증 타입", order = 2)
     private AuthVerificationType type;
 
-    @Column(nullable = false, length = 255)
+    @Column(name = "target", nullable = false, length = 255)
+    @ExcelColumn(headerName = "인증 대상", order = 3)
     private String target;
 
-    @Column(nullable = false, length = 255)
+    @Column(name = "verification_hash", nullable = false, length = 255)
     private String verificationHash;
 
-    @Column(nullable = false)
+    @Column(name = "expires_at", nullable = false)
+    @ExcelColumn(headerName = "만료 시간", order = 4)
     private LocalDateTime expiresAt;
 
-    @Column(nullable = false)
+    @Column(name = "verified", nullable = false)
+    @ExcelColumn(headerName = "인증 완료", order = 5)
     @Builder.Default
     private boolean verified = false;
 
-    @Column(length = 120)
+    @Column(name = "metadata", length = 120)
+    @ExcelColumn(headerName = "메타데이터", order = 6)
     private String metadata;
 }

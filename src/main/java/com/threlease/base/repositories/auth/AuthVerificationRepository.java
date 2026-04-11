@@ -16,9 +16,10 @@ public interface AuthVerificationRepository extends JpaRepository<AuthVerificati
             WHERE a.userUuid = :userUuid
               AND a.type = :type
               AND a.verified = false
+              AND a.deletedAt IS NULL
             ORDER BY a.createdAt DESC
             """)
-    Optional<AuthVerificationEntity> findTopByUserUuidAndTypeAndVerifiedFalseOrderByCreatedAtDesc(String userUuid, AuthVerificationType type);
+    Optional<AuthVerificationEntity> findTopByUserUuidAndTypeAndVerifiedFalseOrderByCreatedAtDesc(@Param("userUuid") String userUuid, @Param("type") AuthVerificationType type);
 
     @Query("""
             SELECT a
@@ -26,14 +27,16 @@ public interface AuthVerificationRepository extends JpaRepository<AuthVerificati
             WHERE a.userUuid = :userUuid
               AND a.type = :type
               AND a.verified = false
+              AND a.deletedAt IS NULL
             """)
-    List<AuthVerificationEntity> findAllByUserUuidAndTypeAndVerifiedFalse(String userUuid, AuthVerificationType type);
+    List<AuthVerificationEntity> findAllByUserUuidAndTypeAndVerifiedFalse(@Param("userUuid") String userUuid, @Param("type") AuthVerificationType type);
 
     @Query("""
             SELECT a
             FROM AuthVerificationEntity a
             WHERE a.userUuid = :userUuid
               AND a.type = :type
+              AND a.deletedAt IS NULL
             """)
     List<AuthVerificationEntity> findAllByUserUuidAndType(@Param("userUuid") String userUuid, @Param("type") AuthVerificationType type);
 }

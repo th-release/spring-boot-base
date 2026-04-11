@@ -7,6 +7,7 @@ import com.threlease.base.entities.AuthEntity;
 import com.threlease.base.functions.auth.AuthFcmService;
 import com.threlease.base.functions.auth.dto.FcmDeviceTokenDto;
 import com.threlease.base.functions.auth.dto.FcmDeviceTokenRequestDto;
+import com.threlease.base.functions.auth.dto.FcmNotificationDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -50,5 +51,20 @@ public class AuthFcmController {
     public ResponseEntity<BasicResponse<Void>> deleteMyFcmToken(@PathVariable Long id, HttpServletRequest request) {
         authFcmService.disableMyToken((AuthEntity) request.getAttribute("user"), id);
         return BasicResponse.noContent();
+    }
+
+    @GetMapping("/notifications")
+    @Operation(summary = "내 FCM 알림 목록 조회")
+    public ResponseEntity<BasicResponse<List<FcmNotificationDto>>> myNotifications(@RequestParam(defaultValue = "0") int page,
+                                                                                   @RequestParam(defaultValue = "20") int size,
+                                                                                   HttpServletRequest request) {
+        return BasicResponse.ok(authFcmService.getMyNotifications((AuthEntity) request.getAttribute("user"), page, size));
+    }
+
+    @PostMapping("/notifications/{id}/read")
+    @Operation(summary = "내 FCM 알림 읽음 처리")
+    public ResponseEntity<BasicResponse<FcmNotificationDto>> markNotificationRead(@PathVariable Long id,
+                                                                                  HttpServletRequest request) {
+        return BasicResponse.ok(authFcmService.markMyNotificationRead((AuthEntity) request.getAttribute("user"), id));
     }
 }

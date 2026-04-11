@@ -264,10 +264,7 @@ public class AuthService {
 
     public PageResult<AdminUserSummaryDto> getUsers(String query, int page, int size) {
         org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(Math.max(page, 0), Math.max(size, 1));
-        org.springframework.data.domain.Page<AuthEntity> pageResult =
-                (query == null || query.isBlank())
-                        ? authRepository.findByPagination(pageable)
-                        : authRepository.findByUsernameContainingIgnoreCaseOrNicknameContainingIgnoreCase(query, pageable);
+        org.springframework.data.domain.Page<AuthEntity> pageResult = authRepository.searchUsers(query, pageable);
 
         return new PageResult<>(
                 pageResult.getContent().stream().map(this::toAdminUserSummary).toList(),

@@ -12,9 +12,9 @@ import java.time.LocalDateTime;
 
 @Repository
 public interface AuditLogRepository extends JpaRepository<AuditLogEntity, Long> {
-    @Query("SELECT a FROM AuditLogEntity a ORDER BY a.createdAt DESC")
+    @Query("SELECT a FROM AuditLogEntity a WHERE a.deletedAt IS NULL ORDER BY a.createdAt DESC")
     Page<AuditLogEntity> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
-    @Query("SELECT a FROM AuditLogEntity a WHERE a.createdAt < :cutoff")
+    @Query("SELECT a FROM AuditLogEntity a WHERE a.createdAt < :cutoff AND a.deletedAt IS NULL")
     java.util.List<AuditLogEntity> findAllByCreatedAtBefore(@Param("cutoff") LocalDateTime cutoff);
 }

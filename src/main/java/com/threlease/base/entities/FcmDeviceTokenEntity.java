@@ -1,5 +1,7 @@
 package com.threlease.base.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.threlease.base.common.annotation.ExcelColumn;
 import com.threlease.base.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -18,26 +20,40 @@ import java.time.LocalDateTime;
 public class FcmDeviceTokenEntity extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    @ExcelColumn(headerName = "ID", order = 0)
     private Long id;
 
-    @Column(nullable = false, length = 36)
+    @Column(name = "user_uuid", nullable = false, length = 36)
+    @ExcelColumn(headerName = "사용자 UUID", order = 1)
     private String userUuid;
 
-    @Column(nullable = false, unique = true, length = 512)
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_uuid", referencedColumnName = "uuid", insertable = false, updatable = false)
+    private AuthEntity user;
+
+    @Column(name = "device_token", nullable = false, length = 512)
     private String deviceToken;
 
-    @Column(length = 120)
+    @Column(name = "device_label", length = 120)
+    @ExcelColumn(headerName = "기기명", order = 2)
     private String deviceLabel;
 
-    @Column(length = 512)
+    @Column(name = "user_agent", length = 512)
+    @ExcelColumn(headerName = "User-Agent", order = 3)
     private String userAgent;
 
-    @Column(length = 64)
+    @Column(name = "last_ip_address", length = 64)
+    @ExcelColumn(headerName = "최근 IP", order = 4)
     private String lastIpAddress;
 
+    @Column(name = "last_used_at")
+    @ExcelColumn(headerName = "최근 사용 시간", order = 5)
     private LocalDateTime lastUsedAt;
 
-    @Column(nullable = false)
+    @Column(name = "enabled", nullable = false)
+    @ExcelColumn(headerName = "활성화", order = 6)
     @Builder.Default
     private boolean enabled = true;
 }
