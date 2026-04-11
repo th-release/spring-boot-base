@@ -38,6 +38,7 @@ public class TokenInterceptor implements HandlerInterceptor {
         if (user.isEmpty()) {
             throw new BusinessException(ErrorCode.USER_NOT_FOUND);
         }
+        authService.assertTokenUsable(user.get());
 
         request.setAttribute("user", user.get());
         return true;

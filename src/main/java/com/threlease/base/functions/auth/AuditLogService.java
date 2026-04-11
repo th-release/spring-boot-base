@@ -2,7 +2,7 @@ package com.threlease.base.functions.auth;
 
 import com.threlease.base.common.properties.app.auth.AuthSecurityProperties;
 import com.threlease.base.common.properties.app.privacy.PrivacyProperties;
-import com.threlease.base.common.utils.IpUtils;
+import com.threlease.base.common.utils.ClientIpResolver;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 public class AuditLogService {
     private final AuthSecurityProperties authSecurityProperties;
     private final PrivacyProperties privacyProperties;
+    private final ClientIpResolver clientIpResolver;
 
     public void log(String actorUuid, String action, String resourceType, String resourceId, boolean success,
                     HttpServletRequest request, String detail) {
@@ -23,7 +24,7 @@ public class AuditLogService {
                 resourceType,
                 resourceId,
                 success,
-                maskIpIfNeeded(request != null ? IpUtils.getClientIp(request) : null),
+                maskIpIfNeeded(clientIpResolver.resolve(request)),
                 detail);
     }
 
@@ -38,7 +39,7 @@ public class AuditLogService {
                 resourceType,
                 resourceId,
                 success,
-                maskIpIfNeeded(request != null ? IpUtils.getClientIp(request) : null),
+                maskIpIfNeeded(clientIpResolver.resolve(request)),
                 resolveUserAgent(request),
                 trim(detail, 255));
     }

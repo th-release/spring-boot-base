@@ -3,7 +3,7 @@ package com.threlease.base.functions.auth.v1;
 import com.threlease.base.common.HttpConstants;
 import com.threlease.base.common.annotation.ApiVersion;
 import com.threlease.base.common.annotation.RateLimit;
-import com.threlease.base.common.utils.IpUtils;
+import com.threlease.base.common.utils.ClientIpResolver;
 import com.threlease.base.common.utils.responses.BasicResponse;
 import com.threlease.base.functions.auth.AuthFlowService;
 import com.threlease.base.functions.auth.dto.AuthProfileDto;
@@ -26,12 +26,13 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class AuthPublicController {
     private final AuthFlowService authFlowService;
+    private final ClientIpResolver clientIpResolver;
 
     @PostMapping("/login")
     @RateLimit(limit = 10, window = 60)
     @Operation(summary = "로그인")
     public ResponseEntity<BasicResponse<TokenResponseDto>> login(@RequestBody @Valid LoginDto dto, HttpServletRequest request) {
-        return BasicResponse.created(authFlowService.login(dto, request.getHeader("User-Agent"), IpUtils.getClientIp(request), request));
+        return BasicResponse.created(authFlowService.login(dto, request.getHeader("User-Agent"), clientIpResolver.resolve(request), request));
     }
 
     @PostMapping("/refresh")
@@ -39,7 +40,7 @@ public class AuthPublicController {
     public ResponseEntity<BasicResponse<TokenResponseDto>> refresh(
             @RequestHeader(HttpConstants.HEADER_REFRESH_TOKEN) String refreshToken,
             HttpServletRequest request) {
-        return BasicResponse.ok(authFlowService.refresh(refreshToken, request.getHeader("User-Agent"), IpUtils.getClientIp(request)));
+        return BasicResponse.ok(authFlowService.refresh(refreshToken, request.getHeader("User-Agent"), clientIpResolver.resolve(request)));
     }
 
     @PostMapping("/signup")

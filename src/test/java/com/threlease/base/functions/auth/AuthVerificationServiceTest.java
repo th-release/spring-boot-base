@@ -2,6 +2,7 @@ package com.threlease.base.functions.auth;
 
 import com.threlease.base.common.enums.AuthVerificationType;
 import com.threlease.base.common.exception.BusinessException;
+import com.threlease.base.common.properties.app.auth.AuthSecurityProperties;
 import com.threlease.base.common.utils.crypto.HashComponent;
 import com.threlease.base.common.utils.random.RandomComponent;
 import com.threlease.base.entities.AuthEntity;
@@ -29,7 +30,8 @@ class AuthVerificationServiceTest {
         authVerificationService = new AuthVerificationService(
                 authVerificationRepository,
                 new HashComponent(),
-                new RandomComponent()
+                new RandomComponent(),
+                new AuthSecurityProperties()
         );
     }
 

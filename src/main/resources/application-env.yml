@@ -105,6 +105,10 @@ app:
     password-reset:
       # 비밀번호 재설정 코드 만료 시간(분)
       code-expire-minutes: ${AUTH_PASSWORD_RESET_CODE_EXPIRE_MINUTES:10}
+      # 인증 코드 최대 실패 횟수
+      max-verification-attempts: ${AUTH_PASSWORD_RESET_MAX_VERIFICATION_ATTEMPTS:5}
+      # 인증 코드 실패 횟수 초과 시 잠금 시간(분)
+      verification-lock-minutes: ${AUTH_PASSWORD_RESET_VERIFICATION_LOCK_MINUTES:15}
     mfa:
       # MFA 기능 전역 활성화 여부
       enabled: ${AUTH_MFA_ENABLED:false}
@@ -172,6 +176,9 @@ app:
     width: ${QR_WIDTH:300}
   security:
     # 보안 헤더 환경별 on/off
+    trusted-proxy:
+      # true일 때만 X-Forwarded-For 등 프록시 전달 IP 헤더를 신뢰
+      forwarded-headers-enabled: ${SECURITY_TRUSTED_PROXY_FORWARDED_HEADERS_ENABLED:false}
     headers:
       # HSTS 헤더 사용 여부
       hsts-enabled: ${SECURITY_HSTS_ENABLED:true}

@@ -77,14 +77,14 @@ public class FileService {
     public ResponseEntity<?> serve(String filePath, String token, boolean download) {
         FileEntity fileEntity = fileRepository.findByFilePathAndDeletedFalse(filePath)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FILE_NOT_FOUND));
+        validateDownloadToken(fileEntity, token);
 
         if (fileEntity.getStorageType() == FileEntity.StorageType.S3) {
             return ResponseEntity.status(302)
-                    .location(URI.create(fileEntity.getUrl()))
+                    .location(URI.create(storageService.getDownloadUrl(fileEntity)))
                     .build();
         }
 
-        validateLocalDownloadToken(fileEntity, token);
         return buildLocalFileResponse(fileEntity, download);
     }
 
@@ -131,7 +131,7 @@ public class FileService {
 
     private String resolveImmediateAccessUrl(FileEntity fileEntity) {
         if (fileEntity.getStorageType() == FileEntity.StorageType.S3) {
-            return fileEntity.getUrl();
+            return storageService.getDownloadUrl(fileEntity);
         }
         String token = fileDownloadTokenService.createToken(fileEntity.getId(), fileEntity.getFilePath(), 10);
         return fileEntity.getUrl() + "?token=" + token;
@@ -146,7 +146,7 @@ public class FileService {
         return fileEntity.getUrl() + "?token=" + token + "&download=true";
     }
 
-    private void validateLocalDownloadToken(FileEntity fileEntity, String token) {
+    private void validateDownloadToken(FileEntity fileEntity, String token) {
         FileDownloadTokenService.FileDownloadClaims claims = fileDownloadTokenService.verify(token)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FORBIDDEN));
 

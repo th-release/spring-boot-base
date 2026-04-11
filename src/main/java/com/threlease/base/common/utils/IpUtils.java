@@ -32,6 +32,13 @@ public class IpUtils {
      * 클라이언트의 실제 IP 주소를 추출합니다. (Proxy, LB, Cloudflare 대응)
      */
     public static String getClientIp(HttpServletRequest request) {
+        return getClientIp(request, false);
+    }
+
+    public static String getClientIp(HttpServletRequest request, boolean trustForwardedHeaders) {
+        if (!trustForwardedHeaders) {
+            return request.getRemoteAddr();
+        }
         for (String header : IP_HEADER_CANDIDATES) {
             String ipList = request.getHeader(header);
             if (StringUtils.hasText(ipList) && !"unknown".equalsIgnoreCase(ipList)) {

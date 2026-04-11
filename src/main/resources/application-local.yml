@@ -74,6 +74,8 @@ app:
       lock-minutes: 15
     password-reset:
       code-expire-minutes: 10
+      max-verification-attempts: 5
+      verification-lock-minutes: 15
     mfa:
       enabled: false
       issuer: spring-boot-base
@@ -113,6 +115,8 @@ app:
     width: 300
   security:
     # local 보안 헤더 설정
+    trusted-proxy:
+      forwarded-headers-enabled: false
     headers:
       hsts-enabled: false
       content-security-policy: "default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"

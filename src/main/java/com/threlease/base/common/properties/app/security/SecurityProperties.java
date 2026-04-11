@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Configuration;
 @Setter
 public class SecurityProperties {
     private Headers headers = new Headers();
+    private TrustedProxy trustedProxy = new TrustedProxy();
 
     @Getter
     @Setter
@@ -18,5 +19,11 @@ public class SecurityProperties {
         private boolean hstsEnabled = true;
         private String contentSecurityPolicy = "default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'";
         private String referrerPolicy = "strict-origin-when-cross-origin";
+    }
+
+    @Getter
+    @Setter
+    public static class TrustedProxy {
+        private boolean forwardedHeadersEnabled = false;
     }
 }

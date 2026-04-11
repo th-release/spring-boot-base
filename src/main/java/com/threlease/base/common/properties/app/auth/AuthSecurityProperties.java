@@ -48,5 +48,7 @@ public class AuthSecurityProperties {
     @Setter
     public static class PasswordReset {
         private int codeExpireMinutes = 10;
+        private int maxVerificationAttempts = 5;
+        private long verificationLockMinutes = 15;
     }
 }

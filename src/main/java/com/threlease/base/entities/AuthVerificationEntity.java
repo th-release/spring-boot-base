@@ -52,6 +52,15 @@ public class AuthVerificationEntity extends BaseEntity {
     @Builder.Default
     private boolean verified = false;
 
+    @Column(name = "failed_attempts", nullable = false)
+    @ExcelColumn(headerName = "실패 횟수")
+    @Builder.Default
+    private int failedAttempts = 0;
+
+    @Column(name = "locked_until")
+    @ExcelColumn(headerName = "잠금 만료 시간")
+    private LocalDateTime lockedUntil;
+
     @Column(name = "metadata", length = 120)
     @ExcelColumn(headerName = "메타데이터", order = 6)
     private String metadata;

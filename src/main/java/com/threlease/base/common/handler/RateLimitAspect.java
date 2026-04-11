@@ -3,6 +3,7 @@ package com.threlease.base.common.handler;
 import com.threlease.base.common.annotation.RateLimit;
 import com.threlease.base.common.exception.BusinessException;
 import com.threlease.base.common.exception.ErrorCode;
+import com.threlease.base.common.utils.ClientIpResolver;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
@@ -27,11 +28,14 @@ import java.util.concurrent.TimeUnit;
 public class RateLimitAspect {
 
     private final ObjectProvider<StringRedisTemplate> stringRedisTemplateProvider;
+    private final ClientIpResolver clientIpResolver;
     private final Map<String, Long> localCache = new ConcurrentHashMap<>();
     private final Map<String, Long> localExpiration = new ConcurrentHashMap<>();
 
-    public RateLimitAspect(ObjectProvider<StringRedisTemplate> stringRedisTemplateProvider) {
+    public RateLimitAspect(ObjectProvider<StringRedisTemplate> stringRedisTemplateProvider,
+                           ClientIpResolver clientIpResolver) {
         this.stringRedisTemplateProvider = stringRedisTemplateProvider;
+        this.clientIpResolver = clientIpResolver;
     }
 
     @Before("@annotation(rateLimit)")
@@ -82,13 +86,6 @@ public class RateLimitAspect {
             return authentication.getName();
         }
 
-        // 2. IP 주소 확인 (프록시 고려)
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getRemoteAddr();
-        } else {
-            ip = ip.split(",")[0].trim();
-        }
-        return ip;
+        return clientIpResolver.resolve(request);
     }
 }

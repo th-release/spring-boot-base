@@ -176,6 +176,8 @@ create table tb_auth_verification
     deleted_at        timestamp(6),
     updated_at        timestamp(6),
     expires_at        timestamp(6) not null,
+    failed_attempts   integer      not null,
+    locked_until      timestamp(6),
     metadata          varchar(120),
     target            varchar(255) not null,
     type              varchar(50)  not null

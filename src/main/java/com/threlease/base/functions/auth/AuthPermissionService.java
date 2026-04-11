@@ -50,6 +50,10 @@ public class AuthPermissionService {
 
     @Transactional
     public AuthPermissionDto createPermission(AuthPermissionCreateDto dto) {
+        if (findActivePermission(dto.getCode()).isPresent()) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "이미 사용 중인 권한 코드입니다.");
+        }
+
         AuthPermissionEntity parent = null;
         int depth = 1;
         if (dto.getParentCode() != null && !dto.getParentCode().isBlank()) {

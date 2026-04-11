@@ -1,7 +1,7 @@
 package com.threlease.base.functions.auth.v1;
 
 import com.threlease.base.common.annotation.ApiVersion;
-import com.threlease.base.common.utils.IpUtils;
+import com.threlease.base.common.utils.ClientIpResolver;
 import com.threlease.base.common.utils.responses.BasicResponse;
 import com.threlease.base.entities.AuthEntity;
 import com.threlease.base.functions.auth.AuthFcmService;
@@ -27,6 +27,7 @@ import java.util.List;
 @ConditionalOnProperty(prefix = "app.firebase", name = "enabled", havingValue = "true")
 public class AuthFcmController {
     private final AuthFcmService authFcmService;
+    private final ClientIpResolver clientIpResolver;
 
     @GetMapping("/tokens")
     @Operation(summary = "내 FCM 디바이스 토큰 목록")
@@ -42,7 +43,7 @@ public class AuthFcmController {
                 (AuthEntity) request.getAttribute("user"),
                 dto,
                 request.getHeader("User-Agent"),
-                IpUtils.getClientIp(request)
+                clientIpResolver.resolve(request)
         ));
     }
 

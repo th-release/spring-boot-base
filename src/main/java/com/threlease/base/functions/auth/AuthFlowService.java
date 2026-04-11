@@ -129,9 +129,14 @@ public class AuthFlowService {
         }
 
         AuthEntity user = authService.findOneByIdentifier(dto.getIdentifier())
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+                .orElse(null);
+        if (user == null) {
+            auditLogService.log(null, "REQUEST_PASSWORD_RESET", "AUTH", dto.getIdentifier(), false, request, "Password reset requested for unknown identifier");
+            return;
+        }
         if (user.getEmail() == null || user.getEmail().isBlank()) {
-            throw new BusinessException(ErrorCode.EMAIL_NOT_REGISTERED);
+            auditLogService.log(user.getUuid(), "REQUEST_PASSWORD_RESET", "AUTH", user.getUuid(), false, request, "Password reset requested without registered email");
+            return;
         }
 
         String code = authVerificationService.issueCode(
@@ -150,7 +155,10 @@ public class AuthFlowService {
         }
 
         AuthEntity user = authService.findOneByIdentifier(dto.getIdentifier())
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+                .orElse(null);
+        if (user == null) {
+            throw new BusinessException(emailProperties.isEnabled() ? ErrorCode.PASSWORD_RESET_CODE_INVALID : ErrorCode.WRONG_PASSWORD);
+        }
 
         if (emailProperties.isEnabled()) {
             authVerificationService.verifyCode(user, AuthVerificationType.PASSWORD_RESET, dto.getVerificationCode());

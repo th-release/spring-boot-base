@@ -139,6 +139,12 @@ public class AuthService {
         }
     }
 
+    public void assertTokenUsable(AuthEntity auth) {
+        if (auth == null || auth.getStatus() == null || auth.getStatus() != AuthStatuses.ACTIVE) {
+            throw new BusinessException(ErrorCode.ACCOUNT_INACTIVE);
+        }
+    }
+
     public void recordFailedLogin(AuthEntity auth) {
         recordFailedLogin(auth, null, null, "WRONG_PASSWORD");
     }
@@ -155,6 +161,7 @@ public class AuthService {
         if (lockedUntil != null) {
             auth.setStatus(AuthStatuses.LOCKED);
             authSave(auth);
+            logoutAll(auth.getUuid());
         }
         saveLoginHistory(auth, false, failedLoginCount, lockedUntil, clientIp, userAgent, failureReason);
     }
@@ -238,6 +245,7 @@ public class AuthService {
 
         AuthEntity user = findOneByUUID(claims.userUuid())
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        assertTokenUsable(user);
 
         rotateRefreshToken(storedToken);
         return issueTokens(user, claims.familyId(), userAgent, ipAddress);
@@ -326,6 +334,7 @@ public class AuthService {
         LocalDateTime lockedUntil = LocalDateTime.now().plusMinutes(Math.max(minutes, 1));
         auth.setStatus(AuthStatuses.LOCKED);
         authSave(auth);
+        logoutAll(auth.getUuid());
         saveLoginHistory(auth, false, getFailedLoginCount(auth), lockedUntil, null, null, "ADMIN_LOCK");
     }
 

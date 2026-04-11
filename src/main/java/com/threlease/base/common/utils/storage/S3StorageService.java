@@ -1,6 +1,8 @@
 package com.threlease.base.common.utils.storage;
 
 import com.threlease.base.common.properties.aws.s3.S3Properties;
+import com.threlease.base.common.exception.BusinessException;
+import com.threlease.base.common.exception.ErrorCode;
 import com.threlease.base.common.utils.storage.entity.FileEntity;
 import com.threlease.base.common.utils.storage.repository.FileRepository;
 import com.threlease.base.entities.AuthEntity;
@@ -84,7 +86,7 @@ public class S3StorageService implements StorageService {
     public String getDownloadUrl(FileEntity fileEntity) {
         S3Presigner presigner = s3PresignerProvider.getIfAvailable();
         if (presigner == null) {
-            return getUrl(fileEntity.getFilePath());
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR, "S3 presigner가 설정되지 않았습니다.");
         }
 
         GetObjectRequest getObjectRequest = GetObjectRequest.builder()
