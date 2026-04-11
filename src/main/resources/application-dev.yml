@@ -78,9 +78,10 @@ app:
     # 초기 관리자 계정 자동 생성 설정
     enabled: true
     username: admin
-    password: Admin1234!
+    password: "Admin1234!"
     nickname: 관리자
     email: admin@dev.base
+    reset-password-on-startup: false
   outbound:
     connect-timeout-seconds: 5
     read-timeout-seconds: 5

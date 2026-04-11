@@ -15,4 +15,5 @@ public class AdminProperties {
     private String password;
     private String nickname = "관리자";
     private String email;
+    private boolean resetPasswordOnStartup = false;
 }

@@ -35,6 +35,7 @@ public class AuthAdminBootstrap {
 
         Optional<AuthEntity> existingAdmin = authService.findOneByUsername(adminProperties.getUsername());
         AuthEntity admin = existingAdmin.orElseGet(this::createAdmin);
+        existingAdmin.ifPresent(this::resetPasswordIfConfigured);
         authPermissionService.ensureSystemAdminPermission();
         authPermissionService.grantPermission(admin.getUuid(), AuthPermissionService.SYSTEM_ADMIN, admin);
 
@@ -43,6 +44,15 @@ public class AuthAdminBootstrap {
         } else {
             log.info("Initial admin created. username={}", admin.getUsername());
         }
+    }
+
+    private void resetPasswordIfConfigured(AuthEntity admin) {
+        if (!adminProperties.isResetPasswordOnStartup()) {
+            return;
+        }
+        admin.setPassword(passwordEncoder.encode(adminProperties.getPassword()));
+        authService.authSave(admin);
+        log.warn("Initial admin password was reset by app.admin.reset-password-on-startup=true. username={}", admin.getUsername());
     }
 
     private AuthEntity createAdmin() {

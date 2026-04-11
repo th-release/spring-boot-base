@@ -84,9 +84,10 @@ app:
     # 초기 관리자 계정 자동 생성 설정
     enabled: true
     username: admin
-    password: Admin1234!
+    password: "Admin1234!"
     nickname: 관리자
     email: admin@local.base
+    reset-password-on-startup: false
   outbound:
     # 외부 API 호출 timeout/retry/header 정책
     connect-timeout-seconds: 5

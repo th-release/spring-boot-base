@@ -127,6 +127,8 @@ app:
     nickname: ${ADMIN_NICKNAME:관리자}
     # 초기 관리자 이메일
     email: ${ADMIN_EMAIL:admin@base.local}
+    # 기존 관리자 계정이 이미 있을 때 시작 시 비밀번호를 설정값으로 재설정할지 여부
+    reset-password-on-startup: ${ADMIN_RESET_PASSWORD_ON_STARTUP:false}
   token:
     # refresh token 저장 방식
     # refresh token 저장 위치(cache 또는 rdb)

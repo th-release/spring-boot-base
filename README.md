@@ -199,9 +199,10 @@ app:
   admin:
     enabled: true
     username: admin
-    password: Admin1234!
+    password: "Admin1234!"
     nickname: 관리자
     email: admin@local.base
+    reset-password-on-startup: false
 ```
 
 운영에서는 `application-env.yml` 프로필을 사용해 아래 환경변수로 주입하는 것을 권장합니다.
@@ -211,10 +212,13 @@ app:
 - `ADMIN_PASSWORD`
 - `ADMIN_NICKNAME`
 - `ADMIN_EMAIL`
+- `ADMIN_RESET_PASSWORD_ON_STARTUP`
 
 주의:
 
 - `enabled=true`인데 `username` 또는 `password`가 비어 있으면 부팅을 실패시킵니다.
+- 이미 같은 username의 계정이 있으면 기본적으로 비밀번호를 덮어쓰지 않습니다.
+- 기존 관리자 비밀번호까지 설정값으로 맞춰야 하면 `reset-password-on-startup=true`를 명시해야 합니다.
 - 기본 예시 비밀번호는 운영 배포 직후 반드시 변경해야 합니다.
 
 ### 비밀번호 정책
