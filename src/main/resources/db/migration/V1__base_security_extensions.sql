@@ -1,3 +1,6 @@
+create schema if not exists ${appSchema};
+set search_path to ${appSchema};
+
 create table tb_auth
 (
     uuid                       varchar(36)  not null

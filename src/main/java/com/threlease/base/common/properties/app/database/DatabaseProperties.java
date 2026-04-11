@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Configuration;
 @Getter
 @Setter
 public class DatabaseProperties {
-    private String jpaSchema = "public";
-    private String flywaySchema = "public";
+    private String jpaSchema = "base";
+    private String flywaySchema = "base";
+    private String flywayHistorySchema = "public";
 }

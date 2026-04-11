@@ -17,7 +17,7 @@ spring:
     # JDBC 드라이버 클래스명
     driver-class-name: org.postgresql.Driver
     # 공통 DB 연결 URL. currentSchema는 JPA_SCHEMA 값을 사용
-    url: jdbc:postgresql://${DATABASE_HOST:127.0.0.1}:${DATABASE_PORT:5432}/${DATABASE_DATABASE:base}?characterEncoding=UTF-8&allowMultiQueries=true&allowMultiQueries=true&currentSchema=${JPA_SCHEMA:public}
+    url: jdbc:postgresql://${DATABASE_HOST:127.0.0.1}:${DATABASE_PORT:5432}/${DATABASE_DATABASE:base}?characterEncoding=UTF-8&allowMultiQueries=true&allowMultiQueries=true&currentSchema=${JPA_SCHEMA:base}
     # DB 접속 계정
     username: ${DATABASE_USERNAME:root}
     # DB 접속 비밀번호
@@ -38,7 +38,7 @@ spring:
         # SQL pretty print 여부
         format_sql: true
         # Hibernate 기본 schema
-        default_schema: ${JPA_SCHEMA:public}
+        default_schema: ${JPA_SCHEMA:base}
   flyway:
     # Flyway 실행 여부
     enabled: ${FLYWAY_ENABLED:true}
@@ -48,10 +48,15 @@ spring:
     baseline-version: 0
     # 마이그레이션 SQL 경로
     locations: classpath:db/migration
-    # Flyway 기본 schema
-    default-schema: ${FLYWAY_SCHEMA:${DATABASE_SCHEMA:public}}
-    # Flyway가 관리할 schema 목록
-    schemas: ${FLYWAY_SCHEMAS:${FLYWAY_SCHEMA:${DATABASE_SCHEMA:public}}}
+    # Flyway schema history table 위치
+    default-schema: ${FLYWAY_HISTORY_SCHEMA:public}
+    # Flyway가 접근할 schema 목록. 첫 번째가 history schema, 두 번째가 migration target schema
+    schemas:
+      - ${FLYWAY_HISTORY_SCHEMA:public}
+      - ${FLYWAY_SCHEMA:base}
+    placeholders:
+      # migration SQL에서 실제 테이블을 생성할 schema
+      appSchema: ${FLYWAY_SCHEMA:base}
   mvc:
     pathmatch:
       # Swagger/구버전 매핑 호환용 path matcher 전략

@@ -36,9 +36,11 @@ app:
     maxAge: 3600
   database:
     # JPA가 사용할 schema
-    jpa-schema: ${JPA_SCHEMA:${DATABASE_SCHEMA:public}}
-    # Flyway가 사용할 schema
-    flyway-schema: ${FLYWAY_SCHEMA:${DATABASE_SCHEMA:public}}
+    jpa-schema: ${JPA_SCHEMA:${DATABASE_SCHEMA:base}}
+    # Flyway migration SQL이 테이블을 생성/변경할 schema
+    flyway-schema: ${FLYWAY_SCHEMA:${DATABASE_SCHEMA:base}}
+    # Flyway schema history table을 저장할 schema
+    flyway-history-schema: ${FLYWAY_HISTORY_SCHEMA:public}
   logging:
     # 요청 로깅 활성화 여부
     request: true

@@ -672,7 +672,7 @@ public class NoticeCreateDto {
 - JPA auditing
 - 테이블/컬럼 naming 전략
 - Flyway migration
-- JPA schema와 Flyway schema 분리 설정
+- JPA schema, Flyway migration target schema, Flyway history schema 분리 설정
 - DB schema 변경은 Flyway migration으로 검증/관리
 - Hibernate는 `ddl-auto=validate`로 엔티티와 DB schema 불일치만 검증
 
@@ -685,12 +685,25 @@ spring:
       ddl-auto: validate
   flyway:
     enabled: true
+    default-schema: public
+    schemas:
+      - public
+      - base
+    placeholders:
+      appSchema: base
 
 app:
   database:
-    jpa-schema: public
-    flyway-schema: public
+    jpa-schema: base
+    flyway-schema: base
+    flyway-history-schema: public
 ```
+
+현재 기본 정책:
+
+- JPA/Hibernate는 `base` schema를 봅니다.
+- Flyway `flyway_schema_history`는 `public` schema에 둡니다.
+- Flyway migration SQL은 `${appSchema}` placeholder를 통해 `base` schema에 테이블을 생성/변경합니다.
 
 ## 외부 연동
 

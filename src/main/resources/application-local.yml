@@ -24,8 +24,9 @@ app:
     maxAge: 3600
   database:
     # local schema 설정
-    jpa-schema: public
-    flyway-schema: public
+    jpa-schema: base
+    flyway-schema: base
+    flyway-history-schema: public
   logging:
     # 요청/응답 로깅과 민감정보 마스킹 정책
     request: true

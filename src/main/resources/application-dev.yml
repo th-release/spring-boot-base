@@ -22,8 +22,9 @@ app:
     allowCredentials: true
     maxAge: 3600
   database:
-    jpa-schema: public
-    flyway-schema: public
+    jpa-schema: base
+    flyway-schema: base
+    flyway-history-schema: public
   logging:
     request: true
     response: false
