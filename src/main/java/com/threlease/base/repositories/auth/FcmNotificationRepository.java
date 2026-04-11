@@ -10,7 +10,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 
-public interface FcmNotificationRepository extends JpaRepository<FcmNotificationEntity, Long> {
+public interface FcmNotificationRepository extends JpaRepository<FcmNotificationEntity, String> {
     @Query("""
             SELECT n
             FROM FcmNotificationEntity n
@@ -23,9 +23,9 @@ public interface FcmNotificationRepository extends JpaRepository<FcmNotification
     @Query("""
             SELECT n
             FROM FcmNotificationEntity n
-            WHERE n.id = :id
+            WHERE n.uuid = :uuid
               AND n.user = :user
               AND n.deletedAt IS NULL
             """)
-    Optional<FcmNotificationEntity> findActiveByIdAndUser(@Param("id") Long id, @Param("user") AuthEntity user);
+    Optional<FcmNotificationEntity> findActiveByUuidAndUser(@Param("uuid") String uuid, @Param("user") AuthEntity user);
 }

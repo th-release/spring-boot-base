@@ -9,19 +9,19 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-public interface AuthPermissionRepository extends JpaRepository<AuthPermissionEntity, Long> {
+public interface AuthPermissionRepository extends JpaRepository<AuthPermissionEntity, String> {
     @Query("""
             SELECT p
             FROM AuthPermissionEntity p
             WHERE p.code = :code
-            ORDER BY p.createdAt DESC, p.id DESC
+            ORDER BY p.createdAt DESC, p.uuid DESC
             """)
     Page<AuthPermissionEntity> findActiveByCode(@Param("code") String code, Pageable pageable);
 
     @Query("""
             SELECT p
             FROM AuthPermissionEntity p
-            ORDER BY p.depth ASC, p.sortOrder ASC, p.id ASC
+            ORDER BY p.depth ASC, p.sortOrder ASC, p.uuid ASC
             """)
     List<AuthPermissionEntity> findAllActive();
 
@@ -29,7 +29,7 @@ public interface AuthPermissionRepository extends JpaRepository<AuthPermissionEn
             SELECT p
             FROM AuthPermissionEntity p
             WHERE p.parent = :parent
-            ORDER BY p.sortOrder ASC, p.id ASC
+            ORDER BY p.sortOrder ASC, p.uuid ASC
             """)
     List<AuthPermissionEntity> findAllActiveByParent(@Param("parent") AuthPermissionEntity parent);
 }

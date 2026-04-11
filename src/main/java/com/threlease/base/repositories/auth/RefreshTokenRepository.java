@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface RefreshTokenRepository extends JpaRepository<RefreshTokenEntity, Long> {
+public interface RefreshTokenRepository extends JpaRepository<RefreshTokenEntity, String> {
     @Query("SELECT r FROM RefreshTokenEntity r WHERE r.tokenId = :tokenId AND r.deletedAt IS NULL")
     Optional<RefreshTokenEntity> findByTokenId(@Param("tokenId") String tokenId);
 

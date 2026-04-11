@@ -8,7 +8,7 @@ import lombok.Getter;
 @Builder
 public class AuthPermissionDto {
     @ExcelColumn(headerName = "권한 ID", order = 0)
-    private Long id;
+    private String uuid;
 
     @ExcelColumn(headerName = "권한 코드", order = 1)
     private String code;
@@ -20,7 +20,7 @@ public class AuthPermissionDto {
     private int depth;
 
     @ExcelColumn(headerName = "상위 권한 ID", order = 4)
-    private Long parentId;
+    private String parentUuid;
 
     @ExcelColumn(headerName = "정렬 순서", order = 5)
     private int sortOrder;

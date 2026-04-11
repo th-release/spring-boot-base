@@ -13,7 +13,7 @@ import org.springframework.data.repository.query.Param;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public interface AuthVerificationRepository extends JpaRepository<AuthVerificationEntity, Long> {
+public interface AuthVerificationRepository extends JpaRepository<AuthVerificationEntity, String> {
     @Query("""
             SELECT a
             FROM AuthVerificationEntity a

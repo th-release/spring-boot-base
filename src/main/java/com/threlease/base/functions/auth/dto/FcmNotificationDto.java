@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @Builder
 public class FcmNotificationDto {
     @ExcelColumn(headerName = "알림 ID", order = 0)
-    private Long id;
+    private String uuid;
 
     @ExcelColumn(headerName = "FCM 메시지 ID", order = 1)
     private String messageId;

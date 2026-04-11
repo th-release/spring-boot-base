@@ -29,10 +29,10 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @EntityListeners(AuditingEntityListener.class)
 public class AuthPermissionGrantEntity extends BaseTimeEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "uuid", length = 36, nullable = false)
     @ExcelColumn(headerName = "ID", order = 0)
-    private Long id;
+    private String uuid;
 
     @JsonIgnore
     @ManyToOne
@@ -42,7 +42,7 @@ public class AuthPermissionGrantEntity extends BaseTimeEntity {
 
     @JsonIgnore
     @ManyToOne
-    @JoinColumn(name = "permission_id", referencedColumnName = "id")
+    @JoinColumn(name = "permission_uuid", referencedColumnName = "uuid")
     @ExcelColumn(headerName = "권한")
     private AuthPermissionEntity permission;
 

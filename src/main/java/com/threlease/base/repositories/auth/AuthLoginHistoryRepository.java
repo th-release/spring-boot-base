@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface AuthLoginHistoryRepository extends JpaRepository<AuthLoginHistoryEntity, Long> {
+public interface AuthLoginHistoryRepository extends JpaRepository<AuthLoginHistoryEntity, String> {
     @Query("""
             SELECT h
             FROM AuthLoginHistoryEntity h

@@ -43,8 +43,8 @@ public class FcmNotificationService {
                 .toList();
     }
 
-    public FcmNotificationDto markMyNotificationRead(String userUuid, Long id) {
-        FcmNotificationEntity notification = fcmNotificationRepository.findActiveByIdAndUser(id, AuthEntity.builder().uuid(userUuid).build())
+    public FcmNotificationDto markMyNotificationRead(String userUuid, String notificationUuid) {
+        FcmNotificationEntity notification = fcmNotificationRepository.findActiveByUuidAndUser(notificationUuid, AuthEntity.builder().uuid(userUuid).build())
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT));
         notification.markRead();
         return toDto(fcmNotificationRepository.save(notification));
@@ -52,7 +52,7 @@ public class FcmNotificationService {
 
     private FcmNotificationDto toDto(FcmNotificationEntity notification) {
         return FcmNotificationDto.builder()
-                .id(notification.getId())
+                .uuid(notification.getUuid())
                 .messageId(notification.getMessageId())
                 .title(notification.getTitle())
                 .body(notification.getBody())

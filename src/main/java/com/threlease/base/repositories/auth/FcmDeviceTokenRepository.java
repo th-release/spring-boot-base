@@ -11,7 +11,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 
-public interface FcmDeviceTokenRepository extends JpaRepository<FcmDeviceTokenEntity, Long> {
+public interface FcmDeviceTokenRepository extends JpaRepository<FcmDeviceTokenEntity, String> {
     @Query("""
             SELECT f
             FROM FcmDeviceTokenEntity f
@@ -34,9 +34,9 @@ public interface FcmDeviceTokenRepository extends JpaRepository<FcmDeviceTokenEn
     @Query("""
             SELECT f
             FROM FcmDeviceTokenEntity f
-            WHERE f.id = :id
+            WHERE f.uuid = :uuid
               AND f.user = :user
               AND f.deletedAt IS NULL
             """)
-    Optional<FcmDeviceTokenEntity> findByIdAndUser(@Param("id") Long id, @Param("user") AuthEntity user);
+    Optional<FcmDeviceTokenEntity> findByUuidAndUser(@Param("uuid") String uuid, @Param("user") AuthEntity user);
 }

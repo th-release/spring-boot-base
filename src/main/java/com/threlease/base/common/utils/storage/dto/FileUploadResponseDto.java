@@ -7,7 +7,7 @@ import lombok.Getter;
 @Getter
 @Builder
 public class FileUploadResponseDto {
-    private Long id;
+    private String uuid;
     private String originalFileName;
     private String filePath;
     private String url;
@@ -18,7 +18,7 @@ public class FileUploadResponseDto {
 
     public static FileUploadResponseDto from(FileEntity fileEntity) {
         return FileUploadResponseDto.builder()
-                .id(fileEntity.getId())
+                .uuid(fileEntity.getUuid())
                 .originalFileName(fileEntity.getOriginalFileName())
                 .filePath(fileEntity.getFilePath())
                 .url(fileEntity.getUrl())

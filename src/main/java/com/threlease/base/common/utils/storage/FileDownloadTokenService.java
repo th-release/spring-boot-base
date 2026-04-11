@@ -18,7 +18,7 @@ import java.util.Optional;
 public class FileDownloadTokenService {
     private static final String TOKEN_TYPE = "file-download";
     private static final String TOKEN_TYPE_CLAIM = "tokenType";
-    private static final String FILE_ID_CLAIM = "fileId";
+    private static final String FILE_UUID_CLAIM = "fileUuid";
     private static final String FILE_PATH_CLAIM = "filePath";
 
     private final JwtProperties jwtProperties;
@@ -27,13 +27,13 @@ public class FileDownloadTokenService {
         this.jwtProperties = jwtProperties;
     }
 
-    public String createToken(Long fileId, String filePath, long expireMinutes) {
+    public String createToken(String fileUuid, String filePath, long expireMinutes) {
         Instant now = Instant.now();
         return Jwts.builder()
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plus(expireMinutes, ChronoUnit.MINUTES)))
                 .claim(TOKEN_TYPE_CLAIM, TOKEN_TYPE)
-                .claim(FILE_ID_CLAIM, fileId)
+                .claim(FILE_UUID_CLAIM, fileUuid)
                 .claim(FILE_PATH_CLAIM, filePath)
                 .signWith(getSigningKey())
                 .compact();
@@ -55,13 +55,13 @@ public class FileDownloadTokenService {
                 return Optional.empty();
             }
 
-            Number fileIdNumber = claims.get(FILE_ID_CLAIM, Number.class);
+            String fileUuid = claims.get(FILE_UUID_CLAIM, String.class);
             String filePath = claims.get(FILE_PATH_CLAIM, String.class);
-            if (fileIdNumber == null || filePath == null || filePath.isBlank()) {
+            if (fileUuid == null || fileUuid.isBlank() || filePath == null || filePath.isBlank()) {
                 return Optional.empty();
             }
 
-            return Optional.of(new FileDownloadClaims(fileIdNumber.longValue(), filePath));
+            return Optional.of(new FileDownloadClaims(fileUuid, filePath));
         } catch (JwtException e) {
             return Optional.empty();
         }
@@ -71,6 +71,6 @@ public class FileDownloadTokenService {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtProperties.getSecretKey()));
     }
 
-    public record FileDownloadClaims(Long fileId, String filePath) {
+    public record FileDownloadClaims(String fileUuid, String filePath) {
     }
 }

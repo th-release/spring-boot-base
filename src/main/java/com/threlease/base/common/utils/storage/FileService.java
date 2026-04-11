@@ -43,7 +43,7 @@ public class FileService {
     public FileUploadResponseDto upload(MultipartFile file, String dirName, AuthEntity user) throws IOException {
         FileEntity fileEntity = storageService.upload(file, dirName, user);
         return FileUploadResponseDto.builder()
-                .id(fileEntity.getId())
+                .uuid(fileEntity.getUuid())
                 .originalFileName(fileEntity.getOriginalFileName())
                 .filePath(fileEntity.getFilePath())
                 .url(resolveImmediateAccessUrl(fileEntity))
@@ -55,17 +55,17 @@ public class FileService {
     }
 
     @Transactional
-    public void delete(Long id, AuthEntity user) {
-        FileEntity fileEntity = findOwnedFile(id, user);
+    public void delete(String uuid, AuthEntity user) {
+        FileEntity fileEntity = findOwnedFile(uuid, user);
         storageService.delete(fileEntity.getFilePath());
     }
 
     @Transactional(readOnly = true)
-    public FileDownloadUrlDto createDownloadUrl(Long id, AuthEntity user) {
-        FileEntity fileEntity = findOwnedFile(id, user);
+    public FileDownloadUrlDto createDownloadUrl(String uuid, AuthEntity user) {
+        FileEntity fileEntity = findOwnedFile(uuid, user);
 
         return FileDownloadUrlDto.builder()
-                .id(fileEntity.getId())
+                .uuid(fileEntity.getUuid())
                 .fileName(fileEntity.getOriginalFileName())
                 .storageType(fileEntity.getStorageType().name())
                 .downloadUrl(resolveDownloadUrl(fileEntity))
@@ -119,13 +119,13 @@ public class FileService {
         }
     }
 
-    private FileEntity findOwnedFile(Long id, AuthEntity user) {
+    private FileEntity findOwnedFile(String uuid, AuthEntity user) {
         if (authPermissionService.hasPermission(user, AuthPermissionService.SYSTEM_ADMIN)) {
-            return fileRepository.findActiveById(id)
+            return fileRepository.findActiveByUuid(uuid)
                     .orElseThrow(() -> new BusinessException(ErrorCode.FILE_NOT_FOUND));
         }
 
-        return fileRepository.findActiveByIdAndOwner(id, user)
+        return fileRepository.findActiveByUuidAndOwner(uuid, user)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FORBIDDEN));
     }
 
@@ -133,7 +133,7 @@ public class FileService {
         if (fileEntity.getStorageType() == FileEntity.StorageType.S3) {
             return storageService.getDownloadUrl(fileEntity);
         }
-        String token = fileDownloadTokenService.createToken(fileEntity.getId(), fileEntity.getFilePath(), 10);
+        String token = fileDownloadTokenService.createToken(fileEntity.getUuid(), fileEntity.getFilePath(), 10);
         return fileEntity.getUrl() + "?token=" + token + "&download=true";
     }
 
@@ -142,7 +142,7 @@ public class FileService {
             return storageService.getDownloadUrl(fileEntity);
         }
 
-        String token = fileDownloadTokenService.createToken(fileEntity.getId(), fileEntity.getFilePath(), 10);
+        String token = fileDownloadTokenService.createToken(fileEntity.getUuid(), fileEntity.getFilePath(), 10);
         return fileEntity.getUrl() + "?token=" + token + "&download=true";
     }
 
@@ -150,7 +150,7 @@ public class FileService {
         FileDownloadTokenService.FileDownloadClaims claims = fileDownloadTokenService.verify(token)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FORBIDDEN));
 
-        if (!fileEntity.getId().equals(claims.fileId()) || !fileEntity.getFilePath().equals(claims.filePath())) {
+        if (!fileEntity.getUuid().equals(claims.fileUuid()) || !fileEntity.getFilePath().equals(claims.filePath())) {
             throw new BusinessException(ErrorCode.FORBIDDEN);
         }
     }

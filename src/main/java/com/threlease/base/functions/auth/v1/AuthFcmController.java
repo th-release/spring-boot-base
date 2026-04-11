@@ -47,10 +47,10 @@ public class AuthFcmController {
         ));
     }
 
-    @DeleteMapping("/tokens/{id}")
+    @DeleteMapping("/tokens/{uuid}")
     @Operation(summary = "내 FCM 디바이스 토큰 비활성화")
-    public ResponseEntity<BasicResponse<Void>> deleteMyFcmToken(@PathVariable Long id, HttpServletRequest request) {
-        authFcmService.disableMyToken((AuthEntity) request.getAttribute("user"), id);
+    public ResponseEntity<BasicResponse<Void>> deleteMyFcmToken(@PathVariable String uuid, HttpServletRequest request) {
+        authFcmService.disableMyToken((AuthEntity) request.getAttribute("user"), uuid);
         return BasicResponse.noContent();
     }
 
@@ -62,10 +62,10 @@ public class AuthFcmController {
         return BasicResponse.ok(authFcmService.getMyNotifications((AuthEntity) request.getAttribute("user"), page, size));
     }
 
-    @PostMapping("/notifications/{id}/read")
+    @PostMapping("/notifications/{uuid}/read")
     @Operation(summary = "내 FCM 알림 읽음 처리")
-    public ResponseEntity<BasicResponse<FcmNotificationDto>> markNotificationRead(@PathVariable Long id,
+    public ResponseEntity<BasicResponse<FcmNotificationDto>> markNotificationRead(@PathVariable String uuid,
                                                                                   HttpServletRequest request) {
-        return BasicResponse.ok(authFcmService.markMyNotificationRead((AuthEntity) request.getAttribute("user"), id));
+        return BasicResponse.ok(authFcmService.markMyNotificationRead((AuthEntity) request.getAttribute("user"), uuid));
     }
 }

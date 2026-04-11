@@ -47,13 +47,13 @@ public class FileController {
         return fileService.serve(extractFilePath(request), token, true);
     }
 
-    @GetMapping("/{id}/download")
+    @GetMapping("/{uuid}/download")
     @Operation(summary = "대용량 파일 다운로드 URL 발급", description = "파일 다운로드용 URL을 발급합니다. S3는 presigned URL, 로컬은 정적 서빙 URL을 반환합니다.")
     public ResponseEntity<BasicResponse<FileDownloadUrlDto>> downloadUrl(
-            @PathVariable Long id,
+            @PathVariable String uuid,
             @RequestAttribute("user") AuthEntity user
     ) {
-        return BasicResponse.ok(fileService.createDownloadUrl(id, user));
+        return BasicResponse.ok(fileService.createDownloadUrl(uuid, user));
     }
 
     @PostMapping
@@ -66,13 +66,13 @@ public class FileController {
         return BasicResponse.created(fileService.upload(file, dirName, user));
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{uuid}")
     @Operation(summary = "파일 삭제", description = "파일 메타데이터를 기준으로 실제 파일을 삭제하고 DB에는 soft delete 처리합니다.")
     public ResponseEntity<BasicResponse<Void>> delete(
-            @PathVariable Long id,
+            @PathVariable String uuid,
             @RequestAttribute("user") AuthEntity user
     ) {
-        fileService.delete(id, user);
+        fileService.delete(uuid, user);
         return BasicResponse.noContent();
     }
 

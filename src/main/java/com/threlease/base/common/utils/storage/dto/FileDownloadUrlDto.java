@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 @Getter
 @Builder
 public class FileDownloadUrlDto {
-    private Long id;
+    private String uuid;
     private String fileName;
     private String storageType;
     private String downloadUrl;

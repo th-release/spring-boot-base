@@ -35,16 +35,16 @@ public class AuthFcmService {
         return toDto(token);
     }
 
-    public void disableMyToken(AuthEntity user, Long id) {
-        fcmDeviceTokenService.disableMyToken(user.getUuid(), id);
+    public void disableMyToken(AuthEntity user, String tokenUuid) {
+        fcmDeviceTokenService.disableMyToken(user.getUuid(), tokenUuid);
     }
 
     public List<FcmNotificationDto> getMyNotifications(AuthEntity user, int page, int size) {
         return fcmNotificationService.getMyNotifications(user.getUuid(), page, size);
     }
 
-    public FcmNotificationDto markMyNotificationRead(AuthEntity user, Long id) {
-        return fcmNotificationService.markMyNotificationRead(user.getUuid(), id);
+    public FcmNotificationDto markMyNotificationRead(AuthEntity user, String notificationUuid) {
+        return fcmNotificationService.markMyNotificationRead(user.getUuid(), notificationUuid);
     }
 
     public List<FcmDeviceTokenDto> getUserTokens(AuthEntity admin, String uuid) {
@@ -77,7 +77,7 @@ public class AuthFcmService {
 
     private FcmDeviceTokenDto toDto(FcmDeviceTokenEntity token) {
         return FcmDeviceTokenDto.builder()
-                .id(token.getId())
+                .uuid(token.getUuid())
                 .deviceLabel(token.getDeviceLabel())
                 .userAgent(token.getUserAgent())
                 .lastIpAddress(token.getLastIpAddress())

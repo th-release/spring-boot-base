@@ -36,8 +36,8 @@ public class FcmDeviceTokenService {
         return fcmDeviceTokenRepository.save(entity);
     }
 
-    public void disableMyToken(String userUuid, Long id) {
-        FcmDeviceTokenEntity entity = fcmDeviceTokenRepository.findByIdAndUser(id, AuthEntity.builder().uuid(userUuid).build())
+    public void disableMyToken(String userUuid, String tokenUuid) {
+        FcmDeviceTokenEntity entity = fcmDeviceTokenRepository.findByUuidAndUser(tokenUuid, AuthEntity.builder().uuid(userUuid).build())
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT));
         entity.setEnabled(false);
         fcmDeviceTokenRepository.save(entity);

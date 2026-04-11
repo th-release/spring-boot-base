@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface AuthMfaRepository extends JpaRepository<AuthMfaEntity, Long> {
+public interface AuthMfaRepository extends JpaRepository<AuthMfaEntity, String> {
     @Query("""
             SELECT m
             FROM AuthMfaEntity m

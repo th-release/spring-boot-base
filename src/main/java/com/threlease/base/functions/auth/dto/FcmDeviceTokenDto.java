@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 @Getter
 @Builder
 public class FcmDeviceTokenDto {
-    private Long id;
+    private String uuid;
     private String deviceLabel;
     private String userAgent;
     private String lastIpAddress;

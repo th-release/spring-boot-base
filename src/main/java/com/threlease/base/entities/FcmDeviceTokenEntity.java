@@ -19,10 +19,10 @@ import java.time.LocalDateTime;
 @EntityListeners(AuditingEntityListener.class)
 public class FcmDeviceTokenEntity extends BaseEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "uuid", length = 36, nullable = false)
     @ExcelColumn(headerName = "ID", order = 0)
-    private Long id;
+    private String uuid;
 
     @JsonIgnore
     @ManyToOne

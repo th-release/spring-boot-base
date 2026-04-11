@@ -23,12 +23,9 @@ create table tb_auth
     username                   varchar(24)  not null
 );
 
-alter table tb_auth
-    owner to root;
-
 create table tb_auth_login_history
 (
-    id                 bigserial
+    id                 varchar(36)  not null
         primary key,
     created_at         timestamp(6) not null,
     updated_at         timestamp(6),
@@ -44,9 +41,6 @@ create table tb_auth_login_history
     user_agent         varchar(512)
 );
 
-alter table tb_auth_login_history
-    owner to root;
-
 create index idx_tb_auth_login_history_user_uuid
     on tb_auth_login_history (user_uuid);
 
@@ -55,7 +49,7 @@ create index idx_tb_auth_login_history_success
 
 create table tb_auth_mfa
 (
-    id         bigserial
+    id         varchar(36)  not null
         primary key,
     created_at timestamp(6) not null,
     updated_at timestamp(6),
@@ -66,30 +60,24 @@ create table tb_auth_mfa
     enabled    boolean      not null
 );
 
-alter table tb_auth_mfa
-    owner to root;
-
 create index idx_tb_auth_mfa_user_uuid
     on tb_auth_mfa (user_uuid);
 
 create table tb_auth_permission
 (
-    id          bigserial
+    id          varchar(36)  not null
         primary key,
     created_at  timestamp(6) not null,
     updated_at  timestamp(6),
     code        varchar(120) not null,
     name        varchar(120) not null,
     depth       integer      not null,
-    parent_id   bigint
+    parent_id   varchar(36)
         constraint fk_auth_permission_parent_id
             references tb_auth_permission,
     sort_order  integer      not null,
     description varchar(255)
 );
-
-alter table tb_auth_permission
-    owner to root;
 
 create index idx_tb_auth_permission_code
     on tb_auth_permission (code);
@@ -97,66 +85,56 @@ create index idx_tb_auth_permission_code
 create index idx_tb_auth_permission_parent_id
     on tb_auth_permission (parent_id);
 
-insert into tb_auth_permission (created_at, code, name, depth, parent_id, sort_order, description)
-values (current_timestamp, 'SYSTEM_ADMIN', '시스템 관리자', 1, null, 0, '운영/관리자 API 전체 권한');
+insert into tb_auth_permission (id, created_at, code, name, depth, parent_id, sort_order, description)
+values ('00000000-0000-0000-0000-000000000001', current_timestamp, 'SYSTEM_ADMIN', '시스템 관리자', 1, null, 0, '운영/관리자 API 전체 권한');
 
-insert into tb_auth_permission (created_at, code, name, depth, parent_id, sort_order, description)
-values (current_timestamp, 'SAMPLE_MENU', '샘플 대메뉴', 1, null, 10, '베이스 프로젝트 샘플 대메뉴');
+insert into tb_auth_permission (id, created_at, code, name, depth, parent_id, sort_order, description)
+values ('00000000-0000-0000-0000-000000000002', current_timestamp, 'SAMPLE_MENU', '샘플 대메뉴', 1, null, 10, '베이스 프로젝트 샘플 대메뉴');
 
-insert into tb_auth_permission (created_at, code, name, depth, parent_id, sort_order, description)
-values (current_timestamp, 'SAMPLE_MENU_SECTION', '샘플 중메뉴', 2,
-        (select id from tb_auth_permission where code = 'SAMPLE_MENU' order by id desc limit 1),
-        10, '베이스 프로젝트 샘플 중메뉴');
+insert into tb_auth_permission (id, created_at, code, name, depth, parent_id, sort_order, description)
+values ('00000000-0000-0000-0000-000000000003', current_timestamp, 'SAMPLE_MENU_SECTION', '샘플 중메뉴', 2,
+        '00000000-0000-0000-0000-000000000002', 10, '베이스 프로젝트 샘플 중메뉴');
 
-insert into tb_auth_permission (created_at, code, name, depth, parent_id, sort_order, description)
-values (current_timestamp, 'SAMPLE_MENU_SECTION_UPDATE', '샘플 수정', 3,
-        (select id from tb_auth_permission where code = 'SAMPLE_MENU_SECTION' order by id desc limit 1),
-        10, '샘플 수정 권한');
+insert into tb_auth_permission (id, created_at, code, name, depth, parent_id, sort_order, description)
+values ('00000000-0000-0000-0000-000000000004', current_timestamp, 'SAMPLE_MENU_SECTION_UPDATE', '샘플 수정', 3,
+        '00000000-0000-0000-0000-000000000003', 10, '샘플 수정 권한');
 
-insert into tb_auth_permission (created_at, code, name, depth, parent_id, sort_order, description)
-values (current_timestamp, 'SAMPLE_MENU_SECTION_CREATE', '샘플 생성', 3,
-        (select id from tb_auth_permission where code = 'SAMPLE_MENU_SECTION' order by id desc limit 1),
-        20, '샘플 생성 권한');
+insert into tb_auth_permission (id, created_at, code, name, depth, parent_id, sort_order, description)
+values ('00000000-0000-0000-0000-000000000005', current_timestamp, 'SAMPLE_MENU_SECTION_CREATE', '샘플 생성', 3,
+        '00000000-0000-0000-0000-000000000003', 20, '샘플 생성 권한');
 
-insert into tb_auth_permission (created_at, code, name, depth, parent_id, sort_order, description)
-values (current_timestamp, 'SAMPLE_POLICY_SECTION', '샘플 정책 중메뉴', 2,
-        (select id from tb_auth_permission where code = 'SAMPLE_MENU' order by id desc limit 1),
-        20, '베이스 프로젝트 샘플 정책 중메뉴');
+insert into tb_auth_permission (id, created_at, code, name, depth, parent_id, sort_order, description)
+values ('00000000-0000-0000-0000-000000000006', current_timestamp, 'SAMPLE_POLICY_SECTION', '샘플 정책 중메뉴', 2,
+        '00000000-0000-0000-0000-000000000002', 20, '베이스 프로젝트 샘플 정책 중메뉴');
 
-insert into tb_auth_permission (created_at, code, name, depth, parent_id, sort_order, description)
-values (current_timestamp, 'SAMPLE_POLICY_SECTION_APPLY', '샘플 정책 적용', 3,
-        (select id from tb_auth_permission where code = 'SAMPLE_POLICY_SECTION' order by id desc limit 1),
-        10, '샘플 정책 적용 권한');
+insert into tb_auth_permission (id, created_at, code, name, depth, parent_id, sort_order, description)
+values ('00000000-0000-0000-0000-000000000007', current_timestamp, 'SAMPLE_POLICY_SECTION_APPLY', '샘플 정책 적용', 3,
+        '00000000-0000-0000-0000-000000000006', 10, '샘플 정책 적용 권한');
 
-insert into tb_auth_permission (created_at, code, name, depth, parent_id, sort_order, description)
-values (current_timestamp, 'SAMPLE_POLICY_SECTION_VIEW', '샘플 정책 조회', 3,
-        (select id from tb_auth_permission where code = 'SAMPLE_POLICY_SECTION' order by id desc limit 1),
-        20, '샘플 정책 조회 권한');
+insert into tb_auth_permission (id, created_at, code, name, depth, parent_id, sort_order, description)
+values ('00000000-0000-0000-0000-000000000008', current_timestamp, 'SAMPLE_POLICY_SECTION_VIEW', '샘플 정책 조회', 3,
+        '00000000-0000-0000-0000-000000000006', 20, '샘플 정책 조회 권한');
 
-insert into tb_auth_permission (created_at, code, name, depth, parent_id, sort_order, description)
-values (current_timestamp, 'SAMPLE_POLICY_SECTION_MANAGE', '샘플 정책 관리', 3,
-        (select id from tb_auth_permission where code = 'SAMPLE_POLICY_SECTION' order by id desc limit 1),
-        30, '샘플 정책 관리 권한');
+insert into tb_auth_permission (id, created_at, code, name, depth, parent_id, sort_order, description)
+values ('00000000-0000-0000-0000-000000000009', current_timestamp, 'SAMPLE_POLICY_SECTION_MANAGE', '샘플 정책 관리', 3,
+        '00000000-0000-0000-0000-000000000006', 30, '샘플 정책 관리 권한');
 
 create table tb_auth_permission_grant
 (
-    id              bigserial
+    id              varchar(36)  not null
         primary key,
     created_at      timestamp(6) not null,
     updated_at      timestamp(6),
     user_uuid       varchar(36)  not null
         constraint fk_auth_permission_grant_user_uuid
             references tb_auth,
-    permission_id   bigint       not null
+    permission_id   varchar(36)  not null
         constraint fk_auth_permission_grant_permission_id
             references tb_auth_permission,
     granted_by_uuid varchar(36)
         constraint fk_auth_permission_grant_granted_by_uuid
             references tb_auth
 );
-
-alter table tb_auth_permission_grant
-    owner to root;
 
 create index idx_tb_auth_permission_grant_user_uuid
     on tb_auth_permission_grant (user_uuid);
@@ -166,7 +144,7 @@ create index idx_tb_auth_permission_grant_permission_id
 
 create table tb_auth_verification
 (
-    id                bigserial
+    id                varchar(36)  not null
         primary key,
     created_at        timestamp(6) not null,
     updated_at        timestamp(6),
@@ -186,12 +164,9 @@ create table tb_auth_verification
     verified          boolean      not null
 );
 
-alter table tb_auth_verification
-    owner to root;
-
 create table tb_fcm_device_token
 (
-    id              bigserial
+    id              varchar(36)  not null
         primary key,
     created_at      timestamp(6) not null,
     deleted_at      timestamp(6),
@@ -207,12 +182,9 @@ create table tb_fcm_device_token
             references tb_auth
 );
 
-alter table tb_fcm_device_token
-    owner to root;
-
 create table tb_fcm_notification
 (
-    id         bigserial
+    id         varchar(36)  not null
         primary key,
     created_at timestamp(6) not null,
     deleted_at timestamp(6),
@@ -228,12 +200,9 @@ create table tb_fcm_notification
             references tb_auth
 );
 
-alter table tb_fcm_notification
-    owner to root;
-
 create table tb_files
 (
-    id                 bigserial
+    id                 varchar(36)  not null
         primary key,
     content_type       varchar(255),
     created_at         timestamp(6),
@@ -251,12 +220,9 @@ create table tb_files
     url                varchar(255) not null
 );
 
-alter table tb_files
-    owner to root;
-
 create table tb_refresh_token
 (
-    id                   bigserial
+    id                   varchar(36)  not null
         primary key,
     created_at           timestamp(6)  not null,
     deleted_at           timestamp(6),
@@ -276,6 +242,3 @@ create table tb_refresh_token
         constraint fkes59al21mee9i14oy9310kpas
             references tb_auth
 );
-
-alter table tb_refresh_token
-    owner to root;
