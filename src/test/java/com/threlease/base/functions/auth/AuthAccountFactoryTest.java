@@ -8,12 +8,15 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AuthAccountFactoryTest {
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-    private final AuthAccountFactory authAccountFactory = new AuthAccountFactory(passwordEncoder);
+    private final AuthPasswordService authPasswordService = new AuthPasswordService(passwordEncoder);
+    private final AuthAccountFactory authAccountFactory = new AuthAccountFactory(authPasswordService);
 
     @Test
     void createEncodesPasswordWithLoginCompatibleEncoder() {
@@ -27,7 +30,10 @@ class AuthAccountFactoryTest {
         );
 
         assertNotEquals("Admin1234!", admin.getPassword());
-        assertTrue(passwordEncoder.matches("Admin1234!", admin.getPassword()));
+        assertNotNull(admin.getSalt());
+        assertFalse(admin.getSalt().isBlank());
+        assertFalse(passwordEncoder.matches("Admin1234!", admin.getPassword()));
+        assertTrue(authPasswordService.matches("Admin1234!", admin));
         assertEquals(AuthTypes.INTERNAL, admin.getType());
         assertEquals(AuthStatuses.ACTIVE, admin.getStatus());
     }

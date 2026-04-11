@@ -171,8 +171,9 @@ public class AuthService {
         saveLoginHistory(auth, true, 0, null, clientIp, userAgent, null);
     }
 
-    public void changePassword(AuthEntity auth, String encodedPassword) {
+    public void changePassword(AuthEntity auth, String encodedPassword, String salt) {
         auth.setPassword(encodedPassword);
+        auth.setSalt(salt);
         authSave(auth);
     }
 

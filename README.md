@@ -225,6 +225,7 @@ app:
 
 - 저장: `BCrypt`
 - 검증: `BCrypt`
+- salt: 사용자별 별도 `salt` 컬럼을 password pre-hash에 사용하고, BCrypt hash 내부 salt도 함께 사용
 - 레거시 `SHA-512 + salt` fallback 없음
 
 즉 현재는 비밀번호 검증이 완전히 `BCrypt only` 입니다.
@@ -634,7 +635,6 @@ public class NoticeCreateDto {
 즉 아래 내부 인증 필드는 외부 응답에서 직접 노출하지 않습니다.
 
 - `password`
-- `salt`
 - refresh token 원문
 - MFA secret
 - 인증 검증 hash
@@ -674,10 +674,18 @@ public class NoticeCreateDto {
 - Flyway migration
 - JPA schema와 Flyway schema 분리 설정
 - DB schema 변경은 Flyway migration으로 검증/관리
+- Hibernate는 `ddl-auto=validate`로 엔티티와 DB schema 불일치만 검증
 
 설정 예시:
 
 ```yml
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+
 app:
   database:
     jpa-schema: public

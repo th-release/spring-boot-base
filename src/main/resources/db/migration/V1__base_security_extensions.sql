@@ -8,7 +8,7 @@ create table tb_auth
     email                      varchar(255),
     nickname                   varchar(36)  not null,
     password                   text         not null,
-    salt                       varchar(32)  not null,
+    salt                       varchar(64)  not null,
     status                     varchar(50)  not null
         constraint tb_auth_status_check
             check ((status)::text = ANY

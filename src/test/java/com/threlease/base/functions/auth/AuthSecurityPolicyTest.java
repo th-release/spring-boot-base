@@ -100,7 +100,6 @@ class AuthSecurityPolicyTest {
                 .username("tester")
                 .nickname("tester")
                 .password("encoded")
-                .salt("salt")
                 .build();
 
         authService.recordFailedLogin(user);
@@ -118,7 +117,6 @@ class AuthSecurityPolicyTest {
                 .username("tester")
                 .nickname("tester")
                 .password("encoded")
-                .salt("salt")
                 .build();
 
         authService.recordSuccessfulLogin(user, "127.0.0.1");

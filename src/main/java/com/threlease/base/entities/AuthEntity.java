@@ -53,7 +53,7 @@ public class AuthEntity extends BaseEntity {
     private String password;
 
     @JsonIgnore
-    @Column(name = "salt", length = 32, nullable = false)
+    @Column(name = "salt", length = 64, nullable = false)
     private String salt;
 
     @Enumerated(EnumType.STRING)

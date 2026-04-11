@@ -49,7 +49,9 @@ public class AuthAdminBootstrap {
         if (!adminProperties.isResetPasswordOnStartup()) {
             return;
         }
-        admin.setPassword(authAccountFactory.encodePassword(adminProperties.getPassword()));
+        AuthPasswordService.EncodedPassword encodedPassword = authAccountFactory.encodePassword(adminProperties.getPassword());
+        admin.setPassword(encodedPassword.passwordHash());
+        admin.setSalt(encodedPassword.salt());
         authService.authSave(admin);
         log.warn("Initial admin password was reset by app.admin.reset-password-on-startup=true. username={}", admin.getUsername());
     }

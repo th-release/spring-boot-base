@@ -81,7 +81,6 @@ class AuthServiceRdbTest {
                 .username("tester")
                 .nickname("tester")
                 .password("encoded")
-                .salt("salt")
                 .build();
 
         when(refreshTokenRepository.findAllByUserAndRevokedFalse(any(AuthEntity.class))).thenReturn(List.of());
@@ -122,7 +121,6 @@ class AuthServiceRdbTest {
                 .username("tester")
                 .nickname("tester")
                 .password("encoded")
-                .salt("salt")
                 .build();
 
         RefreshTokenEntity[] savedToken = new RefreshTokenEntity[1];

@@ -20,7 +20,6 @@ import com.threlease.base.functions.auth.dto.SignUpDto;
 import com.threlease.base.functions.auth.dto.TokenResponseDto;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -29,19 +28,19 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AuthFlowService {
     private final AuthService authService;
-    private final PasswordEncoder passwordEncoder;
     private final AuditLogService auditLogService;
     private final MfaService mfaService;
     private final EmailService emailService;
     private final EmailProperties emailProperties;
     private final AuthVerificationService authVerificationService;
     private final AuthAccountFactory authAccountFactory;
+    private final AuthPasswordService authPasswordService;
 
     public TokenResponseDto login(LoginDto dto, String userAgent, String clientIp, HttpServletRequest request) {
         AuthEntity auth = authService.findOneByUsername(dto.getUsername())
                 .orElseThrow(() -> {
                     auditLogService.log(null, "LOGIN", "AUTH", dto.getUsername(), false, request, "User not found");
-                    return new BusinessException(ErrorCode.USER_NOT_FOUND);
+                    return new BusinessException(ErrorCode.WRONG_PASSWORD);
                 });
 
         try {
@@ -51,7 +50,7 @@ public class AuthFlowService {
             throw e;
         }
 
-        if (!passwordEncoder.matches(dto.getPassword(), auth.getPassword())) {
+        if (!authPasswordService.matches(dto.getPassword(), auth)) {
             authService.recordFailedLogin(auth, clientIp, userAgent, "WRONG_PASSWORD");
             auditLogService.log(auth.getUuid(), "LOGIN", "AUTH", auth.getUuid(), false, request, "Wrong password");
             throw new BusinessException(ErrorCode.WRONG_PASSWORD);
@@ -115,11 +114,12 @@ public class AuthFlowService {
         if (!dto.getNewPassword().equals(dto.getConfirmPassword())) {
             throw new BusinessException(ErrorCode.PASSWORD_CHANGE_MISMATCH);
         }
-        if (!passwordEncoder.matches(dto.getCurrentPassword(), user.getPassword())) {
+        if (!authPasswordService.matches(dto.getCurrentPassword(), user)) {
             throw new BusinessException(ErrorCode.WRONG_PASSWORD);
         }
 
-        authService.changePassword(user, passwordEncoder.encode(dto.getNewPassword()));
+        AuthPasswordService.EncodedPassword encodedPassword = authPasswordService.encode(dto.getNewPassword());
+        authService.changePassword(user, encodedPassword.passwordHash(), encodedPassword.salt());
         auditLogService.log(user.getUuid(), "CHANGE_PASSWORD", "AUTH", user.getUuid(), true, request, "Password changed");
     }
 
@@ -154,7 +154,8 @@ public class AuthFlowService {
 
         if (emailProperties.isEnabled()) {
             authVerificationService.verifyCode(user, AuthVerificationType.PASSWORD_RESET, dto.getVerificationCode());
-            authService.changePassword(user, passwordEncoder.encode(dto.getNewPassword()));
+            AuthPasswordService.EncodedPassword encodedPassword = authPasswordService.encode(dto.getNewPassword());
+            authService.changePassword(user, encodedPassword.passwordHash(), encodedPassword.salt());
             authVerificationService.clear(user, AuthVerificationType.PASSWORD_RESET);
             auditLogService.log(user.getUuid(), "CONFIRM_PASSWORD_RESET", "AUTH", user.getUuid(), true, request, "Password reset by email verification");
             return;
@@ -163,12 +164,13 @@ public class AuthFlowService {
         if (dto.getCurrentPassword() == null || dto.getCurrentPassword().isBlank()) {
             throw new BusinessException(ErrorCode.WRONG_PASSWORD);
         }
-        if (!passwordEncoder.matches(dto.getCurrentPassword(), user.getPassword())) {
+        if (!authPasswordService.matches(dto.getCurrentPassword(), user)) {
             auditLogService.log(user.getUuid(), "CONFIRM_PASSWORD_RESET", "AUTH", user.getUuid(), false, request, "Wrong current password");
             throw new BusinessException(ErrorCode.WRONG_PASSWORD);
         }
 
-        authService.changePassword(user, passwordEncoder.encode(dto.getNewPassword()));
+        AuthPasswordService.EncodedPassword encodedPassword = authPasswordService.encode(dto.getNewPassword());
+        authService.changePassword(user, encodedPassword.passwordHash(), encodedPassword.salt());
         auditLogService.log(user.getUuid(), "CONFIRM_PASSWORD_RESET", "AUTH", user.getUuid(), true, request, "Password reset by current password");
     }
 
