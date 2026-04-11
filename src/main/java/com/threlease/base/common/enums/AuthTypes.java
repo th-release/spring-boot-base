@@ -5,11 +5,10 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public enum UserTypes implements EnumValue {
-    USER("일반 사용자"),
-    ADMIN("관리자 유형"),
-    TEACHER("선생님"),
-    STUDENT("학생");
+public enum AuthTypes implements EnumValue {
+    GENERAL("일반"),
+    INTERNAL("내부"),
+    EXTERNAL("외부");
 
     private final String name;
 

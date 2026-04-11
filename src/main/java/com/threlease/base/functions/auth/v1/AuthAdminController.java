@@ -1,6 +1,7 @@
 package com.threlease.base.functions.auth.v1;
 
 import com.threlease.base.common.annotation.ApiVersion;
+import com.threlease.base.common.dto.SearchRequest;
 import com.threlease.base.common.utils.PageRequestHelper;
 import com.threlease.base.common.utils.responses.BasicResponse;
 import com.threlease.base.entities.AuthEntity;
@@ -10,14 +11,12 @@ import com.threlease.base.functions.auth.dto.AdminUserSummaryDto;
 import com.threlease.base.functions.auth.dto.AuthPermissionCreateDto;
 import com.threlease.base.functions.auth.dto.AuthPermissionDto;
 import com.threlease.base.functions.auth.dto.AuthPermissionGrantDto;
-import com.threlease.base.functions.auth.dto.AuditLogDto;
 import com.threlease.base.functions.auth.dto.RefreshTokenSessionDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,15 +32,12 @@ public class AuthAdminController {
 
     @GetMapping("/users")
     @Operation(summary = "관리자용 사용자 목록")
-    public ResponseEntity<BasicResponse<AuthService.PageResult<AdminUserSummaryDto>>> users(
-            @RequestParam(defaultValue = "") String query,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            HttpServletRequest request) {
+    public ResponseEntity<BasicResponse<AuthService.PageResult<AdminUserSummaryDto>>> users(SearchRequest searchRequest,
+                                                                                            HttpServletRequest request) {
         return BasicResponse.ok(authAdminService.getUsers(
                 (AuthEntity) request.getAttribute("user"),
-                PageRequestHelper.searchQuery(query),
-                PageRequestHelper.ofLatest(page, size)
+                PageRequestHelper.searchQuery(searchRequest),
+                PageRequestHelper.latest(searchRequest)
         ));
     }
 
@@ -79,15 +75,6 @@ public class AuthAdminController {
     public ResponseEntity<BasicResponse<Void>> resetUserMfa(@PathVariable String uuid, HttpServletRequest request) {
         authAdminService.resetUserMfa((AuthEntity) request.getAttribute("user"), uuid, request);
         return BasicResponse.noContent();
-    }
-
-    @GetMapping("/audit-logs")
-    @Operation(summary = "관리자용 감사 로그 조회")
-    public ResponseEntity<BasicResponse<Page<AuditLogDto>>> auditLogs(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            HttpServletRequest request) {
-        return BasicResponse.ok(authAdminService.getAuditLogs((AuthEntity) request.getAttribute("user"), page, size));
     }
 
     @GetMapping("/permissions")

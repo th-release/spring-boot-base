@@ -51,7 +51,7 @@ public class AuthPermissionService {
                 .code(trim(dto.getCode(), 120))
                 .name(trim(dto.getName(), 120))
                 .depth(depth)
-                .parentId(parent == null ? null : parent.getId())
+                .parent(parent)
                 .sortOrder(dto.getSortOrder())
                 .description(trim(dto.getDescription(), 255))
                 .build();
@@ -62,13 +62,13 @@ public class AuthPermissionService {
     public void grantPermission(String userUuid, String permissionCode, AuthEntity grantedBy) {
         AuthPermissionEntity permission = authPermissionRepository.findActiveByCode(permissionCode)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT, "권한을 찾을 수 없습니다."));
-        if (authPermissionGrantRepository.findActiveByUserUuidAndPermissionId(userUuid, permission.getId()).isPresent()) {
+        if (authPermissionGrantRepository.findActiveByUserUuidAndPermission(userUuid, permission).isPresent()) {
             return;
         }
         authPermissionGrantRepository.save(AuthPermissionGrantEntity.builder()
-                .userUuid(userUuid)
-                .permissionId(permission.getId())
-                .grantedByUuid(grantedBy == null ? null : grantedBy.getUuid())
+                .user(AuthEntity.builder().uuid(userUuid).build())
+                .permission(permission)
+                .grantedBy(grantedBy)
                 .build());
     }
 
@@ -76,7 +76,7 @@ public class AuthPermissionService {
     public void revokePermission(String userUuid, String permissionCode) {
         AuthPermissionEntity permission = authPermissionRepository.findActiveByCode(permissionCode)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT, "권한을 찾을 수 없습니다."));
-        authPermissionGrantRepository.findActiveByUserUuidAndPermissionId(userUuid, permission.getId())
+        authPermissionGrantRepository.findActiveByUserUuidAndPermission(userUuid, permission)
                 .ifPresent(grant -> {
                     grant.delete();
                     authPermissionGrantRepository.save(grant);
@@ -87,7 +87,7 @@ public class AuthPermissionService {
     public List<AuthPermissionDto> getEffectivePermissions(String userUuid) {
         Set<Long> effectivePermissionIds = new HashSet<>();
         for (AuthPermissionGrantEntity grant : authPermissionGrantRepository.findAllActiveByUserUuid(userUuid)) {
-            collectDescendantPermissionIds(grant.getPermissionId(), effectivePermissionIds);
+            collectDescendantPermissionIds(grant.getPermission().getId(), effectivePermissionIds);
         }
 
         List<AuthPermissionDto> result = new ArrayList<>();
@@ -112,7 +112,7 @@ public class AuthPermissionService {
 
         Set<Long> grantedPermissionIds = new HashSet<>();
         for (AuthPermissionGrantEntity grant : authPermissionGrantRepository.findAllActiveByUserUuid(user.getUuid())) {
-            grantedPermissionIds.add(grant.getPermissionId());
+            grantedPermissionIds.add(grant.getPermission().getId());
         }
 
         AuthPermissionEntity current = target.get();
@@ -126,19 +126,15 @@ public class AuthPermissionService {
     }
 
     private AuthPermissionEntity resolveParent(AuthPermissionEntity permission) {
-        if (permission.getParentId() == null) {
-            return null;
-        }
-        return authPermissionRepository.findById(permission.getParentId())
-                .filter(parent -> !parent.isDeleted())
-                .orElse(null);
+        return permission.getParent() != null && !permission.getParent().isDeleted() ? permission.getParent() : null;
     }
 
     private void collectDescendantPermissionIds(Long permissionId, Set<Long> collector) {
         if (permissionId == null || !collector.add(permissionId)) {
             return;
         }
-        for (AuthPermissionEntity child : authPermissionRepository.findAllActiveByParentId(permissionId)) {
+        AuthPermissionEntity parent = AuthPermissionEntity.builder().id(permissionId).build();
+        for (AuthPermissionEntity child : authPermissionRepository.findAllActiveByParent(parent)) {
             collectDescendantPermissionIds(child.getId(), collector);
         }
     }
@@ -149,7 +145,7 @@ public class AuthPermissionService {
                 .code(permission.getCode())
                 .name(permission.getName())
                 .depth(permission.getDepth())
-                .parentId(permission.getParentId())
+                .parentId(permission.getParent() == null ? null : permission.getParent().getId())
                 .sortOrder(permission.getSortOrder())
                 .description(permission.getDescription())
                 .build();

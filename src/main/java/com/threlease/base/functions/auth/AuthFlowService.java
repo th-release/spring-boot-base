@@ -100,7 +100,7 @@ public class AuthFlowService {
                 .email(dto.getEmail())
                 .password(passwordEncoder.encode(dto.getPassword()))
                 .salt("")
-                .type(com.threlease.base.common.enums.UserTypes.USER)
+                .type(com.threlease.base.common.enums.AuthTypes.GENERAL)
                 .status(com.threlease.base.common.enums.AuthStatuses.ACTIVE)
                 .build();
 

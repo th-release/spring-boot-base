@@ -19,5 +19,5 @@ public @interface ExcelColumn {
     /**
      * 컬럼 순서 (0부터 시작)
      */
-    int order() default 999;
+    int order() default -1;
 }

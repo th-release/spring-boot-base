@@ -172,7 +172,7 @@ public class MfaService {
     private AuthMfaEntity resolveOrCreateMfa(AuthEntity user) {
         return authMfaRepository.findActiveByUserUuid(user.getUuid())
                 .orElseGet(() -> AuthMfaEntity.builder()
-                        .userUuid(user.getUuid())
+                        .user(user)
                         .enabled(false)
                         .build());
     }

@@ -3,6 +3,7 @@ package com.threlease.base.common.utils.storage;
 import com.threlease.base.common.properties.aws.s3.S3Properties;
 import com.threlease.base.common.utils.storage.entity.FileEntity;
 import com.threlease.base.common.utils.storage.repository.FileRepository;
+import com.threlease.base.entities.AuthEntity;
 import io.awspring.cloud.s3.S3Template;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +30,7 @@ public class S3StorageService implements StorageService {
     private final ObjectProvider<S3Presigner> s3PresignerProvider;
 
     @Override
-    public FileEntity upload(MultipartFile file, String dirName, String ownerUuid) throws IOException {
+    public FileEntity upload(MultipartFile file, String dirName, AuthEntity owner) throws IOException {
         fileUploadSecurityService.validate(file);
         String normalizedDirName = fileUploadSecurityService.validateDirName(dirName);
         String bucket = s3Properties.getBucket();
@@ -44,7 +45,7 @@ public class S3StorageService implements StorageService {
                 .contentType(file.getContentType())
                 .fileSize(file.getSize())
                 .dirName(normalizedDirName)
-                .ownerUuid(ownerUuid)
+                .owner(owner)
                 .storageType(FileEntity.StorageType.S3)
                 .url(getUrl(filePath))
                 .build();

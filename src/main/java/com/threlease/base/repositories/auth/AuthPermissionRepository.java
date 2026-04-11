@@ -33,9 +33,9 @@ public interface AuthPermissionRepository extends JpaRepository<AuthPermissionEn
     @Query("""
             SELECT p
             FROM AuthPermissionEntity p
-            WHERE p.parentId = :parentId
+            WHERE p.parent = :parent
               AND p.deletedAt IS NULL
             ORDER BY p.sortOrder ASC, p.id ASC
             """)
-    List<AuthPermissionEntity> findAllActiveByParentId(@Param("parentId") Long parentId);
+    List<AuthPermissionEntity> findAllActiveByParent(@Param("parent") AuthPermissionEntity parent);
 }

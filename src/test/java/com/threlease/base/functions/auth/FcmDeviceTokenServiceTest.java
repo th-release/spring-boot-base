@@ -35,7 +35,7 @@ class FcmDeviceTokenServiceTest {
 
         FcmDeviceTokenEntity entity = service.register(auth, "device-token", null, "Mozilla/5.0 Chrome", "127.0.0.1");
 
-        assertEquals("user-1", entity.getUserUuid());
+        assertEquals("user-1", entity.getUser().getUuid());
         assertTrue(entity.isEnabled());
     }
 }

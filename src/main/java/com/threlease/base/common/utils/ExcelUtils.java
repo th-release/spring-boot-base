@@ -117,9 +117,13 @@ public class ExcelUtils {
     }
 
     private static List<Field> getSortedExcelFields(Class<?> clazz) {
-        return Arrays.stream(clazz.getDeclaredFields())
+        List<Field> declaredFields = Arrays.asList(clazz.getDeclaredFields());
+        return declaredFields.stream()
                 .filter(f -> f.isAnnotationPresent(ExcelColumn.class))
-                .sorted(Comparator.comparingInt(f -> f.getAnnotation(ExcelColumn.class).order()))
+                .sorted(Comparator.comparingInt(f -> {
+                    int configuredOrder = f.getAnnotation(ExcelColumn.class).order();
+                    return configuredOrder >= 0 ? configuredOrder : declaredFields.indexOf(f);
+                }))
                 .collect(Collectors.toList());
     }
 

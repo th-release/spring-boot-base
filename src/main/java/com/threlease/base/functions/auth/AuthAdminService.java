@@ -6,13 +6,10 @@ import com.threlease.base.entities.AuthEntity;
 import com.threlease.base.functions.auth.dto.AdminUserSummaryDto;
 import com.threlease.base.functions.auth.dto.AuthPermissionCreateDto;
 import com.threlease.base.functions.auth.dto.AuthPermissionDto;
-import com.threlease.base.functions.auth.dto.AuditLogDto;
 import com.threlease.base.functions.auth.dto.RefreshTokenSessionDto;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -70,11 +67,6 @@ public class AuthAdminService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
         mfaService.reset(target);
         auditLogService.logAdmin(admin.getUuid(), "ADMIN_RESET_MFA", "AUTH", uuid, true, request, "User MFA reset");
-    }
-
-    public Page<AuditLogDto> getAuditLogs(AuthEntity admin, int page, int size) {
-        assertAdmin(admin);
-        return auditLogService.getAuditLogs(PageRequest.of(page, size));
     }
 
     public List<AuthPermissionDto> getPermissions(AuthEntity admin) {

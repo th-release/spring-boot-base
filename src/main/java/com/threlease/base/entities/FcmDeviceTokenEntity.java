@@ -24,13 +24,10 @@ public class FcmDeviceTokenEntity extends BaseEntity {
     @ExcelColumn(headerName = "ID", order = 0)
     private Long id;
 
-    @Column(name = "user_uuid", nullable = false, length = 36)
-    @ExcelColumn(headerName = "사용자 UUID", order = 1)
-    private String userUuid;
-
     @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_uuid", referencedColumnName = "uuid", insertable = false, updatable = false)
+    @ManyToOne
+    @JoinColumn(name = "user_uuid", referencedColumnName = "uuid")
+    @ExcelColumn(headerName = "사용자")
     private AuthEntity user;
 
     @Column(name = "device_token", nullable = false, length = 512)

@@ -24,7 +24,7 @@ public class AuthVerificationService {
         authVerificationRepository.deleteAll(authVerificationRepository.findAllByUserUuidAndType(auth.getUuid(), type));
         String code = randomComponent.generateOtp(6);
         authVerificationRepository.save(AuthVerificationEntity.builder()
-                .userUuid(auth.getUuid())
+                .user(auth)
                 .type(type)
                 .target(target)
                 .verificationHash(hashComponent.generateSHA256(code))

@@ -1,6 +1,7 @@
 package com.threlease.base.repositories.auth;
 
 import com.threlease.base.entities.AuthMfaEntity;
+import com.threlease.base.entities.AuthEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,13 +13,13 @@ public interface AuthMfaRepository extends JpaRepository<AuthMfaEntity, Long> {
     @Query("""
             SELECT m
             FROM AuthMfaEntity m
-            WHERE m.userUuid = :userUuid
+            WHERE m.user = :user
               AND m.deletedAt IS NULL
             ORDER BY m.createdAt DESC, m.id DESC
             """)
-    List<AuthMfaEntity> findAllActiveByUserUuid(@Param("userUuid") String userUuid);
+    List<AuthMfaEntity> findAllActiveByUser(@Param("user") AuthEntity user);
 
     default Optional<AuthMfaEntity> findActiveByUserUuid(String userUuid) {
-        return findAllActiveByUserUuid(userUuid).stream().findFirst();
+        return findAllActiveByUser(AuthEntity.builder().uuid(userUuid).build()).stream().findFirst();
     }
 }

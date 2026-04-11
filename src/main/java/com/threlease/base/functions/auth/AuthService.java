@@ -341,7 +341,7 @@ public class AuthService {
 
         if (isRdbStorage()) {
             refreshTokenRepository.save(RefreshTokenEntity.builder()
-                    .userUuid(uuid)
+                    .user(authRef(uuid))
                     .tokenId(tokenId)
                     .familyId(familyId)
                     .tokenHash(hashedToken)
@@ -439,7 +439,7 @@ public class AuthService {
         return new RefreshTokenRecord(
                 entity.getTokenId(),
                 entity.getFamilyId(),
-                entity.getUserUuid(),
+                entity.getUser().getUuid(),
                 entity.getTokenHash(),
                 entity.getCreatedAt(),
                 entity.getLastUsedAt(),
@@ -616,7 +616,7 @@ public class AuthService {
                                   String userAgent,
                                   String failureReason) {
         authLoginHistoryRepository.save(AuthLoginHistoryEntity.builder()
-                .userUuid(auth.getUuid())
+                .user(auth)
                 .username(trim(auth.getUsername(), 24))
                 .success(success)
                 .failureReason(trim(failureReason, 120))
@@ -684,5 +684,9 @@ public class AuthService {
             return null;
         }
         return value.substring(0, Math.min(value.length(), maxLength));
+    }
+
+    private AuthEntity authRef(String uuid) {
+        return AuthEntity.builder().uuid(uuid).build();
     }
 }

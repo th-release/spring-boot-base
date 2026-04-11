@@ -97,7 +97,7 @@ class AuthServiceRdbTest {
     void logoutAllRevokesActiveSessionsInRdbMode() {
         RefreshTokenEntity token1 = RefreshTokenEntity.builder()
                 .id(1L)
-                .userUuid("user-1")
+                .user(AuthEntity.builder().uuid("user-1").build())
                 .tokenId("token-1")
                 .familyId("family-1")
                 .tokenHash("hash-1")

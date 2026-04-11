@@ -1,6 +1,7 @@
 package com.threlease.base.repositories.auth;
 
 import com.threlease.base.entities.AuthLoginHistoryEntity;
+import com.threlease.base.entities.AuthEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,27 +14,27 @@ public interface AuthLoginHistoryRepository extends JpaRepository<AuthLoginHisto
     @Query("""
             SELECT h
             FROM AuthLoginHistoryEntity h
-            WHERE h.userUuid = :userUuid
+            WHERE h.user = :user
               AND h.deletedAt IS NULL
             ORDER BY h.createdAt DESC, h.id DESC
             """)
-    Page<AuthLoginHistoryEntity> findRecentByUserUuid(@Param("userUuid") String userUuid, Pageable pageable);
+    Page<AuthLoginHistoryEntity> findRecentByUser(@Param("user") AuthEntity user, Pageable pageable);
 
     @Query("""
             SELECT h
             FROM AuthLoginHistoryEntity h
-            WHERE h.userUuid = :userUuid
+            WHERE h.user = :user
               AND h.success = true
               AND h.deletedAt IS NULL
             ORDER BY h.createdAt DESC, h.id DESC
             """)
-    Page<AuthLoginHistoryEntity> findRecentSuccessfulByUserUuid(@Param("userUuid") String userUuid, Pageable pageable);
+    Page<AuthLoginHistoryEntity> findRecentSuccessfulByUser(@Param("user") AuthEntity user, Pageable pageable);
 
     default Optional<AuthLoginHistoryEntity> findLatestByUserUuid(String userUuid) {
-        return findRecentByUserUuid(userUuid, org.springframework.data.domain.PageRequest.of(0, 1)).stream().findFirst();
+        return findRecentByUser(AuthEntity.builder().uuid(userUuid).build(), org.springframework.data.domain.PageRequest.of(0, 1)).stream().findFirst();
     }
 
     default Optional<AuthLoginHistoryEntity> findLatestSuccessfulByUserUuid(String userUuid) {
-        return findRecentSuccessfulByUserUuid(userUuid, org.springframework.data.domain.PageRequest.of(0, 1)).stream().findFirst();
+        return findRecentSuccessfulByUser(AuthEntity.builder().uuid(userUuid).build(), org.springframework.data.domain.PageRequest.of(0, 1)).stream().findFirst();
     }
 }

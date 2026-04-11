@@ -55,7 +55,7 @@ class AuthVerificationServiceTest {
                 .build();
 
         AuthVerificationEntity entity = AuthVerificationEntity.builder()
-                .userUuid("user-1")
+                .user(auth)
                 .type(AuthVerificationType.PASSWORD_RESET)
                 .target("user@example.com")
                 .verificationHash("other-hash")
@@ -81,7 +81,7 @@ class AuthVerificationServiceTest {
 
         HashComponent hashComponent = new HashComponent();
         AuthVerificationEntity entity = AuthVerificationEntity.builder()
-                .userUuid("user-1")
+                .user(auth)
                 .type(AuthVerificationType.PASSWORD_RESET)
                 .target("user@example.com")
                 .verificationHash(hashComponent.generateSHA256(code))

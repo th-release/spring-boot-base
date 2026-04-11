@@ -3,6 +3,7 @@ package com.threlease.base.functions.auth;
 import com.google.gson.Gson;
 import com.threlease.base.common.exception.BusinessException;
 import com.threlease.base.common.exception.ErrorCode;
+import com.threlease.base.entities.AuthEntity;
 import com.threlease.base.entities.FcmNotificationEntity;
 import com.threlease.base.functions.auth.dto.FcmNotificationDto;
 import com.threlease.base.repositories.auth.FcmNotificationRepository;
@@ -25,7 +26,7 @@ public class FcmNotificationService {
                                                       String body,
                                                       Map<String, String> data) {
         FcmNotificationEntity notification = FcmNotificationEntity.builder()
-                .userUuid(userUuid)
+                .user(AuthEntity.builder().uuid(userUuid).build())
                 .messageId(messageId)
                 .title(trim(title, 255))
                 .body(body)

@@ -21,27 +21,27 @@ class AuthPermissionServiceTest {
     private AuthPermissionRepository permissionRepository;
     private AuthPermissionGrantRepository grantRepository;
 
-    private final AuthPermissionEntity studentRoot = AuthPermissionEntity.builder()
+    private final AuthPermissionEntity rootPermission = AuthPermissionEntity.builder()
             .id(1L)
-            .code("STUDENT_MANAGE")
-            .name("학생관리")
+            .code("SAMPLE_MENU")
+            .name("샘플 대메뉴")
             .depth(1)
             .build();
 
-    private final AuthPermissionEntity studentMenu = AuthPermissionEntity.builder()
+    private final AuthPermissionEntity sectionPermission = AuthPermissionEntity.builder()
             .id(2L)
-            .code("STUDENT_MANAGE_STUDENT")
-            .name("학생관리")
+            .code("SAMPLE_MENU_SECTION")
+            .name("샘플 중메뉴")
             .depth(2)
-            .parentId(1L)
+            .parent(rootPermission)
             .build();
 
-    private final AuthPermissionEntity editStudent = AuthPermissionEntity.builder()
+    private final AuthPermissionEntity updatePermission = AuthPermissionEntity.builder()
             .id(3L)
-            .code("STUDENT_MANAGE_STUDENT_EDIT")
-            .name("학생 정보 수정")
+            .code("SAMPLE_MENU_SECTION_UPDATE")
+            .name("샘플 수정")
             .depth(3)
-            .parentId(2L)
+            .parent(sectionPermission)
             .build();
 
     @BeforeEach
@@ -50,32 +50,32 @@ class AuthPermissionServiceTest {
         grantRepository = mock(AuthPermissionGrantRepository.class);
         authPermissionService = new AuthPermissionService(permissionRepository, grantRepository);
 
-        when(permissionRepository.findActiveByCode("STUDENT_MANAGE")).thenReturn(Optional.of(studentRoot));
-        when(permissionRepository.findActiveByCode("STUDENT_MANAGE_STUDENT_EDIT")).thenReturn(Optional.of(editStudent));
-        when(permissionRepository.findById(1L)).thenReturn(Optional.of(studentRoot));
-        when(permissionRepository.findById(2L)).thenReturn(Optional.of(studentMenu));
-        when(permissionRepository.findById(3L)).thenReturn(Optional.of(editStudent));
+        when(permissionRepository.findActiveByCode("SAMPLE_MENU")).thenReturn(Optional.of(rootPermission));
+        when(permissionRepository.findActiveByCode("SAMPLE_MENU_SECTION_UPDATE")).thenReturn(Optional.of(updatePermission));
+        when(permissionRepository.findById(1L)).thenReturn(Optional.of(rootPermission));
+        when(permissionRepository.findById(2L)).thenReturn(Optional.of(sectionPermission));
+        when(permissionRepository.findById(3L)).thenReturn(Optional.of(updatePermission));
     }
 
     @Test
     void parentGrantAllowsChildPermission() {
-        AuthEntity teacher = AuthEntity.builder().uuid("teacher-1").build();
+        AuthEntity actor = AuthEntity.builder().uuid("actor-1").build();
         AuthPermissionGrantEntity rootGrant = AuthPermissionGrantEntity.builder()
-                .userUuid("teacher-1")
-                .permissionId(1L)
+                .user(actor)
+                .permission(rootPermission)
                 .build();
 
-        when(grantRepository.findAllActiveByUserUuid("teacher-1")).thenReturn(List.of(rootGrant));
+        when(grantRepository.findAllActiveByUserUuid("actor-1")).thenReturn(List.of(rootGrant));
 
-        assertTrue(authPermissionService.hasPermission(teacher, "STUDENT_MANAGE_STUDENT_EDIT"));
+        assertTrue(authPermissionService.hasPermission(actor, "SAMPLE_MENU_SECTION_UPDATE"));
     }
 
     @Test
     void missingParentGrantDeniesChildPermission() {
-        AuthEntity teacher = AuthEntity.builder().uuid("teacher-1").build();
+        AuthEntity actor = AuthEntity.builder().uuid("actor-1").build();
 
-        when(grantRepository.findAllActiveByUserUuid("teacher-1")).thenReturn(List.of());
+        when(grantRepository.findAllActiveByUserUuid("actor-1")).thenReturn(List.of());
 
-        assertFalse(authPermissionService.hasPermission(teacher, "STUDENT_MANAGE_STUDENT_EDIT"));
+        assertFalse(authPermissionService.hasPermission(actor, "SAMPLE_MENU_SECTION_UPDATE"));
     }
 }

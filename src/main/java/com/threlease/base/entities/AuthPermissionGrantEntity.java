@@ -6,7 +6,6 @@ import com.threlease.base.common.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -35,30 +34,21 @@ public class AuthPermissionGrantEntity extends BaseEntity {
     @ExcelColumn(headerName = "ID", order = 0)
     private Long id;
 
-    @Column(name = "user_uuid", nullable = false, length = 36)
-    @ExcelColumn(headerName = "사용자 UUID", order = 1)
-    private String userUuid;
-
     @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_uuid", referencedColumnName = "uuid", insertable = false, updatable = false)
+    @ManyToOne
+    @JoinColumn(name = "user_uuid", referencedColumnName = "uuid")
+    @ExcelColumn(headerName = "사용자")
     private AuthEntity user;
 
-    @Column(name = "permission_id", nullable = false)
-    @ExcelColumn(headerName = "권한 ID", order = 2)
-    private Long permissionId;
-
     @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "permission_id", referencedColumnName = "id", insertable = false, updatable = false)
+    @ManyToOne
+    @JoinColumn(name = "permission_id", referencedColumnName = "id")
+    @ExcelColumn(headerName = "권한")
     private AuthPermissionEntity permission;
 
-    @Column(name = "granted_by_uuid", length = 36)
-    @ExcelColumn(headerName = "부여자 UUID", order = 3)
-    private String grantedByUuid;
-
     @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "granted_by_uuid", referencedColumnName = "uuid", insertable = false, updatable = false)
+    @ManyToOne
+    @JoinColumn(name = "granted_by_uuid", referencedColumnName = "uuid")
+    @ExcelColumn(headerName = "부여자")
     private AuthEntity grantedBy;
 }

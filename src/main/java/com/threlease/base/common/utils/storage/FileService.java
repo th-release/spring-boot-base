@@ -41,7 +41,7 @@ public class FileService {
 
     @Transactional
     public FileUploadResponseDto upload(MultipartFile file, String dirName, AuthEntity user) throws IOException {
-        FileEntity fileEntity = storageService.upload(file, dirName, user.getUuid());
+        FileEntity fileEntity = storageService.upload(file, dirName, user);
         return FileUploadResponseDto.builder()
                 .id(fileEntity.getId())
                 .originalFileName(fileEntity.getOriginalFileName())

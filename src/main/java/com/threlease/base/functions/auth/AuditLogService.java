@@ -3,35 +3,15 @@ package com.threlease.base.functions.auth;
 import com.threlease.base.common.properties.app.auth.AuthSecurityProperties;
 import com.threlease.base.common.properties.app.privacy.PrivacyProperties;
 import com.threlease.base.common.utils.IpUtils;
-import com.threlease.base.entities.AuditLogEntity;
-import com.threlease.base.functions.auth.dto.AuditLogDto;
-import com.threlease.base.repositories.auth.AuditLogRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
-import java.util.Set;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class AuditLogService {
-    private static final Set<String> PERSISTED_ADMIN_ACTIONS = Set.of(
-            "ADMIN_LOGOUT_ALL",
-            "ADMIN_LOCK_USER",
-            "ADMIN_UNLOCK_USER",
-            "ADMIN_RESET_MFA",
-            "ADMIN_CREATE_PERMISSION",
-            "ADMIN_GRANT_PERMISSION",
-            "ADMIN_REVOKE_PERMISSION"
-    );
-
-    private final AuditLogRepository auditLogRepository;
     private final AuthSecurityProperties authSecurityProperties;
     private final PrivacyProperties privacyProperties;
 
@@ -52,51 +32,15 @@ public class AuditLogService {
         if (!authSecurityProperties.getAudit().isEnabled()) {
             return;
         }
-        if (!PERSISTED_ADMIN_ACTIONS.contains(action)) {
-            log.info("ADMIN EVENT actor={}, action={}, resourceType={}, resourceId={}, success={}, ip={}, detail={}",
-                    actorUuid,
-                    action,
-                    resourceType,
-                    resourceId,
-                    success,
-                    maskIpIfNeeded(request != null ? IpUtils.getClientIp(request) : null),
-                    detail);
-            return;
-        }
-
-        auditLogRepository.save(AuditLogEntity.builder()
-                .actorUuid(actorUuid)
-                .action(action)
-                .resourceType(resourceType)
-                .resourceId(resourceId)
-                .success(success)
-                .clientIp(maskIpIfNeeded(request != null ? IpUtils.getClientIp(request) : null))
-                .userAgent(resolveUserAgent(request))
-                .detail(trim(detail, 255))
-                .build());
-    }
-
-    public Page<AuditLogDto> getAuditLogs(Pageable pageable) {
-        return auditLogRepository.findAllByOrderByCreatedAtDesc(pageable)
-                .map(entity -> AuditLogDto.builder()
-                        .id(entity.getId())
-                        .actorUuid(entity.getActorUuid())
-                        .action(entity.getAction())
-                        .resourceType(entity.getResourceType())
-                        .resourceId(entity.getResourceId())
-                        .success(entity.isSuccess())
-                        .clientIp(entity.getClientIp())
-                        .userAgent(entity.getUserAgent())
-                        .detail(entity.getDetail())
-                        .createdAt(entity.getCreatedAt())
-                        .build());
-    }
-
-    @Scheduled(cron = "0 30 4 * * *")
-    public void cleanupExpiredAuditLogs() {
-        auditLogRepository.deleteAll(
-                auditLogRepository.findAllByCreatedAtBefore(LocalDateTime.now().minusDays(privacyProperties.getAuditRetentionDays()))
-        );
+        log.info("ADMIN EVENT actor={}, action={}, resourceType={}, resourceId={}, success={}, ip={}, userAgent={}, detail={}",
+                actorUuid,
+                action,
+                resourceType,
+                resourceId,
+                success,
+                maskIpIfNeeded(request != null ? IpUtils.getClientIp(request) : null),
+                resolveUserAgent(request),
+                trim(detail, 255));
     }
 
     private String resolveUserAgent(HttpServletRequest request) {

@@ -50,13 +50,10 @@ public class FileEntity {
     private String dirName;
 
     /** 파일 소유자 UUID */
-    @Column(name = "owner_uuid", length = 36)
-    @ExcelColumn(headerName = "소유자 UUID", order = 6)
-    private String ownerUuid;
-
     @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "owner_uuid", referencedColumnName = "uuid", insertable = false, updatable = false)
+    @ManyToOne
+    @JoinColumn(name = "owner_uuid", referencedColumnName = "uuid")
+    @ExcelColumn(headerName = "소유자")
     private AuthEntity owner;
 
     /** 스토리지 종류 */

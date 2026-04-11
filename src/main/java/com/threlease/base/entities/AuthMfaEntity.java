@@ -6,7 +6,6 @@ import com.threlease.base.common.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -35,13 +34,10 @@ public class AuthMfaEntity extends BaseEntity {
     @ExcelColumn(headerName = "ID", order = 0)
     private Long id;
 
-    @Column(name = "user_uuid", nullable = false, length = 36)
-    @ExcelColumn(headerName = "사용자 UUID", order = 1)
-    private String userUuid;
-
     @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_uuid", referencedColumnName = "uuid", insertable = false, updatable = false)
+    @ManyToOne
+    @JoinColumn(name = "user_uuid", referencedColumnName = "uuid")
+    @ExcelColumn(headerName = "사용자")
     private AuthEntity user;
 
     @JsonIgnore

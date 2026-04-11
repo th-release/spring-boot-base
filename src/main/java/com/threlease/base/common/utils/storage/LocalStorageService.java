@@ -3,6 +3,7 @@ package com.threlease.base.common.utils.storage;
 import com.threlease.base.common.properties.storage.StorageProperties;
 import com.threlease.base.common.utils.storage.entity.FileEntity;
 import com.threlease.base.common.utils.storage.repository.FileRepository;
+import com.threlease.base.entities.AuthEntity;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -24,7 +25,7 @@ public class LocalStorageService implements StorageService {
     private final FileUploadSecurityService fileUploadSecurityService;
 
     @Override
-    public FileEntity upload(MultipartFile file, String dirName, String ownerUuid) throws IOException {
+    public FileEntity upload(MultipartFile file, String dirName, AuthEntity owner) throws IOException {
         fileUploadSecurityService.validate(file);
         String normalizedDirName = fileUploadSecurityService.validateDirName(dirName);
         String rootPath = storageProperties.getLocal().getPath();
@@ -46,7 +47,7 @@ public class LocalStorageService implements StorageService {
                 .contentType(file.getContentType())
                 .fileSize(file.getSize())
                 .dirName(normalizedDirName)
-                .ownerUuid(ownerUuid)
+                .owner(owner)
                 .storageType(FileEntity.StorageType.LOCAL)
                 .url(getUrl(filePath))
                 .build();

@@ -6,7 +6,6 @@ import com.threlease.base.common.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -47,13 +46,10 @@ public class AuthPermissionEntity extends BaseEntity {
     @ExcelColumn(headerName = "뎁스", order = 3)
     private int depth;
 
-    @Column(name = "parent_id")
-    @ExcelColumn(headerName = "상위 권한 ID", order = 4)
-    private Long parentId;
-
     @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parent_id", referencedColumnName = "id", insertable = false, updatable = false)
+    @ManyToOne
+    @JoinColumn(name = "parent_id", referencedColumnName = "id")
+    @ExcelColumn(headerName = "상위 권한")
     private AuthPermissionEntity parent;
 
     @Column(name = "sort_order", nullable = false)

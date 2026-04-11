@@ -1,5 +1,6 @@
 package com.threlease.base.common.utils;
 
+import com.threlease.base.common.dto.SearchRequest;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -40,6 +41,21 @@ public class PageRequestHelper {
         return of(page, size, Sort.by(Sort.Direction.DESC, "id"));
     }
 
+    public static Pageable of(SearchRequest searchRequest) {
+        return of(searchRequest, Sort.unsorted());
+    }
+
+    public static Pageable of(SearchRequest searchRequest, Sort sort) {
+        if (searchRequest == null) {
+            return of(null, null, sort);
+        }
+        return of(searchRequest.zeroBasedPage(), searchRequest.pageSizeOrDefault(), sort);
+    }
+
+    public static Pageable latest(SearchRequest searchRequest) {
+        return of(searchRequest, Sort.by(Sort.Direction.DESC, "id"));
+    }
+
     /**
      * 검색어 정규화: null/공백은 null로 반환하고, 과도하게 긴 입력은 제한합니다.
      */
@@ -49,5 +65,12 @@ public class PageRequestHelper {
         }
         String normalized = query.trim();
         return normalized.substring(0, Math.min(normalized.length(), 100));
+    }
+
+    public static String searchQuery(SearchRequest searchRequest) {
+        if (searchRequest == null) {
+            return null;
+        }
+        return searchQuery(searchRequest.getKeyword());
     }
 }

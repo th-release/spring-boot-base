@@ -77,7 +77,7 @@ class MfaServiceTest {
                 .nickname("tester")
                 .password("encoded")
                 .salt("salt")
-                .type(com.threlease.base.common.enums.UserTypes.USER)
+                .type(com.threlease.base.common.enums.AuthTypes.GENERAL)
                 .build();
     }
 

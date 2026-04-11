@@ -16,33 +16,11 @@ create table tb_auth
     type                       varchar(50)  not null
         constraint tb_auth_type_check
             check ((type)::text = ANY
-        ((ARRAY ['USER'::character varying, 'ADMIN'::character varying, 'TEACHER'::character varying, 'STUDENT'::character varying])::text[])),
+        ((ARRAY ['GENERAL'::character varying, 'INTERNAL'::character varying, 'EXTERNAL'::character varying])::text[])),
     username                   varchar(24)  not null
 );
 
 alter table tb_auth
-    owner to root;
-
-create table tb_audit_log
-(
-    id            bigserial
-        primary key,
-    created_at    timestamp(6) not null,
-    deleted_at    timestamp(6),
-    updated_at    timestamp(6),
-    action        varchar(120) not null,
-    actor_uuid    varchar(36)
-        constraint fkonqhset54g0242olb3kpf6iu6
-            references tb_auth,
-    client_ip     varchar(64),
-    detail        text,
-    resource_id   varchar(120),
-    resource_type varchar(120) not null,
-    success       boolean      not null,
-    user_agent    varchar(512)
-);
-
-alter table tb_audit_log
     owner to root;
 
 create table tb_auth_login_history
@@ -123,42 +101,42 @@ insert into tb_auth_permission (created_at, code, name, depth, parent_id, sort_o
 values (current_timestamp, 'SYSTEM_ADMIN', '시스템 관리자', 1, null, 0, '운영/관리자 API 전체 권한');
 
 insert into tb_auth_permission (created_at, code, name, depth, parent_id, sort_order, description)
-values (current_timestamp, 'STUDENT_MANAGE', '학생관리', 1, null, 10, '학생관리 대메뉴');
+values (current_timestamp, 'SAMPLE_MENU', '샘플 대메뉴', 1, null, 10, '베이스 프로젝트 샘플 대메뉴');
 
 insert into tb_auth_permission (created_at, code, name, depth, parent_id, sort_order, description)
-values (current_timestamp, 'STUDENT_MANAGE_STUDENT', '학생관리', 2,
-        (select id from tb_auth_permission where code = 'STUDENT_MANAGE' and deleted_at is null order by id desc limit 1),
-        10, '학생관리 중메뉴');
+values (current_timestamp, 'SAMPLE_MENU_SECTION', '샘플 중메뉴', 2,
+        (select id from tb_auth_permission where code = 'SAMPLE_MENU' and deleted_at is null order by id desc limit 1),
+        10, '베이스 프로젝트 샘플 중메뉴');
 
 insert into tb_auth_permission (created_at, code, name, depth, parent_id, sort_order, description)
-values (current_timestamp, 'STUDENT_MANAGE_STUDENT_EDIT', '학생 정보 수정', 3,
-        (select id from tb_auth_permission where code = 'STUDENT_MANAGE_STUDENT' and deleted_at is null order by id desc limit 1),
-        10, '학생 정보 수정');
+values (current_timestamp, 'SAMPLE_MENU_SECTION_UPDATE', '샘플 수정', 3,
+        (select id from tb_auth_permission where code = 'SAMPLE_MENU_SECTION' and deleted_at is null order by id desc limit 1),
+        10, '샘플 수정 권한');
 
 insert into tb_auth_permission (created_at, code, name, depth, parent_id, sort_order, description)
-values (current_timestamp, 'STUDENT_MANAGE_STUDENT_CREATE', '학생 추가', 3,
-        (select id from tb_auth_permission where code = 'STUDENT_MANAGE_STUDENT' and deleted_at is null order by id desc limit 1),
-        20, '학생 추가');
+values (current_timestamp, 'SAMPLE_MENU_SECTION_CREATE', '샘플 생성', 3,
+        (select id from tb_auth_permission where code = 'SAMPLE_MENU_SECTION' and deleted_at is null order by id desc limit 1),
+        20, '샘플 생성 권한');
 
 insert into tb_auth_permission (created_at, code, name, depth, parent_id, sort_order, description)
-values (current_timestamp, 'STUDENT_REWARD_PENALTY', '상벌점 점수 관리', 2,
-        (select id from tb_auth_permission where code = 'STUDENT_MANAGE' and deleted_at is null order by id desc limit 1),
-        20, '상벌점 점수 관리 중메뉴');
+values (current_timestamp, 'SAMPLE_POLICY_SECTION', '샘플 정책 중메뉴', 2,
+        (select id from tb_auth_permission where code = 'SAMPLE_MENU' and deleted_at is null order by id desc limit 1),
+        20, '베이스 프로젝트 샘플 정책 중메뉴');
 
 insert into tb_auth_permission (created_at, code, name, depth, parent_id, sort_order, description)
-values (current_timestamp, 'STUDENT_REWARD_PENALTY_ASSIGN', '상벌점 학생 점수 부여', 3,
-        (select id from tb_auth_permission where code = 'STUDENT_REWARD_PENALTY' and deleted_at is null order by id desc limit 1),
-        10, '상벌점 학생 점수 부여');
+values (current_timestamp, 'SAMPLE_POLICY_SECTION_APPLY', '샘플 정책 적용', 3,
+        (select id from tb_auth_permission where code = 'SAMPLE_POLICY_SECTION' and deleted_at is null order by id desc limit 1),
+        10, '샘플 정책 적용 권한');
 
 insert into tb_auth_permission (created_at, code, name, depth, parent_id, sort_order, description)
-values (current_timestamp, 'STUDENT_REWARD_PENALTY_VIEW', '상벌점 학생 점수 조회', 3,
-        (select id from tb_auth_permission where code = 'STUDENT_REWARD_PENALTY' and deleted_at is null order by id desc limit 1),
-        20, '상벌점 학생 점수 조회');
+values (current_timestamp, 'SAMPLE_POLICY_SECTION_VIEW', '샘플 정책 조회', 3,
+        (select id from tb_auth_permission where code = 'SAMPLE_POLICY_SECTION' and deleted_at is null order by id desc limit 1),
+        20, '샘플 정책 조회 권한');
 
 insert into tb_auth_permission (created_at, code, name, depth, parent_id, sort_order, description)
-values (current_timestamp, 'STUDENT_REWARD_PENALTY_MENU_EDIT', '상벌점 메뉴 수정', 3,
-        (select id from tb_auth_permission where code = 'STUDENT_REWARD_PENALTY' and deleted_at is null order by id desc limit 1),
-        30, '상벌점 메뉴 수정');
+values (current_timestamp, 'SAMPLE_POLICY_SECTION_MANAGE', '샘플 정책 관리', 3,
+        (select id from tb_auth_permission where code = 'SAMPLE_POLICY_SECTION' and deleted_at is null order by id desc limit 1),
+        30, '샘플 정책 관리 권한');
 
 create table tb_auth_permission_grant
 (

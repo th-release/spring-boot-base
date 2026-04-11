@@ -24,7 +24,7 @@ public class FcmDeviceTokenService {
     public FcmDeviceTokenEntity register(AuthEntity auth, String deviceToken, String deviceLabel, String userAgent, String ipAddress) {
         FcmDeviceTokenEntity entity = fcmDeviceTokenRepository.findByDeviceToken(deviceToken)
                 .orElse(FcmDeviceTokenEntity.builder().deviceToken(deviceToken).build());
-        entity.setUserUuid(auth.getUuid());
+        entity.setUser(auth);
         entity.setDeviceLabel(deviceLabel == null || deviceLabel.isBlank() ? DeviceUtils.describe(userAgent) : deviceLabel);
         entity.setUserAgent(userAgent == null ? null : userAgent.substring(0, Math.min(userAgent.length(), 512)));
         entity.setLastIpAddress(ipAddress == null ? null : ipAddress.substring(0, Math.min(ipAddress.length(), 64)));

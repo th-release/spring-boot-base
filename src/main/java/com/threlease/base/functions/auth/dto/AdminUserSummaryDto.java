@@ -1,7 +1,7 @@
 package com.threlease.base.functions.auth.dto;
 
 import com.threlease.base.common.enums.AuthStatuses;
-import com.threlease.base.common.enums.UserTypes;
+import com.threlease.base.common.enums.AuthTypes;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -13,7 +13,7 @@ public class AdminUserSummaryDto {
     private String uuid;
     private String username;
     private String nickname;
-    private UserTypes type;
+    private AuthTypes type;
     private AuthStatuses status;
     private int failedLoginCount;
     private LocalDateTime lockedUntil;
