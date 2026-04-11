@@ -38,13 +38,13 @@ public class FcmNotificationService {
 
     public List<FcmNotificationDto> getMyNotifications(String userUuid, int page, int size) {
         PageRequest pageRequest = PageRequest.of(Math.max(page, 0), Math.max(size, 1));
-        return fcmNotificationRepository.findAllActiveByUserUuid(userUuid, pageRequest).stream()
+        return fcmNotificationRepository.findAllActiveByUser(AuthEntity.builder().uuid(userUuid).build(), pageRequest).stream()
                 .map(this::toDto)
                 .toList();
     }
 
     public FcmNotificationDto markMyNotificationRead(String userUuid, Long id) {
-        FcmNotificationEntity notification = fcmNotificationRepository.findActiveByIdAndUserUuid(id, userUuid)
+        FcmNotificationEntity notification = fcmNotificationRepository.findActiveByIdAndUser(id, AuthEntity.builder().uuid(userUuid).build())
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT));
         notification.markRead();
         return toDto(fcmNotificationRepository.save(notification));

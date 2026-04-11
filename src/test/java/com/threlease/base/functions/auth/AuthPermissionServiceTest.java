@@ -7,12 +7,13 @@ import com.threlease.base.repositories.auth.AuthPermissionGrantRepository;
 import com.threlease.base.repositories.auth.AuthPermissionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.PageImpl;
 
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -50,11 +51,8 @@ class AuthPermissionServiceTest {
         grantRepository = mock(AuthPermissionGrantRepository.class);
         authPermissionService = new AuthPermissionService(permissionRepository, grantRepository);
 
-        when(permissionRepository.findActiveByCode("SAMPLE_MENU")).thenReturn(Optional.of(rootPermission));
-        when(permissionRepository.findActiveByCode("SAMPLE_MENU_SECTION_UPDATE")).thenReturn(Optional.of(updatePermission));
-        when(permissionRepository.findById(1L)).thenReturn(Optional.of(rootPermission));
-        when(permissionRepository.findById(2L)).thenReturn(Optional.of(sectionPermission));
-        when(permissionRepository.findById(3L)).thenReturn(Optional.of(updatePermission));
+        when(permissionRepository.findActiveByCode("SAMPLE_MENU", org.springframework.data.domain.PageRequest.of(0, 1))).thenReturn(new PageImpl<>(List.of(rootPermission)));
+        when(permissionRepository.findActiveByCode("SAMPLE_MENU_SECTION_UPDATE", org.springframework.data.domain.PageRequest.of(0, 1))).thenReturn(new PageImpl<>(List.of(updatePermission)));
     }
 
     @Test
@@ -65,7 +63,7 @@ class AuthPermissionServiceTest {
                 .permission(rootPermission)
                 .build();
 
-        when(grantRepository.findAllActiveByUserUuid("actor-1")).thenReturn(List.of(rootGrant));
+        when(grantRepository.findAllActiveByUser(any(AuthEntity.class))).thenReturn(List.of(rootGrant));
 
         assertTrue(authPermissionService.hasPermission(actor, "SAMPLE_MENU_SECTION_UPDATE"));
     }
@@ -74,7 +72,7 @@ class AuthPermissionServiceTest {
     void missingParentGrantDeniesChildPermission() {
         AuthEntity actor = AuthEntity.builder().uuid("actor-1").build();
 
-        when(grantRepository.findAllActiveByUserUuid("actor-1")).thenReturn(List.of());
+        when(grantRepository.findAllActiveByUser(any(AuthEntity.class))).thenReturn(List.of());
 
         assertFalse(authPermissionService.hasPermission(actor, "SAMPLE_MENU_SECTION_UPDATE"));
     }

@@ -10,6 +10,7 @@ import com.threlease.base.entities.AuthMfaEntity;
 import com.threlease.base.functions.auth.dto.MfaSetupResponseDto;
 import com.threlease.base.repositories.auth.AuthMfaRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.Mac;
@@ -97,7 +98,7 @@ public class MfaService {
     }
 
     public boolean isEnabled(AuthEntity user) {
-        return authMfaRepository.findActiveByUserUuid(user.getUuid())
+        return findActiveMfa(user)
                 .map(AuthMfaEntity::isEnabled)
                 .orElse(false);
     }
@@ -107,7 +108,7 @@ public class MfaService {
             throw new BusinessException(ErrorCode.MFA_REQUIRED);
         }
 
-        String encryptedSecret = authMfaRepository.findActiveByUserUuid(user.getUuid())
+        String encryptedSecret = findActiveMfa(user)
                 .map(AuthMfaEntity::getSecret)
                 .orElse(null);
         if (encryptedSecret == null || encryptedSecret.isBlank()) {
@@ -170,11 +171,15 @@ public class MfaService {
     }
 
     private AuthMfaEntity resolveOrCreateMfa(AuthEntity user) {
-        return authMfaRepository.findActiveByUserUuid(user.getUuid())
+        return findActiveMfa(user)
                 .orElseGet(() -> AuthMfaEntity.builder()
                         .user(user)
                         .enabled(false)
                         .build());
+    }
+
+    private java.util.Optional<AuthMfaEntity> findActiveMfa(AuthEntity user) {
+        return authMfaRepository.findLatestActiveByUser(user, PageRequest.of(0, 1)).stream().findFirst();
     }
 
     private String encodeBase32(byte[] data) {

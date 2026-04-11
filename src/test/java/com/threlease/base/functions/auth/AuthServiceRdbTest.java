@@ -11,6 +11,7 @@ import com.threlease.base.entities.AuthEntity;
 import com.threlease.base.entities.RefreshTokenEntity;
 import com.threlease.base.functions.auth.dto.RefreshTokenSessionDto;
 import com.threlease.base.functions.auth.dto.TokenResponseDto;
+import com.threlease.base.repositories.auth.AuthLoginFailureRepository;
 import com.threlease.base.repositories.auth.AuthRepository;
 import com.threlease.base.repositories.auth.AuthLoginHistoryRepository;
 import com.threlease.base.repositories.auth.AuthMfaRepository;
@@ -32,6 +33,7 @@ import static org.mockito.Mockito.when;
 
 class AuthServiceRdbTest {
     private final AuthRepository authRepository = mock(AuthRepository.class);
+    private final AuthLoginFailureRepository authLoginFailureRepository = mock(AuthLoginFailureRepository.class);
     private final AuthLoginHistoryRepository authLoginHistoryRepository = mock(AuthLoginHistoryRepository.class);
     private final AuthMfaRepository authMfaRepository = mock(AuthMfaRepository.class);
     private final RefreshTokenRepository refreshTokenRepository = mock(RefreshTokenRepository.class);
@@ -61,6 +63,7 @@ class AuthServiceRdbTest {
 
         authService = new AuthService(
                 authRepository,
+                authLoginFailureRepository,
                 authLoginHistoryRepository,
                 authMfaRepository,
                 refreshTokenRepository,
@@ -84,7 +87,7 @@ class AuthServiceRdbTest {
                 .salt("salt")
                 .build();
 
-        when(refreshTokenRepository.findAllByUserUuidAndRevokedFalse("user-1")).thenReturn(List.of());
+        when(refreshTokenRepository.findAllByUserAndRevokedFalse(any(AuthEntity.class))).thenReturn(List.of());
         when(refreshTokenRepository.save(any(RefreshTokenEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         TokenResponseDto tokenResponse = authService.issueTokens(user);
@@ -105,7 +108,7 @@ class AuthServiceRdbTest {
                 .revoked(false)
                 .build();
 
-        when(refreshTokenRepository.findAllByUserUuidAndRevokedFalse("user-1")).thenReturn(List.of(token1));
+        when(refreshTokenRepository.findAllByUserAndRevokedFalse(any(AuthEntity.class))).thenReturn(List.of(token1));
         when(refreshTokenRepository.findByTokenId("token-1")).thenReturn(Optional.of(token1));
         when(refreshTokenRepository.save(any(RefreshTokenEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -126,7 +129,7 @@ class AuthServiceRdbTest {
                 .build();
 
         RefreshTokenEntity[] savedToken = new RefreshTokenEntity[1];
-        when(refreshTokenRepository.findAllByUserUuidAndRevokedFalse("user-1")).thenAnswer(invocation -> savedToken[0] == null ? List.of() : List.of(savedToken[0]));
+        when(refreshTokenRepository.findAllByUserAndRevokedFalse(any(AuthEntity.class))).thenAnswer(invocation -> savedToken[0] == null ? List.of() : List.of(savedToken[0]));
         when(refreshTokenRepository.save(any(RefreshTokenEntity.class))).thenAnswer(invocation -> {
             savedToken[0] = invocation.getArgument(0);
             return savedToken[0];

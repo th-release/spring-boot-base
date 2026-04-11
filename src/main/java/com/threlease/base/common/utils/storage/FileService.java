@@ -125,7 +125,7 @@ public class FileService {
                     .orElseThrow(() -> new BusinessException(ErrorCode.FILE_NOT_FOUND));
         }
 
-        return fileRepository.findActiveByIdAndOwnerUuid(id, user.getUuid())
+        return fileRepository.findActiveByIdAndOwner(id, user)
                 .orElseThrow(() -> new BusinessException(ErrorCode.FORBIDDEN));
     }
 

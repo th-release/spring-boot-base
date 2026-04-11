@@ -1,12 +1,13 @@
 package com.threlease.base.repositories.auth;
 
 import com.threlease.base.entities.AuthPermissionEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface AuthPermissionRepository extends JpaRepository<AuthPermissionEntity, Long> {
     @Query("""
@@ -16,11 +17,7 @@ public interface AuthPermissionRepository extends JpaRepository<AuthPermissionEn
               AND p.deletedAt IS NULL
             ORDER BY p.createdAt DESC, p.id DESC
             """)
-    List<AuthPermissionEntity> findAllActiveByCode(@Param("code") String code);
-
-    default Optional<AuthPermissionEntity> findActiveByCode(String code) {
-        return findAllActiveByCode(code).stream().findFirst();
-    }
+    Page<AuthPermissionEntity> findActiveByCode(@Param("code") String code, Pageable pageable);
 
     @Query("""
             SELECT p

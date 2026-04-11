@@ -10,6 +10,7 @@ import com.threlease.base.functions.auth.dto.AuthPermissionDto;
 import com.threlease.base.repositories.auth.AuthPermissionGrantRepository;
 import com.threlease.base.repositories.auth.AuthPermissionRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,7 +40,7 @@ public class AuthPermissionService {
         AuthPermissionEntity parent = null;
         int depth = 1;
         if (dto.getParentCode() != null && !dto.getParentCode().isBlank()) {
-            parent = authPermissionRepository.findActiveByCode(dto.getParentCode())
+            parent = findActivePermission(dto.getParentCode())
                     .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT, "상위 권한을 찾을 수 없습니다."));
             depth = parent.getDepth() + 1;
         }
@@ -60,13 +61,14 @@ public class AuthPermissionService {
 
     @Transactional
     public void grantPermission(String userUuid, String permissionCode, AuthEntity grantedBy) {
-        AuthPermissionEntity permission = authPermissionRepository.findActiveByCode(permissionCode)
+        AuthEntity user = AuthEntity.builder().uuid(userUuid).build();
+        AuthPermissionEntity permission = findActivePermission(permissionCode)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT, "권한을 찾을 수 없습니다."));
-        if (authPermissionGrantRepository.findActiveByUserUuidAndPermission(userUuid, permission).isPresent()) {
+        if (findActiveGrant(user, permission).isPresent()) {
             return;
         }
         authPermissionGrantRepository.save(AuthPermissionGrantEntity.builder()
-                .user(AuthEntity.builder().uuid(userUuid).build())
+                .user(user)
                 .permission(permission)
                 .grantedBy(grantedBy)
                 .build());
@@ -74,9 +76,10 @@ public class AuthPermissionService {
 
     @Transactional
     public void revokePermission(String userUuid, String permissionCode) {
-        AuthPermissionEntity permission = authPermissionRepository.findActiveByCode(permissionCode)
+        AuthEntity user = AuthEntity.builder().uuid(userUuid).build();
+        AuthPermissionEntity permission = findActivePermission(permissionCode)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT, "권한을 찾을 수 없습니다."));
-        authPermissionGrantRepository.findActiveByUserUuidAndPermission(userUuid, permission)
+        findActiveGrant(user, permission)
                 .ifPresent(grant -> {
                     grant.delete();
                     authPermissionGrantRepository.save(grant);
@@ -85,8 +88,9 @@ public class AuthPermissionService {
 
     @Transactional(readOnly = true)
     public List<AuthPermissionDto> getEffectivePermissions(String userUuid) {
+        AuthEntity user = AuthEntity.builder().uuid(userUuid).build();
         Set<Long> effectivePermissionIds = new HashSet<>();
-        for (AuthPermissionGrantEntity grant : authPermissionGrantRepository.findAllActiveByUserUuid(userUuid)) {
+        for (AuthPermissionGrantEntity grant : authPermissionGrantRepository.findAllActiveByUser(user)) {
             collectDescendantPermissionIds(grant.getPermission().getId(), effectivePermissionIds);
         }
 
@@ -105,13 +109,13 @@ public class AuthPermissionService {
             return false;
         }
 
-        Optional<AuthPermissionEntity> target = authPermissionRepository.findActiveByCode(permissionCode);
+        Optional<AuthPermissionEntity> target = findActivePermission(permissionCode);
         if (target.isEmpty()) {
             return false;
         }
 
         Set<Long> grantedPermissionIds = new HashSet<>();
-        for (AuthPermissionGrantEntity grant : authPermissionGrantRepository.findAllActiveByUserUuid(user.getUuid())) {
+        for (AuthPermissionGrantEntity grant : authPermissionGrantRepository.findAllActiveByUser(user)) {
             grantedPermissionIds.add(grant.getPermission().getId());
         }
 
@@ -127,6 +131,16 @@ public class AuthPermissionService {
 
     private AuthPermissionEntity resolveParent(AuthPermissionEntity permission) {
         return permission.getParent() != null && !permission.getParent().isDeleted() ? permission.getParent() : null;
+    }
+
+    private Optional<AuthPermissionEntity> findActivePermission(String code) {
+        return authPermissionRepository.findActiveByCode(code, PageRequest.of(0, 1)).stream().findFirst();
+    }
+
+    private Optional<AuthPermissionGrantEntity> findActiveGrant(AuthEntity user, AuthPermissionEntity permission) {
+        return authPermissionGrantRepository.findLatestActiveByUserAndPermission(user, permission, PageRequest.of(0, 1))
+                .stream()
+                .findFirst();
     }
 
     private void collectDescendantPermissionIds(Long permissionId, Set<Long> collector) {

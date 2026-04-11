@@ -12,6 +12,7 @@ import com.threlease.base.common.utils.DeviceUtils;
 import com.threlease.base.common.utils.crypto.HashComponent;
 import com.threlease.base.common.utils.random.RandomComponent;
 import com.threlease.base.entities.AuthEntity;
+import com.threlease.base.entities.AuthLoginFailureEntity;
 import com.threlease.base.entities.AuthLoginHistoryEntity;
 import com.threlease.base.entities.AuthMfaEntity;
 import com.threlease.base.entities.RefreshTokenEntity;
@@ -20,6 +21,7 @@ import com.threlease.base.functions.auth.dto.AuthProfileDto;
 import com.threlease.base.functions.auth.dto.RefreshTokenSessionDto;
 import com.threlease.base.functions.auth.dto.TokenResponseDto;
 import com.threlease.base.repositories.auth.AuthRepository;
+import com.threlease.base.repositories.auth.AuthLoginFailureRepository;
 import com.threlease.base.repositories.auth.AuthLoginHistoryRepository;
 import com.threlease.base.repositories.auth.AuthMfaRepository;
 import com.threlease.base.repositories.auth.RefreshTokenRepository;
@@ -28,6 +30,7 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -50,6 +53,7 @@ public class AuthService {
     private static final String REDIS_USER_KEY_PREFIX = "refresh_token_user:";
 
     private final AuthRepository authRepository;
+    private final AuthLoginFailureRepository authLoginFailureRepository;
     private final AuthLoginHistoryRepository authLoginHistoryRepository;
     private final AuthMfaRepository authMfaRepository;
     private final RefreshTokenRepository refreshTokenRepository;
@@ -62,6 +66,7 @@ public class AuthService {
     private final boolean redisEnabled;
 
     public AuthService(AuthRepository authRepository,
+                       AuthLoginFailureRepository authLoginFailureRepository,
                        AuthLoginHistoryRepository authLoginHistoryRepository,
                        AuthMfaRepository authMfaRepository,
                        RefreshTokenRepository refreshTokenRepository,
@@ -73,6 +78,7 @@ public class AuthService {
                        TokenProperties tokenProperties,
                        AuthSecurityProperties authSecurityProperties) {
         this.authRepository = authRepository;
+        this.authLoginFailureRepository = authLoginFailureRepository;
         this.authLoginHistoryRepository = authLoginHistoryRepository;
         this.authMfaRepository = authMfaRepository;
         this.refreshTokenRepository = refreshTokenRepository;
@@ -124,6 +130,7 @@ public class AuthService {
             }
             auth.setStatus(AuthStatuses.ACTIVE);
             authSave(auth);
+            resetLoginFailure(auth);
         }
         if (!authSecurityProperties.getLoginFailure().isEnabled()) {
             return;
@@ -131,6 +138,9 @@ public class AuthService {
         LocalDateTime lockedUntil = getLockedUntil(auth);
         if (lockedUntil != null && lockedUntil.isAfter(LocalDateTime.now())) {
             throw new BusinessException(ErrorCode.ACCOUNT_LOCKED);
+        }
+        if (lockedUntil != null) {
+            resetLoginFailure(auth);
         }
     }
 
@@ -151,7 +161,7 @@ public class AuthService {
             auth.setStatus(AuthStatuses.LOCKED);
             authSave(auth);
         }
-        saveLoginHistory(auth, false, failedLoginCount, lockedUntil, clientIp, userAgent, failureReason);
+        saveLoginFailure(auth, failedLoginCount, lockedUntil);
     }
 
     public void recordSuccessfulLogin(AuthEntity auth, String clientIp) {
@@ -163,7 +173,8 @@ public class AuthService {
             auth.setStatus(AuthStatuses.ACTIVE);
             authSave(auth);
         }
-        saveLoginHistory(auth, true, 0, null, clientIp, userAgent, null);
+        resetLoginFailure(auth);
+        saveLoginHistory(auth, clientIp, userAgent);
     }
 
     public void changePassword(AuthEntity auth, String encodedPassword) {
@@ -247,8 +258,9 @@ public class AuthService {
     }
 
     public void logoutAll(String userUuid) {
+        AuthEntity user = authRef(userUuid);
         if (isRdbStorage()) {
-            refreshTokenRepository.findAllByUserUuidAndRevokedFalse(userUuid)
+            refreshTokenRepository.findAllByUserAndRevokedFalse(user)
                     .forEach(entity -> revokeRefreshToken(entity.getTokenId(), entity.getFamilyId(), "LOGOUT_ALL"));
             return;
         }
@@ -261,7 +273,7 @@ public class AuthService {
 
     public void revokeSession(String userUuid, String tokenId) {
         if (isRdbStorage()) {
-            RefreshTokenEntity entity = refreshTokenRepository.findByTokenIdAndUserUuid(tokenId, userUuid)
+            RefreshTokenEntity entity = refreshTokenRepository.findByTokenIdAndUser(tokenId, authRef(userUuid))
                     .orElseThrow(() -> new BusinessException(ErrorCode.TOKEN_INVALID));
             revokeRefreshToken(entity.getTokenId(), entity.getFamilyId(), "REVOKED");
             return;
@@ -316,15 +328,16 @@ public class AuthService {
     }
 
     public void forceLockUser(AuthEntity auth, long minutes) {
+        LocalDateTime lockedUntil = LocalDateTime.now().plusMinutes(Math.max(minutes, 1));
         auth.setStatus(AuthStatuses.LOCKED);
         authSave(auth);
-        saveLoginHistory(auth, false, getFailedLoginCount(auth), LocalDateTime.now().plusMinutes(Math.max(minutes, 1)), null, null, "ADMIN_LOCK");
+        saveLoginFailure(auth, getFailedLoginCount(auth), lockedUntil);
     }
 
     public void unlockUser(AuthEntity auth) {
         auth.setStatus(AuthStatuses.ACTIVE);
         authSave(auth);
-        saveLoginHistory(auth, false, 0, null, null, null, "ADMIN_UNLOCK");
+        resetLoginFailure(auth);
     }
 
     public int getPasswordResetExpireMinutes() {
@@ -536,7 +549,7 @@ public class AuthService {
 
     private List<RefreshTokenRecord> getActiveRefreshTokenRecords(String userUuid) {
         if (isRdbStorage()) {
-            return refreshTokenRepository.findAllByUserUuidAndRevokedFalse(userUuid).stream()
+            return refreshTokenRepository.findAllByUserAndRevokedFalse(authRef(userUuid)).stream()
                     .map(this::toRefreshTokenRecord)
                     .filter(record -> !record.isExpired())
                     .toList();
@@ -550,7 +563,7 @@ public class AuthService {
 
     private Set<String> getUserTokenIds(String userUuid) {
         if (isRdbStorage()) {
-            return refreshTokenRepository.findAllByUserUuidAndRevokedFalse(userUuid).stream()
+            return refreshTokenRepository.findAllByUserAndRevokedFalse(authRef(userUuid)).stream()
                     .map(RefreshTokenEntity::getTokenId)
                     .collect(java.util.stream.Collectors.toCollection(TreeSet::new));
         }
@@ -608,53 +621,69 @@ public class AuthService {
                 .build();
     }
 
-    private void saveLoginHistory(AuthEntity auth,
-                                  boolean success,
-                                  int failedLoginCount,
-                                  LocalDateTime lockedUntil,
-                                  String clientIp,
-                                  String userAgent,
-                                  String failureReason) {
+    private void saveLoginHistory(AuthEntity auth, String clientIp, String userAgent) {
         authLoginHistoryRepository.save(AuthLoginHistoryEntity.builder()
                 .user(auth)
                 .username(trim(auth.getUsername(), 24))
-                .success(success)
-                .failureReason(trim(failureReason, 120))
-                .failedLoginCount(failedLoginCount)
-                .lockedUntil(lockedUntil)
                 .clientIp(trim(clientIp, 64))
                 .userAgent(trim(userAgent, 512))
                 .build());
     }
 
     public int getFailedLoginCount(AuthEntity auth) {
-        return authLoginHistoryRepository.findLatestByUserUuid(auth.getUuid())
-                .map(AuthLoginHistoryEntity::getFailedLoginCount)
+        return findLatestLoginFailure(auth)
+                .map(AuthLoginFailureEntity::getFailedLoginCount)
                 .orElse(0);
     }
 
     public LocalDateTime getLockedUntil(AuthEntity auth) {
-        return authLoginHistoryRepository.findLatestByUserUuid(auth.getUuid())
-                .map(AuthLoginHistoryEntity::getLockedUntil)
+        return findLatestLoginFailure(auth)
+                .map(AuthLoginFailureEntity::getLockedUntil)
                 .orElse(null);
     }
 
     public LocalDateTime getLastLoginAt(AuthEntity auth) {
-        return authLoginHistoryRepository.findLatestSuccessfulByUserUuid(auth.getUuid())
+        return findLatestLoginHistory(auth)
                 .map(AuthLoginHistoryEntity::getCreatedAt)
                 .orElse(null);
     }
 
     public String getLastLoginIp(AuthEntity auth) {
-        return authLoginHistoryRepository.findLatestSuccessfulByUserUuid(auth.getUuid())
+        return findLatestLoginHistory(auth)
                 .map(AuthLoginHistoryEntity::getClientIp)
                 .orElse(null);
     }
 
     private boolean isMfaEnabled(AuthEntity auth) {
-        return authMfaRepository.findActiveByUserUuid(auth.getUuid())
+        return authMfaRepository.findLatestActiveByUser(auth, PageRequest.of(0, 1)).stream().findFirst()
                 .map(AuthMfaEntity::isEnabled)
                 .orElse(false);
+    }
+
+    private Optional<AuthLoginFailureEntity> findLatestLoginFailure(AuthEntity auth) {
+        return authLoginFailureRepository.findLatestByUser(auth, PageRequest.of(0, 1)).stream().findFirst();
+    }
+
+    private Optional<AuthLoginHistoryEntity> findLatestLoginHistory(AuthEntity auth) {
+        return authLoginHistoryRepository.findRecentByUser(auth, PageRequest.of(0, 1)).stream().findFirst();
+    }
+
+    private void saveLoginFailure(AuthEntity auth, int failedLoginCount, LocalDateTime lockedUntil) {
+        AuthLoginFailureEntity failure = findLatestLoginFailure(auth)
+                .orElseGet(() -> AuthLoginFailureEntity.builder()
+                        .user(auth)
+                        .build());
+        failure.setFailedLoginCount(failedLoginCount);
+        failure.setLockedUntil(lockedUntil);
+        authLoginFailureRepository.save(failure);
+    }
+
+    private void resetLoginFailure(AuthEntity auth) {
+        findLatestLoginFailure(auth).ifPresent(failure -> {
+            failure.setFailedLoginCount(0);
+            failure.setLockedUntil(null);
+            authLoginFailureRepository.save(failure);
+        });
     }
 
     public record PageResult<T>(List<T> content, int page, int size, long totalElements, int totalPages) {

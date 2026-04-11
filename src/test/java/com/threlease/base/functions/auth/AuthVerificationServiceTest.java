@@ -9,10 +9,9 @@ import com.threlease.base.entities.AuthVerificationEntity;
 import com.threlease.base.repositories.auth.AuthVerificationRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.PageImpl;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
-
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -63,8 +62,8 @@ class AuthVerificationServiceTest {
                 .verified(false)
                 .build();
 
-        when(authVerificationRepository.findTopByUserUuidAndTypeAndVerifiedFalseOrderByCreatedAtDesc("user-1", AuthVerificationType.PASSWORD_RESET))
-                .thenReturn(Optional.of(entity));
+        when(authVerificationRepository.findLatestByUserAndTypeAndVerifiedFalse(any(AuthEntity.class), any(AuthVerificationType.class), any()))
+                .thenReturn(new PageImpl<>(java.util.List.of(entity)));
 
         assertThrows(BusinessException.class, () -> authVerificationService.verifyCode(auth, AuthVerificationType.PASSWORD_RESET, "123456"));
     }
@@ -89,8 +88,8 @@ class AuthVerificationServiceTest {
                 .verified(false)
                 .build();
 
-        when(authVerificationRepository.findTopByUserUuidAndTypeAndVerifiedFalseOrderByCreatedAtDesc("user-1", AuthVerificationType.PASSWORD_RESET))
-                .thenReturn(Optional.of(entity));
+        when(authVerificationRepository.findLatestByUserAndTypeAndVerifiedFalse(any(AuthEntity.class), any(AuthVerificationType.class), any()))
+                .thenReturn(new PageImpl<>(java.util.List.of(entity)));
         when(authVerificationRepository.save(any(AuthVerificationEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         assertDoesNotThrow(() -> authVerificationService.verifyCode(auth, AuthVerificationType.PASSWORD_RESET, code));

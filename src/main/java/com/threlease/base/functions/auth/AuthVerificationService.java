@@ -9,6 +9,7 @@ import com.threlease.base.entities.AuthVerificationEntity;
 import com.threlease.base.entities.AuthEntity;
 import com.threlease.base.repositories.auth.AuthVerificationRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -21,7 +22,7 @@ public class AuthVerificationService {
     private final RandomComponent randomComponent;
 
     public String issueCode(AuthEntity auth, AuthVerificationType type, String target, int expireMinutes) {
-        authVerificationRepository.deleteAll(authVerificationRepository.findAllByUserUuidAndType(auth.getUuid(), type));
+        authVerificationRepository.deleteAll(authVerificationRepository.findAllByUserAndType(auth, type));
         String code = randomComponent.generateOtp(6);
         authVerificationRepository.save(AuthVerificationEntity.builder()
                 .user(auth)
@@ -40,7 +41,9 @@ public class AuthVerificationService {
         }
 
         AuthVerificationEntity verification = authVerificationRepository
-                .findTopByUserUuidAndTypeAndVerifiedFalseOrderByCreatedAtDesc(auth.getUuid(), type)
+                .findLatestByUserAndTypeAndVerifiedFalse(auth, type, PageRequest.of(0, 1))
+                .stream()
+                .findFirst()
                 .orElseThrow(() -> new BusinessException(ErrorCode.PASSWORD_RESET_CODE_INVALID));
 
         if (verification.getExpiresAt().isBefore(LocalDateTime.now())) {
@@ -57,6 +60,6 @@ public class AuthVerificationService {
     }
 
     public void clear(AuthEntity auth, AuthVerificationType type) {
-        authVerificationRepository.deleteAll(authVerificationRepository.findAllByUserUuidAndType(auth.getUuid(), type));
+        authVerificationRepository.deleteAll(authVerificationRepository.findAllByUserAndType(auth, type));
     }
 }

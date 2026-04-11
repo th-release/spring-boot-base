@@ -12,6 +12,7 @@ import com.threlease.base.functions.auth.dto.MfaSetupResponseDto;
 import com.threlease.base.repositories.auth.AuthMfaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.PageImpl;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -20,7 +21,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -58,7 +58,7 @@ class MfaServiceTest {
 
         AuthMfaRepository authMfaRepository = mock(AuthMfaRepository.class);
         List<AuthMfaEntity> mfaRecords = new ArrayList<>();
-        when(authMfaRepository.findActiveByUserUuid("user-1")).thenAnswer(invocation -> mfaRecords.stream().findFirst());
+        when(authMfaRepository.findLatestActiveByUser(any(AuthEntity.class), any())).thenAnswer(invocation -> new PageImpl<>(mfaRecords));
         when(authMfaRepository.save(any(AuthMfaEntity.class))).thenAnswer(invocation -> {
             AuthMfaEntity mfa = invocation.getArgument(0);
             if (mfaRecords.isEmpty()) {

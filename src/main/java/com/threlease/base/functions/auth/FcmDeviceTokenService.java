@@ -7,6 +7,7 @@ import com.threlease.base.entities.AuthEntity;
 import com.threlease.base.entities.FcmDeviceTokenEntity;
 import com.threlease.base.repositories.auth.FcmDeviceTokenRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -18,11 +19,13 @@ public class FcmDeviceTokenService {
     private final FcmDeviceTokenRepository fcmDeviceTokenRepository;
 
     public List<FcmDeviceTokenEntity> getMyTokens(String userUuid) {
-        return fcmDeviceTokenRepository.findAllByUserUuidAndEnabledTrueOrderByLastUsedAtDesc(userUuid);
+        return fcmDeviceTokenRepository.findAllByUserAndEnabledTrueOrderByLastUsedAtDesc(AuthEntity.builder().uuid(userUuid).build());
     }
 
     public FcmDeviceTokenEntity register(AuthEntity auth, String deviceToken, String deviceLabel, String userAgent, String ipAddress) {
-        FcmDeviceTokenEntity entity = fcmDeviceTokenRepository.findByDeviceToken(deviceToken)
+        FcmDeviceTokenEntity entity = fcmDeviceTokenRepository.findLatestActiveByDeviceToken(deviceToken, PageRequest.of(0, 1))
+                .stream()
+                .findFirst()
                 .orElse(FcmDeviceTokenEntity.builder().deviceToken(deviceToken).build());
         entity.setUser(auth);
         entity.setDeviceLabel(deviceLabel == null || deviceLabel.isBlank() ? DeviceUtils.describe(userAgent) : deviceLabel);
@@ -34,13 +37,13 @@ public class FcmDeviceTokenService {
     }
 
     public void disableMyToken(String userUuid, Long id) {
-        FcmDeviceTokenEntity entity = fcmDeviceTokenRepository.findByIdAndUserUuid(id, userUuid)
+        FcmDeviceTokenEntity entity = fcmDeviceTokenRepository.findByIdAndUser(id, AuthEntity.builder().uuid(userUuid).build())
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT));
         entity.setEnabled(false);
         fcmDeviceTokenRepository.save(entity);
     }
 
     public List<FcmDeviceTokenEntity> getTokensForUser(String userUuid) {
-        return fcmDeviceTokenRepository.findAllByUserUuidAndEnabledTrueOrderByLastUsedAtDesc(userUuid);
+        return fcmDeviceTokenRepository.findAllByUserAndEnabledTrueOrderByLastUsedAtDesc(AuthEntity.builder().uuid(userUuid).build());
     }
 }

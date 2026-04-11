@@ -20,10 +20,6 @@ public interface FcmNotificationRepository extends JpaRepository<FcmNotification
             """)
     List<FcmNotificationEntity> findAllActiveByUser(@Param("user") AuthEntity user, Pageable pageable);
 
-    default List<FcmNotificationEntity> findAllActiveByUserUuid(String userUuid, Pageable pageable) {
-        return findAllActiveByUser(AuthEntity.builder().uuid(userUuid).build(), pageable);
-    }
-
     @Query("""
             SELECT n
             FROM FcmNotificationEntity n
@@ -32,8 +28,4 @@ public interface FcmNotificationRepository extends JpaRepository<FcmNotification
               AND n.deletedAt IS NULL
             """)
     Optional<FcmNotificationEntity> findActiveByIdAndUser(@Param("id") Long id, @Param("user") AuthEntity user);
-
-    default Optional<FcmNotificationEntity> findActiveByIdAndUserUuid(Long id, String userUuid) {
-        return findActiveByIdAndUser(id, AuthEntity.builder().uuid(userUuid).build());
-    }
 }

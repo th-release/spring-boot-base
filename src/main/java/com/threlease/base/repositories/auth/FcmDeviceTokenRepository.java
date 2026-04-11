@@ -2,6 +2,8 @@ package com.threlease.base.repositories.auth;
 
 import com.threlease.base.entities.FcmDeviceTokenEntity;
 import com.threlease.base.entities.AuthEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -17,11 +19,7 @@ public interface FcmDeviceTokenRepository extends JpaRepository<FcmDeviceTokenEn
               AND f.deletedAt IS NULL
             ORDER BY f.lastUsedAt DESC
             """)
-    List<FcmDeviceTokenEntity> findAllActiveByDeviceToken(@Param("deviceToken") String deviceToken);
-
-    default Optional<FcmDeviceTokenEntity> findByDeviceToken(String deviceToken) {
-        return findAllActiveByDeviceToken(deviceToken).stream().findFirst();
-    }
+    Page<FcmDeviceTokenEntity> findLatestActiveByDeviceToken(@Param("deviceToken") String deviceToken, Pageable pageable);
 
     @Query("""
             SELECT f
@@ -33,10 +31,6 @@ public interface FcmDeviceTokenRepository extends JpaRepository<FcmDeviceTokenEn
             """)
     List<FcmDeviceTokenEntity> findAllByUserAndEnabledTrueOrderByLastUsedAtDesc(@Param("user") AuthEntity user);
 
-    default List<FcmDeviceTokenEntity> findAllByUserUuidAndEnabledTrueOrderByLastUsedAtDesc(String userUuid) {
-        return findAllByUserAndEnabledTrueOrderByLastUsedAtDesc(AuthEntity.builder().uuid(userUuid).build());
-    }
-
     @Query("""
             SELECT f
             FROM FcmDeviceTokenEntity f
@@ -45,8 +39,4 @@ public interface FcmDeviceTokenRepository extends JpaRepository<FcmDeviceTokenEn
               AND f.deletedAt IS NULL
             """)
     Optional<FcmDeviceTokenEntity> findByIdAndUser(@Param("id") Long id, @Param("user") AuthEntity user);
-
-    default Optional<FcmDeviceTokenEntity> findByIdAndUserUuid(Long id, String userUuid) {
-        return findByIdAndUser(id, AuthEntity.builder().uuid(userUuid).build());
-    }
 }

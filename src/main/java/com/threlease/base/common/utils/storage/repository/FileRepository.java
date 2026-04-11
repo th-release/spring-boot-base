@@ -17,10 +17,6 @@ public interface FileRepository extends JpaRepository<FileEntity, Long> {
     @Query("SELECT f FROM FileEntity f WHERE f.id = :id AND f.deleted = false AND f.owner = :owner")
     Optional<FileEntity> findActiveByIdAndOwner(@Param("id") Long id, @Param("owner") AuthEntity owner);
 
-    default Optional<FileEntity> findActiveByIdAndOwnerUuid(Long id, String ownerUuid) {
-        return findActiveByIdAndOwner(id, AuthEntity.builder().uuid(ownerUuid).build());
-    }
-
     /** 경로로 활성 파일 조회 */
     @Query("SELECT f FROM FileEntity f WHERE f.filePath = :filePath AND f.deleted = false")
     Optional<FileEntity> findByFilePathAndDeletedFalse(@Param("filePath") String filePath);
