@@ -6,8 +6,9 @@ import com.threlease.base.common.properties.app.auth.AuthSecurityProperties;
 import com.threlease.base.common.utils.QR.QRCode;
 import com.threlease.base.common.utils.crypto.AesComponent;
 import com.threlease.base.entities.AuthEntity;
+import com.threlease.base.entities.AuthMfaEntity;
 import com.threlease.base.functions.auth.dto.MfaSetupResponseDto;
-import com.threlease.base.repositories.auth.AuthRepository;
+import com.threlease.base.repositories.auth.AuthMfaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -25,7 +26,7 @@ public class MfaService {
     private static final String BASE32_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 
     private final AuthSecurityProperties authSecurityProperties;
-    private final AuthRepository authRepository;
+    private final AuthMfaRepository authMfaRepository;
     private final AesComponent aesComponent;
     private final QRCode qrCode;
 
@@ -62,14 +63,16 @@ public class MfaService {
     public void completeEnrollment(AuthEntity user, String otpCode) {
         assertMfaEnabled();
         validateOtp(user, otpCode);
-        user.setMfaEnabled(true);
-        authRepository.save(user);
+        AuthMfaEntity mfa = resolveOrCreateMfa(user);
+        mfa.setEnabled(true);
+        authMfaRepository.save(mfa);
     }
 
     public void reset(AuthEntity user) {
-        user.setMfaEnabled(false);
-        user.setMfaSecret(null);
-        authRepository.save(user);
+        AuthMfaEntity mfa = resolveOrCreateMfa(user);
+        mfa.setEnabled(false);
+        mfa.setSecret(null);
+        authMfaRepository.save(mfa);
     }
 
     public void verifyLogin(AuthEntity user, String otpCode) {
@@ -83,14 +86,20 @@ public class MfaService {
         if (!authSecurityProperties.getMfa().isEnabled()) {
             return false;
         }
-        if (user.isMfaEnabled()) {
+        if (isEnabled(user)) {
             return true;
         }
         return false;
     }
 
     public boolean isEnrollmentRequired(AuthEntity user) {
-        return authSecurityProperties.getMfa().isEnabled() && !user.isMfaEnabled();
+        return authSecurityProperties.getMfa().isEnabled() && !isEnabled(user);
+    }
+
+    public boolean isEnabled(AuthEntity user) {
+        return authMfaRepository.findActiveByUserUuid(user.getUuid())
+                .map(AuthMfaEntity::isEnabled)
+                .orElse(false);
     }
 
     private void validateOtp(AuthEntity user, String otpCode) {
@@ -98,7 +107,9 @@ public class MfaService {
             throw new BusinessException(ErrorCode.MFA_REQUIRED);
         }
 
-        String encryptedSecret = user.getMfaSecret();
+        String encryptedSecret = authMfaRepository.findActiveByUserUuid(user.getUuid())
+                .map(AuthMfaEntity::getSecret)
+                .orElse(null);
         if (encryptedSecret == null || encryptedSecret.isBlank()) {
             throw new BusinessException(ErrorCode.MFA_NOT_CONFIGURED);
         }
@@ -147,14 +158,23 @@ public class MfaService {
     }
 
     private String resolveOrCreateSecret(AuthEntity user) {
-        if (user.getMfaSecret() != null && !user.getMfaSecret().isBlank()) {
-            return aesComponent.decrypt(user.getMfaSecret());
+        AuthMfaEntity mfa = resolveOrCreateMfa(user);
+        if (mfa.getSecret() != null && !mfa.getSecret().isBlank()) {
+            return aesComponent.decrypt(mfa.getSecret());
         }
         String secret = generateBase32Secret();
-        user.setMfaSecret(aesComponent.encrypt(secret));
-        user.setMfaEnabled(false);
-        authRepository.save(user);
+        mfa.setSecret(aesComponent.encrypt(secret));
+        mfa.setEnabled(false);
+        authMfaRepository.save(mfa);
         return secret;
+    }
+
+    private AuthMfaEntity resolveOrCreateMfa(AuthEntity user) {
+        return authMfaRepository.findActiveByUserUuid(user.getUuid())
+                .orElseGet(() -> AuthMfaEntity.builder()
+                        .userUuid(user.getUuid())
+                        .enabled(false)
+                        .build());
     }
 
     private String encodeBase32(byte[] data) {

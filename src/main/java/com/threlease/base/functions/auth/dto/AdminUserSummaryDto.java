@@ -1,6 +1,6 @@
 package com.threlease.base.functions.auth.dto;
 
-import com.threlease.base.common.enums.Roles;
+import com.threlease.base.common.enums.UserTypes;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -12,7 +12,7 @@ public class AdminUserSummaryDto {
     private String uuid;
     private String username;
     private String nickname;
-    private Roles role;
+    private UserTypes type;
     private int failedLoginCount;
     private LocalDateTime lockedUntil;
     private LocalDateTime lastLoginAt;

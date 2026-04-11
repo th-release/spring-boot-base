@@ -115,7 +115,7 @@ app:
       # 허용 시간 오차 윈도우 수
       allowed-windows: ${AUTH_MFA_ALLOWED_WINDOWS:1}
       # MFA를 필수로 강제할 역할 목록
-      required-roles: []
+      required-types: []
   token:
     # refresh token 저장 방식
     # refresh token 저장 위치(cache 또는 rdb)

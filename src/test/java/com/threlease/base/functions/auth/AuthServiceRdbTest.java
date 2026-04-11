@@ -12,6 +12,8 @@ import com.threlease.base.entities.RefreshTokenEntity;
 import com.threlease.base.functions.auth.dto.RefreshTokenSessionDto;
 import com.threlease.base.functions.auth.dto.TokenResponseDto;
 import com.threlease.base.repositories.auth.AuthRepository;
+import com.threlease.base.repositories.auth.AuthLoginHistoryRepository;
+import com.threlease.base.repositories.auth.AuthMfaRepository;
 import com.threlease.base.repositories.auth.RefreshTokenRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,6 +32,8 @@ import static org.mockito.Mockito.when;
 
 class AuthServiceRdbTest {
     private final AuthRepository authRepository = mock(AuthRepository.class);
+    private final AuthLoginHistoryRepository authLoginHistoryRepository = mock(AuthLoginHistoryRepository.class);
+    private final AuthMfaRepository authMfaRepository = mock(AuthMfaRepository.class);
     private final RefreshTokenRepository refreshTokenRepository = mock(RefreshTokenRepository.class);
     private final HashComponent hashComponent = new HashComponent();
     private final RandomComponent randomComponent = new RandomComponent();
@@ -57,6 +61,8 @@ class AuthServiceRdbTest {
 
         authService = new AuthService(
                 authRepository,
+                authLoginHistoryRepository,
+                authMfaRepository,
                 refreshTokenRepository,
                 jwtProvider,
                 objectProvider,

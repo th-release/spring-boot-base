@@ -49,16 +49,16 @@ public class AuthFlowService {
         }
 
         if (!passwordEncoder.matches(dto.getPassword(), auth.getPassword())) {
-            authService.recordFailedLogin(auth);
+            authService.recordFailedLogin(auth, clientIp, userAgent, "WRONG_PASSWORD");
             auditLogService.log(auth.getUuid(), "LOGIN", "AUTH", auth.getUuid(), false, request, "Wrong password");
             throw new BusinessException(ErrorCode.WRONG_PASSWORD);
         }
 
         mfaService.verifyLogin(auth, dto.getOtpCode());
-        authService.recordSuccessfulLogin(auth, clientIp);
+        authService.recordSuccessfulLogin(auth, clientIp, userAgent);
         auditLogService.log(auth.getUuid(), "LOGIN", "AUTH", auth.getUuid(), true, request, "User login succeeded");
         TokenResponseDto response = authService.issueTokens(auth, userAgent, clientIp);
-        response.setMfaEnabled(auth.isMfaEnabled());
+        response.setMfaEnabled(mfaService.isEnabled(auth));
         response.setMfaEnrollmentRequired(mfaService.isEnrollmentRequired(auth));
         return response;
     }
@@ -100,7 +100,7 @@ public class AuthFlowService {
                 .email(dto.getEmail())
                 .password(passwordEncoder.encode(dto.getPassword()))
                 .salt("")
-                .role(com.threlease.base.common.enums.Roles.ROLE_USER)
+                .type(com.threlease.base.common.enums.UserTypes.USER)
                 .build();
 
         authService.authSave(user);

@@ -7,8 +7,9 @@ import com.threlease.base.common.properties.crypto.CryptoProperties;
 import com.threlease.base.common.utils.QR.QRCode;
 import com.threlease.base.common.utils.crypto.AesComponent;
 import com.threlease.base.entities.AuthEntity;
+import com.threlease.base.entities.AuthMfaEntity;
 import com.threlease.base.functions.auth.dto.MfaSetupResponseDto;
-import com.threlease.base.repositories.auth.AuthRepository;
+import com.threlease.base.repositories.auth.AuthMfaRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -16,7 +17,10 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.ByteBuffer;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -52,10 +56,20 @@ class MfaServiceTest {
         qrCodeProperties.setCharset("UTF-8");
         qrCodeProperties.setMargin(1);
 
-        AuthRepository authRepository = mock(AuthRepository.class);
-        when(authRepository.save(any(AuthEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        AuthMfaRepository authMfaRepository = mock(AuthMfaRepository.class);
+        List<AuthMfaEntity> mfaRecords = new ArrayList<>();
+        when(authMfaRepository.findActiveByUserUuid("user-1")).thenAnswer(invocation -> mfaRecords.stream().findFirst());
+        when(authMfaRepository.save(any(AuthMfaEntity.class))).thenAnswer(invocation -> {
+            AuthMfaEntity mfa = invocation.getArgument(0);
+            if (mfaRecords.isEmpty()) {
+                mfaRecords.add(mfa);
+            } else {
+                mfaRecords.set(0, mfa);
+            }
+            return mfa;
+        });
 
-        mfaService = new MfaService(properties, authRepository, aesComponent, new QRCode(qrCodeProperties));
+        mfaService = new MfaService(properties, authMfaRepository, aesComponent, new QRCode(qrCodeProperties));
 
         user = AuthEntity.builder()
                 .uuid("user-1")
@@ -63,7 +77,7 @@ class MfaServiceTest {
                 .nickname("tester")
                 .password("encoded")
                 .salt("salt")
-                .role(com.threlease.base.common.enums.Roles.ROLE_USER)
+                .type(com.threlease.base.common.enums.UserTypes.USER)
                 .build();
     }
 
@@ -73,7 +87,7 @@ class MfaServiceTest {
 
         assertNotNull(setup.getSecret());
         assertNotNull(setup.getOtpAuthUri());
-        assertFalse(user.isMfaEnabled());
+        assertFalse(mfaService.isEnabled(user));
 
         String otpCode = generateTotp(setup.getSecret(), 30, 6);
         assertDoesNotThrow(() -> mfaService.completeEnrollment(user, otpCode));

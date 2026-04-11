@@ -9,7 +9,10 @@ import com.threlease.base.common.provider.JwtProvider;
 import com.threlease.base.common.utils.crypto.HashComponent;
 import com.threlease.base.common.utils.random.RandomComponent;
 import com.threlease.base.entities.AuthEntity;
+import com.threlease.base.entities.AuthLoginHistoryEntity;
 import com.threlease.base.repositories.auth.AuthRepository;
+import com.threlease.base.repositories.auth.AuthLoginHistoryRepository;
+import com.threlease.base.repositories.auth.AuthMfaRepository;
 import com.threlease.base.repositories.auth.RefreshTokenRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,18 +20,25 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class AuthSecurityPolicyTest {
     private AuthService authService;
+    private final List<AuthLoginHistoryEntity> loginHistories = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
         AuthRepository authRepository = mock(AuthRepository.class);
+        AuthLoginHistoryRepository authLoginHistoryRepository = mock(AuthLoginHistoryRepository.class);
+        AuthMfaRepository authMfaRepository = mock(AuthMfaRepository.class);
         RefreshTokenRepository refreshTokenRepository = mock(RefreshTokenRepository.class);
         HashComponent hashComponent = new HashComponent();
         RandomComponent randomComponent = new RandomComponent();
@@ -51,9 +61,18 @@ class AuthSecurityPolicyTest {
 
         ObjectProvider<StringRedisTemplate> objectProvider = mock(ObjectProvider.class);
         when(objectProvider.getIfAvailable()).thenReturn(null);
+        when(authLoginHistoryRepository.save(any(AuthLoginHistoryEntity.class))).thenAnswer(invocation -> {
+            AuthLoginHistoryEntity history = invocation.getArgument(0);
+            loginHistories.add(history);
+            return history;
+        });
+        when(authLoginHistoryRepository.findLatestByUserUuid("user-1")).thenAnswer(invocation -> latestHistory());
+        when(authLoginHistoryRepository.findLatestSuccessfulByUserUuid("user-1")).thenAnswer(invocation -> latestSuccessfulHistory());
 
         authService = new AuthService(
                 authRepository,
+                authLoginHistoryRepository,
+                authMfaRepository,
                 refreshTokenRepository,
                 jwtProvider,
                 objectProvider,
@@ -79,7 +98,7 @@ class AuthSecurityPolicyTest {
         authService.recordFailedLogin(user);
         authService.recordFailedLogin(user);
 
-        assertEquals(3, user.getFailedLoginCount());
+        assertEquals(3, authService.getFailedLoginCount(user));
         assertThrows(BusinessException.class, () -> authService.ensureLoginAllowed(user));
     }
 
@@ -91,13 +110,24 @@ class AuthSecurityPolicyTest {
                 .nickname("tester")
                 .password("encoded")
                 .salt("salt")
-                .failedLoginCount(3)
-                .lockedUntil(LocalDateTime.now().plusMinutes(5))
                 .build();
 
         authService.recordSuccessfulLogin(user, "127.0.0.1");
 
-        assertEquals(0, user.getFailedLoginCount());
-        assertEquals("127.0.0.1", user.getLastLoginIp());
+        assertEquals(0, authService.getFailedLoginCount(user));
+        assertEquals("127.0.0.1", authService.getLastLoginIp(user));
+    }
+
+    private Optional<AuthLoginHistoryEntity> latestHistory() {
+        if (loginHistories.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(loginHistories.get(loginHistories.size() - 1));
+    }
+
+    private Optional<AuthLoginHistoryEntity> latestSuccessfulHistory() {
+        return loginHistories.stream()
+                .filter(AuthLoginHistoryEntity::isSuccess)
+                .reduce((previous, current) -> current);
     }
 }

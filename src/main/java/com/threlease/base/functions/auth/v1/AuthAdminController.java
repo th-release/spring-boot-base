@@ -6,11 +6,15 @@ import com.threlease.base.entities.AuthEntity;
 import com.threlease.base.functions.auth.AuthAdminService;
 import com.threlease.base.functions.auth.AuthService;
 import com.threlease.base.functions.auth.dto.AdminUserSummaryDto;
+import com.threlease.base.functions.auth.dto.AuthPermissionCreateDto;
+import com.threlease.base.functions.auth.dto.AuthPermissionDto;
+import com.threlease.base.functions.auth.dto.AuthPermissionGrantDto;
 import com.threlease.base.functions.auth.dto.AuditLogDto;
 import com.threlease.base.functions.auth.dto.RefreshTokenSessionDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -79,5 +83,43 @@ public class AuthAdminController {
             @RequestParam(defaultValue = "20") int size,
             HttpServletRequest request) {
         return BasicResponse.ok(authAdminService.getAuditLogs((AuthEntity) request.getAttribute("user"), page, size));
+    }
+
+    @GetMapping("/permissions")
+    @Operation(summary = "관리자용 권한 목록 조회")
+    public ResponseEntity<BasicResponse<List<AuthPermissionDto>>> permissions(HttpServletRequest request) {
+        return BasicResponse.ok(authAdminService.getPermissions((AuthEntity) request.getAttribute("user")));
+    }
+
+    @PostMapping("/permissions")
+    @Operation(summary = "관리자용 권한 생성")
+    public ResponseEntity<BasicResponse<AuthPermissionDto>> createPermission(@RequestBody @Valid AuthPermissionCreateDto dto,
+                                                                             HttpServletRequest request) {
+        return BasicResponse.created(authAdminService.createPermission((AuthEntity) request.getAttribute("user"), dto, request));
+    }
+
+    @GetMapping("/users/{uuid}/permissions")
+    @Operation(summary = "관리자용 사용자 유효 권한 조회")
+    public ResponseEntity<BasicResponse<List<AuthPermissionDto>>> userPermissions(@PathVariable String uuid,
+                                                                                  HttpServletRequest request) {
+        return BasicResponse.ok(authAdminService.getEffectivePermissions((AuthEntity) request.getAttribute("user"), uuid));
+    }
+
+    @PostMapping("/users/{uuid}/permissions")
+    @Operation(summary = "관리자용 사용자 권한 부여")
+    public ResponseEntity<BasicResponse<Void>> grantPermission(@PathVariable String uuid,
+                                                               @RequestBody @Valid AuthPermissionGrantDto dto,
+                                                               HttpServletRequest request) {
+        authAdminService.grantPermission((AuthEntity) request.getAttribute("user"), uuid, dto.getPermissionCode(), request);
+        return BasicResponse.noContent();
+    }
+
+    @DeleteMapping("/users/{uuid}/permissions/{permissionCode}")
+    @Operation(summary = "관리자용 사용자 권한 회수")
+    public ResponseEntity<BasicResponse<Void>> revokePermission(@PathVariable String uuid,
+                                                                @PathVariable String permissionCode,
+                                                                HttpServletRequest request) {
+        authAdminService.revokePermission((AuthEntity) request.getAttribute("user"), uuid, permissionCode, request);
+        return BasicResponse.noContent();
     }
 }

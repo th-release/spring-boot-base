@@ -73,7 +73,7 @@ app:
       code-digits: 6
       time-step-seconds: 30
       allowed-windows: 1
-      required-roles: []
+      required-types: []
   outbound:
     connect-timeout-seconds: 5
     read-timeout-seconds: 5

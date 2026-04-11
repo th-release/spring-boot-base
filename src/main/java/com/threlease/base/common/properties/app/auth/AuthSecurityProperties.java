@@ -41,7 +41,7 @@ public class AuthSecurityProperties {
         private int codeDigits = 6;
         private int timeStepSeconds = 30;
         private int allowedWindows = 1;
-        private List<String> requiredRoles = new ArrayList<>();
+        private List<String> requiredTypes = new ArrayList<>();
     }
 
     @Getter

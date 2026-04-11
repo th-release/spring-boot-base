@@ -79,7 +79,7 @@ app:
       code-digits: 6
       time-step-seconds: 30
       allowed-windows: 1
-      required-roles: []
+      required-types: []
   outbound:
     # 외부 API 호출 timeout/retry/header 정책
     connect-timeout-seconds: 5

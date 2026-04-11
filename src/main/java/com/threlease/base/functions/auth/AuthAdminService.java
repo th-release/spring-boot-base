@@ -1,10 +1,11 @@
 package com.threlease.base.functions.auth;
 
-import com.threlease.base.common.enums.Roles;
 import com.threlease.base.common.exception.BusinessException;
 import com.threlease.base.common.exception.ErrorCode;
 import com.threlease.base.entities.AuthEntity;
 import com.threlease.base.functions.auth.dto.AdminUserSummaryDto;
+import com.threlease.base.functions.auth.dto.AuthPermissionCreateDto;
+import com.threlease.base.functions.auth.dto.AuthPermissionDto;
 import com.threlease.base.functions.auth.dto.AuditLogDto;
 import com.threlease.base.functions.auth.dto.RefreshTokenSessionDto;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,9 +22,10 @@ public class AuthAdminService {
     private final AuthService authService;
     private final AuditLogService auditLogService;
     private final MfaService mfaService;
+    private final AuthPermissionService authPermissionService;
 
     public AuthEntity assertAdmin(AuthEntity user) {
-        if (user == null || user.getRole() != Roles.ROLE_ADMIN) {
+        if (!authPermissionService.hasPermission(user, AuthPermissionService.SYSTEM_ADMIN)) {
             throw new BusinessException(ErrorCode.FORBIDDEN);
         }
         return user;
@@ -57,9 +59,7 @@ public class AuthAdminService {
         assertAdmin(admin);
         AuthEntity target = authService.findManagedUserByUuid(uuid)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
-        target.setLockedUntil(null);
-        target.setFailedLoginCount(0);
-        authService.authSave(target);
+        authService.unlockUser(target);
         auditLogService.logAdmin(admin.getUuid(), "ADMIN_UNLOCK_USER", "AUTH", uuid, true, request, "User unlocked");
     }
 
@@ -74,5 +74,34 @@ public class AuthAdminService {
     public Page<AuditLogDto> getAuditLogs(AuthEntity admin, int page, int size) {
         assertAdmin(admin);
         return auditLogService.getAuditLogs(PageRequest.of(page, size));
+    }
+
+    public List<AuthPermissionDto> getPermissions(AuthEntity admin) {
+        assertAdmin(admin);
+        return authPermissionService.getPermissions();
+    }
+
+    public AuthPermissionDto createPermission(AuthEntity admin, AuthPermissionCreateDto dto, HttpServletRequest request) {
+        assertAdmin(admin);
+        AuthPermissionDto permission = authPermissionService.createPermission(dto);
+        auditLogService.logAdmin(admin.getUuid(), "ADMIN_CREATE_PERMISSION", "AUTH_PERMISSION", permission.getCode(), true, request, "Permission created");
+        return permission;
+    }
+
+    public void grantPermission(AuthEntity admin, String uuid, String permissionCode, HttpServletRequest request) {
+        assertAdmin(admin);
+        authPermissionService.grantPermission(uuid, permissionCode, admin);
+        auditLogService.logAdmin(admin.getUuid(), "ADMIN_GRANT_PERMISSION", "AUTH_PERMISSION", uuid, true, request, "Permission granted: " + permissionCode);
+    }
+
+    public void revokePermission(AuthEntity admin, String uuid, String permissionCode, HttpServletRequest request) {
+        assertAdmin(admin);
+        authPermissionService.revokePermission(uuid, permissionCode);
+        auditLogService.logAdmin(admin.getUuid(), "ADMIN_REVOKE_PERMISSION", "AUTH_PERMISSION", uuid, true, request, "Permission revoked: " + permissionCode);
+    }
+
+    public List<AuthPermissionDto> getEffectivePermissions(AuthEntity admin, String uuid) {
+        assertAdmin(admin);
+        return authPermissionService.getEffectivePermissions(uuid);
     }
 }

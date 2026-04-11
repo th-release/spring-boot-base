@@ -2,13 +2,13 @@ package com.threlease.base.common.utils.storage;
 
 import com.threlease.base.common.exception.BusinessException;
 import com.threlease.base.common.exception.ErrorCode;
-import com.threlease.base.common.enums.Roles;
 import com.threlease.base.common.properties.storage.StorageProperties;
 import com.threlease.base.common.utils.storage.dto.FileDownloadUrlDto;
 import com.threlease.base.common.utils.storage.dto.FileUploadResponseDto;
 import com.threlease.base.common.utils.storage.entity.FileEntity;
 import com.threlease.base.common.utils.storage.repository.FileRepository;
 import com.threlease.base.entities.AuthEntity;
+import com.threlease.base.functions.auth.AuthPermissionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -37,6 +37,7 @@ public class FileService {
     private final StorageService storageService;
     private final StorageProperties storageProperties;
     private final FileDownloadTokenService fileDownloadTokenService;
+    private final AuthPermissionService authPermissionService;
 
     @Transactional
     public FileUploadResponseDto upload(MultipartFile file, String dirName, AuthEntity user) throws IOException {
@@ -119,7 +120,7 @@ public class FileService {
     }
 
     private FileEntity findOwnedFile(Long id, AuthEntity user) {
-        if (user.getRole() == Roles.ROLE_ADMIN) {
+        if (authPermissionService.hasPermission(user, AuthPermissionService.SYSTEM_ADMIN)) {
             return fileRepository.findActiveById(id)
                     .orElseThrow(() -> new BusinessException(ErrorCode.FILE_NOT_FOUND));
         }

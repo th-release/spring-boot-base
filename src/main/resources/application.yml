@@ -32,7 +32,7 @@ spring:
   jpa:
     hibernate:
       # 베이스 프로젝트 기본값. 운영에서는 migration 중심 관리 권장
-      ddl-auto: none
+      ddl-auto: update
     properties:
       hibernate:
         # SQL pretty print 여부
@@ -41,7 +41,7 @@ spring:
         default_schema: ${JPA_SCHEMA:public}
   flyway:
     # Flyway 실행 여부
-    enabled: ${FLYWAY_ENABLED:true}
+    enabled: ${FLYWAY_ENABLED:false}
     # 기존 DB에 flyway_schema_history가 없을 때 baseline 생성 허용
     baseline-on-migrate: true
     # baseline 버전

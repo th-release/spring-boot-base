@@ -19,14 +19,6 @@ public interface AuthMapper {
     // SignUpDto -> AuthEntity (Password 등 필요한 필드는 수동 처리 필요할 수 있음)
     @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "salt", ignore = true)
-    @Mapping(target = "role", ignore = true)
-    @Mapping(target = "failedLoginCount", ignore = true)
-    @Mapping(target = "lockedUntil", ignore = true)
-    @Mapping(target = "lastLoginAt", ignore = true)
-    @Mapping(target = "lastLoginIp", ignore = true)
-    @Mapping(target = "mfaSecret", ignore = true)
-    @Mapping(target = "mfaEnabled", ignore = true)
-    @Mapping(target = "passwordResetCodeHash", ignore = true)
-    @Mapping(target = "passwordResetCodeExpiry", ignore = true)
+    @Mapping(target = "type", ignore = true)
     AuthEntity toEntity(SignUpDto dto);
 }
