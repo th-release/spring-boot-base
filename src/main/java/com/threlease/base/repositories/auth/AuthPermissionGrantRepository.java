@@ -34,4 +34,15 @@ public interface AuthPermissionGrantRepository extends JpaRepository<AuthPermiss
     Page<AuthPermissionGrantEntity> findLatestActiveByUserAndPermission(@Param("user") AuthEntity user,
                                                                         @Param("permission") AuthPermissionEntity permission,
                                                                         Pageable pageable);
+
+    @Query("""
+            SELECT g
+            FROM AuthPermissionGrantEntity g
+            JOIN FETCH g.user u
+            WHERE g.permission = :permission
+              AND g.deletedAt IS NULL
+              AND u.deletedAt IS NULL
+            ORDER BY g.createdAt ASC, g.id ASC
+            """)
+    List<AuthPermissionGrantEntity> findAllActiveByPermission(@Param("permission") AuthPermissionEntity permission);
 }

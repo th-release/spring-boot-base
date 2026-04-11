@@ -15,8 +15,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -50,7 +52,8 @@ public class AuthPermissionService {
 
     @Transactional
     public AuthPermissionDto createPermission(AuthPermissionCreateDto dto) {
-        if (findActivePermission(dto.getCode()).isPresent()) {
+        String permissionCode = trim(dto.getCode(), 120);
+        if (findActivePermission(permissionCode).isPresent()) {
             throw new BusinessException(ErrorCode.INVALID_INPUT, "이미 사용 중인 권한 코드입니다.");
         }
 
@@ -66,14 +69,16 @@ public class AuthPermissionService {
         }
 
         AuthPermissionEntity permission = AuthPermissionEntity.builder()
-                .code(trim(dto.getCode(), 120))
+                .code(permissionCode)
                 .name(trim(dto.getName(), 120))
                 .depth(depth)
                 .parent(parent)
                 .sortOrder(dto.getSortOrder())
                 .description(trim(dto.getDescription(), 255))
                 .build();
-        return toDto(authPermissionRepository.save(permission));
+        AuthPermissionEntity savedPermission = authPermissionRepository.save(permission);
+        grantNewPermissionToParentHolders(savedPermission, parent);
+        return toDto(savedPermission);
     }
 
     @Transactional
@@ -81,6 +86,62 @@ public class AuthPermissionService {
         AuthEntity user = AuthEntity.builder().uuid(userUuid).build();
         AuthPermissionEntity permission = findActivePermission(permissionCode)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT, "권한을 찾을 수 없습니다."));
+
+        for (AuthPermissionEntity targetPermission : resolveGrantTargets(permission)) {
+            grantSinglePermission(user, targetPermission, grantedBy);
+        }
+    }
+
+    @Transactional
+    public void revokePermission(String userUuid, String permissionCode) {
+        AuthEntity user = AuthEntity.builder().uuid(userUuid).build();
+        AuthPermissionEntity permission = findActivePermission(permissionCode)
+                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT, "권한을 찾을 수 없습니다."));
+
+        Set<Long> revokePermissionIds = resolveGrantTargetIds(permission);
+        for (AuthPermissionGrantEntity grant : authPermissionGrantRepository.findAllActiveByUser(user)) {
+            if (grant.getPermission() != null && revokePermissionIds.contains(grant.getPermission().getId())) {
+                grant.delete();
+                authPermissionGrantRepository.save(grant);
+            }
+        }
+    }
+
+    @Transactional
+    public void ensureSystemAdminHasAllPermissions(AuthEntity admin) {
+        AuthPermissionEntity systemAdmin = ensureSystemAdminPermission();
+        grantPermission(admin.getUuid(), systemAdmin.getCode(), admin);
+    }
+
+    private void grantNewPermissionToParentHolders(AuthPermissionEntity permission, AuthPermissionEntity parent) {
+        for (AuthPermissionEntity holderPermission : resolveNewPermissionHolderPermissions(parent)) {
+            for (AuthPermissionGrantEntity holderGrant : findActiveGrantsByPermission(holderPermission)) {
+                if (holderGrant.getUser() != null) {
+                    grantSinglePermission(holderGrant.getUser(), permission, holderGrant.getGrantedBy());
+                }
+            }
+        }
+    }
+
+    private List<AuthPermissionEntity> resolveNewPermissionHolderPermissions(AuthPermissionEntity parent) {
+        Map<Long, AuthPermissionEntity> holderPermissions = new LinkedHashMap<>();
+        findActivePermission(SYSTEM_ADMIN).ifPresent(permission -> holderPermissions.put(permission.getId(), permission));
+
+        AuthPermissionEntity current = parent;
+        while (current != null && current.getId() != null) {
+            holderPermissions.put(current.getId(), current);
+            current = resolveParent(current);
+        }
+
+        return new ArrayList<>(holderPermissions.values());
+    }
+
+    private List<AuthPermissionGrantEntity> findActiveGrantsByPermission(AuthPermissionEntity permission) {
+        List<AuthPermissionGrantEntity> grants = authPermissionGrantRepository.findAllActiveByPermission(permission);
+        return grants == null ? List.of() : grants;
+    }
+
+    private void grantSinglePermission(AuthEntity user, AuthPermissionEntity permission, AuthEntity grantedBy) {
         if (findActiveGrant(user, permission).isPresent()) {
             return;
         }
@@ -91,16 +152,45 @@ public class AuthPermissionService {
                 .build());
     }
 
-    @Transactional
-    public void revokePermission(String userUuid, String permissionCode) {
-        AuthEntity user = AuthEntity.builder().uuid(userUuid).build();
-        AuthPermissionEntity permission = findActivePermission(permissionCode)
-                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT, "권한을 찾을 수 없습니다."));
-        findActiveGrant(user, permission)
-                .ifPresent(grant -> {
-                    grant.delete();
-                    authPermissionGrantRepository.save(grant);
-                });
+    private List<AuthPermissionEntity> resolveGrantTargets(AuthPermissionEntity permission) {
+        if (SYSTEM_ADMIN.equals(permission.getCode())) {
+            return authPermissionRepository.findAllActive();
+        }
+
+        Map<Long, AuthPermissionEntity> permissions = new LinkedHashMap<>();
+        collectDescendantPermissions(permission, permissions);
+        return new ArrayList<>(permissions.values());
+    }
+
+    private Set<Long> resolveGrantTargetIds(AuthPermissionEntity permission) {
+        if (SYSTEM_ADMIN.equals(permission.getCode())) {
+            Set<Long> permissionIds = new HashSet<>();
+            for (AuthPermissionEntity activePermission : authPermissionRepository.findAllActive()) {
+                permissionIds.add(activePermission.getId());
+            }
+            return permissionIds;
+        }
+
+        Map<Long, AuthPermissionEntity> permissions = new LinkedHashMap<>();
+        collectDescendantPermissions(permission, permissions);
+        return permissions.keySet();
+    }
+
+    private void collectDescendantPermissions(AuthPermissionEntity permission, Map<Long, AuthPermissionEntity> collector) {
+        if (permission == null || permission.getId() == null || collector.containsKey(permission.getId())) {
+            return;
+        }
+        collector.put(permission.getId(), permission);
+        AuthPermissionEntity parent = AuthPermissionEntity.builder().id(permission.getId()).build();
+        for (AuthPermissionEntity child : authPermissionRepository.findAllActiveByParent(parent)) {
+            collectDescendantPermissions(child, collector);
+        }
+    }
+
+    private Optional<AuthPermissionGrantEntity> findActiveGrant(AuthEntity user, AuthPermissionEntity permission) {
+        return authPermissionGrantRepository.findLatestActiveByUserAndPermission(user, permission, PageRequest.of(0, 1))
+                .stream()
+                .findFirst();
     }
 
     @Transactional(readOnly = true)
@@ -151,13 +241,8 @@ public class AuthPermissionService {
     }
 
     private Optional<AuthPermissionEntity> findActivePermission(String code) {
-        return authPermissionRepository.findActiveByCode(code, PageRequest.of(0, 1)).stream().findFirst();
-    }
-
-    private Optional<AuthPermissionGrantEntity> findActiveGrant(AuthEntity user, AuthPermissionEntity permission) {
-        return authPermissionGrantRepository.findLatestActiveByUserAndPermission(user, permission, PageRequest.of(0, 1))
-                .stream()
-                .findFirst();
+        org.springframework.data.domain.Page<AuthPermissionEntity> page = authPermissionRepository.findActiveByCode(code, PageRequest.of(0, 1));
+        return page == null ? Optional.empty() : page.stream().findFirst();
     }
 
     private void collectDescendantPermissionIds(Long permissionId, Set<Long> collector) {

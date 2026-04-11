@@ -35,8 +35,7 @@ public class AuthAdminBootstrap {
         Optional<AuthEntity> existingAdmin = authService.findOneByUsername(adminProperties.getUsername());
         AuthEntity admin = existingAdmin.orElseGet(this::createAdmin);
         existingAdmin.ifPresent(this::resetPasswordIfConfigured);
-        authPermissionService.ensureSystemAdminPermission();
-        authPermissionService.grantPermission(admin.getUuid(), AuthPermissionService.SYSTEM_ADMIN, admin);
+        authPermissionService.ensureSystemAdminHasAllPermissions(admin);
 
         if (existingAdmin.isPresent()) {
             log.info("Initial admin already exists. SYSTEM_ADMIN permission ensured for username={}", admin.getUsername());
