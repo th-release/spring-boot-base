@@ -120,6 +120,7 @@ public class AuthFlowService {
 
         AuthPasswordService.EncodedPassword encodedPassword = authPasswordService.encode(dto.getNewPassword());
         authService.changePassword(user, encodedPassword.passwordHash(), encodedPassword.salt());
+        authService.logoutAll(user.getUuid());
         auditLogService.log(user.getUuid(), "CHANGE_PASSWORD", "AUTH", user.getUuid(), true, request, "Password changed");
     }
 
@@ -164,6 +165,7 @@ public class AuthFlowService {
             authVerificationService.verifyCode(user, AuthVerificationType.PASSWORD_RESET, dto.getVerificationCode());
             AuthPasswordService.EncodedPassword encodedPassword = authPasswordService.encode(dto.getNewPassword());
             authService.changePassword(user, encodedPassword.passwordHash(), encodedPassword.salt());
+            authService.logoutAll(user.getUuid());
             authVerificationService.clear(user, AuthVerificationType.PASSWORD_RESET);
             auditLogService.log(user.getUuid(), "CONFIRM_PASSWORD_RESET", "AUTH", user.getUuid(), true, request, "Password reset by email verification");
             return;
@@ -179,6 +181,7 @@ public class AuthFlowService {
 
         AuthPasswordService.EncodedPassword encodedPassword = authPasswordService.encode(dto.getNewPassword());
         authService.changePassword(user, encodedPassword.passwordHash(), encodedPassword.salt());
+        authService.logoutAll(user.getUuid());
         auditLogService.log(user.getUuid(), "CONFIRM_PASSWORD_RESET", "AUTH", user.getUuid(), true, request, "Password reset by current password");
     }
 

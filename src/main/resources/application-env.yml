@@ -233,11 +233,11 @@ management:
     web:
       exposure:
         # 외부 노출할 actuator endpoint 목록
-        include: health, metrics, prometheus
+        include: ${MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE:health}
   endpoint:
     health:
       # health 상세정보 노출 수준
-      show-details: always
+      show-details: ${MANAGEMENT_HEALTH_SHOW_DETAILS:never}
     prometheus:
       # prometheus endpoint 활성화 여부
       enabled: true

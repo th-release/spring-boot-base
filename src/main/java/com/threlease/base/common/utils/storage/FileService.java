@@ -134,7 +134,7 @@ public class FileService {
             return storageService.getDownloadUrl(fileEntity);
         }
         String token = fileDownloadTokenService.createToken(fileEntity.getId(), fileEntity.getFilePath(), 10);
-        return fileEntity.getUrl() + "?token=" + token;
+        return fileEntity.getUrl() + "?token=" + token + "&download=true";
     }
 
     private String resolveDownloadUrl(FileEntity fileEntity) {

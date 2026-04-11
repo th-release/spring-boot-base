@@ -42,9 +42,9 @@ public class FileController {
     public ResponseEntity<?> serve(
             HttpServletRequest request,
             @RequestParam("token") String token,
-            @RequestParam(value = "download", defaultValue = "false") boolean download
+            @RequestParam(value = "download", defaultValue = "true") boolean download
     ) {
-        return fileService.serve(extractFilePath(request), token, download);
+        return fileService.serve(extractFilePath(request), token, true);
     }
 
     @GetMapping("/{id}/download")

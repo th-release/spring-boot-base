@@ -50,23 +50,24 @@ public class WebMvcConfig implements WebMvcConfigurer {
      */
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        String apiV1 = "/api/v1";
-
         registry.addInterceptor(apiVersionInterceptor)
                 .addPathPatterns("/api/**");
 
         registry.addInterceptor(tokenInterceptor)
-                .addPathPatterns(apiV1 + "/**")
+                .addPathPatterns("/api/**")
                 .excludePathPatterns(
                         // 모든 경로를 리터럴로 명시하여 직관성 확보
-                        apiV1 + "/auth/login",
-                        apiV1 + "/auth/signup",
-                        apiV1 + "/auth/refresh",
-                        apiV1 + "/auth/password/reset/request",
-                        apiV1 + "/auth/password/reset/confirm",
+                        "/api/v*/auth/login",
+                        "/api/v*/auth/signup",
+                        "/api/v*/auth/refresh",
+                        "/api/v*/auth/password/reset/request",
+                        "/api/v*/auth/password/reset/confirm",
+                        "/api/v*/files/content/**",
+                        "/api/api/common/enums",
                         "/api/swagger-ui/**",
                         "/api/v3/api-docs/**",
-                        "/api/actuator/**"
+                        "/api/actuator/health",
+                        "/api/actuator/health/**"
                 );
     }
 

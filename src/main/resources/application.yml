@@ -43,7 +43,7 @@ spring:
     # Flyway 실행 여부
     enabled: ${FLYWAY_ENABLED:true}
     # 기존 DB에 flyway_schema_history가 없을 때 baseline 생성 허용
-    baseline-on-migrate: true
+    baseline-on-migrate: ${FLYWAY_BASELINE_ON_MIGRATE:false}
     # baseline 버전
     baseline-version: 0
     # 마이그레이션 SQL 경로
