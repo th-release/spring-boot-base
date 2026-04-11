@@ -36,16 +36,16 @@ public class OrphanFileDeleter {
                 case LOCAL -> deleteLocal(file.getFilePath());
                 case S3    -> deleteS3(file.getFilePath());
                 default    -> {
-                    log.warn("[OrphanFileDeleter] 알 수 없는 스토리지 타입: {}, fileId={}",
-                            file.getStorageType(), file.getId());
+                    log.warn("[OrphanFileDeleter] 알 수 없는 스토리지 타입: {}, fileUuid={}",
+                            file.getStorageType(), file.getUuid());
                     return false;
                 }
             }
             return true;
 
         } catch (Exception e) {
-            log.error("[OrphanFileDeleter] 파일 삭제 실패: fileId={}, path={}, type={}",
-                    file.getId(), file.getFilePath(), file.getStorageType(), e);
+            log.error("[OrphanFileDeleter] 파일 삭제 실패: fileUuid={}, path={}, type={}",
+                    file.getUuid(), file.getFilePath(), file.getStorageType(), e);
             return false;
         }
     }

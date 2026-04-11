@@ -25,7 +25,7 @@ create table tb_auth
 
 create table tb_auth_login_history
 (
-    id                 varchar(36)  not null
+    uuid               varchar(36)  not null
         primary key,
     created_at         timestamp(6) not null,
     updated_at         timestamp(6),
@@ -49,7 +49,7 @@ create index idx_tb_auth_login_history_success
 
 create table tb_auth_mfa
 (
-    id         varchar(36)  not null
+    uuid       varchar(36)  not null
         primary key,
     created_at timestamp(6) not null,
     updated_at timestamp(6),
@@ -65,15 +65,15 @@ create index idx_tb_auth_mfa_user_uuid
 
 create table tb_auth_permission
 (
-    id          varchar(36)  not null
+    uuid        varchar(36)  not null
         primary key,
     created_at  timestamp(6) not null,
     updated_at  timestamp(6),
     code        varchar(120) not null,
     name        varchar(120) not null,
     depth       integer      not null,
-    parent_id   varchar(36)
-        constraint fk_auth_permission_parent_id
+    parent_uuid varchar(36)
+        constraint fk_auth_permission_parent_uuid
             references tb_auth_permission,
     sort_order  integer      not null,
     description varchar(255)
@@ -82,54 +82,54 @@ create table tb_auth_permission
 create index idx_tb_auth_permission_code
     on tb_auth_permission (code);
 
-create index idx_tb_auth_permission_parent_id
-    on tb_auth_permission (parent_id);
+create index idx_tb_auth_permission_parent_uuid
+    on tb_auth_permission (parent_uuid);
 
-insert into tb_auth_permission (id, created_at, code, name, depth, parent_id, sort_order, description)
+insert into tb_auth_permission (uuid, created_at, code, name, depth, parent_uuid, sort_order, description)
 values ('00000000-0000-0000-0000-000000000001', current_timestamp, 'SYSTEM_ADMIN', '시스템 관리자', 1, null, 0, '운영/관리자 API 전체 권한');
 
-insert into tb_auth_permission (id, created_at, code, name, depth, parent_id, sort_order, description)
+insert into tb_auth_permission (uuid, created_at, code, name, depth, parent_uuid, sort_order, description)
 values ('00000000-0000-0000-0000-000000000002', current_timestamp, 'SAMPLE_MENU', '샘플 대메뉴', 1, null, 10, '베이스 프로젝트 샘플 대메뉴');
 
-insert into tb_auth_permission (id, created_at, code, name, depth, parent_id, sort_order, description)
+insert into tb_auth_permission (uuid, created_at, code, name, depth, parent_uuid, sort_order, description)
 values ('00000000-0000-0000-0000-000000000003', current_timestamp, 'SAMPLE_MENU_SECTION', '샘플 중메뉴', 2,
         '00000000-0000-0000-0000-000000000002', 10, '베이스 프로젝트 샘플 중메뉴');
 
-insert into tb_auth_permission (id, created_at, code, name, depth, parent_id, sort_order, description)
+insert into tb_auth_permission (uuid, created_at, code, name, depth, parent_uuid, sort_order, description)
 values ('00000000-0000-0000-0000-000000000004', current_timestamp, 'SAMPLE_MENU_SECTION_UPDATE', '샘플 수정', 3,
         '00000000-0000-0000-0000-000000000003', 10, '샘플 수정 권한');
 
-insert into tb_auth_permission (id, created_at, code, name, depth, parent_id, sort_order, description)
+insert into tb_auth_permission (uuid, created_at, code, name, depth, parent_uuid, sort_order, description)
 values ('00000000-0000-0000-0000-000000000005', current_timestamp, 'SAMPLE_MENU_SECTION_CREATE', '샘플 생성', 3,
         '00000000-0000-0000-0000-000000000003', 20, '샘플 생성 권한');
 
-insert into tb_auth_permission (id, created_at, code, name, depth, parent_id, sort_order, description)
+insert into tb_auth_permission (uuid, created_at, code, name, depth, parent_uuid, sort_order, description)
 values ('00000000-0000-0000-0000-000000000006', current_timestamp, 'SAMPLE_POLICY_SECTION', '샘플 정책 중메뉴', 2,
         '00000000-0000-0000-0000-000000000002', 20, '베이스 프로젝트 샘플 정책 중메뉴');
 
-insert into tb_auth_permission (id, created_at, code, name, depth, parent_id, sort_order, description)
+insert into tb_auth_permission (uuid, created_at, code, name, depth, parent_uuid, sort_order, description)
 values ('00000000-0000-0000-0000-000000000007', current_timestamp, 'SAMPLE_POLICY_SECTION_APPLY', '샘플 정책 적용', 3,
         '00000000-0000-0000-0000-000000000006', 10, '샘플 정책 적용 권한');
 
-insert into tb_auth_permission (id, created_at, code, name, depth, parent_id, sort_order, description)
+insert into tb_auth_permission (uuid, created_at, code, name, depth, parent_uuid, sort_order, description)
 values ('00000000-0000-0000-0000-000000000008', current_timestamp, 'SAMPLE_POLICY_SECTION_VIEW', '샘플 정책 조회', 3,
         '00000000-0000-0000-0000-000000000006', 20, '샘플 정책 조회 권한');
 
-insert into tb_auth_permission (id, created_at, code, name, depth, parent_id, sort_order, description)
+insert into tb_auth_permission (uuid, created_at, code, name, depth, parent_uuid, sort_order, description)
 values ('00000000-0000-0000-0000-000000000009', current_timestamp, 'SAMPLE_POLICY_SECTION_MANAGE', '샘플 정책 관리', 3,
         '00000000-0000-0000-0000-000000000006', 30, '샘플 정책 관리 권한');
 
 create table tb_auth_permission_grant
 (
-    id              varchar(36)  not null
+    uuid            varchar(36)  not null
         primary key,
     created_at      timestamp(6) not null,
     updated_at      timestamp(6),
     user_uuid       varchar(36)  not null
         constraint fk_auth_permission_grant_user_uuid
             references tb_auth,
-    permission_id   varchar(36)  not null
-        constraint fk_auth_permission_grant_permission_id
+    permission_uuid varchar(36)  not null
+        constraint fk_auth_permission_grant_permission_uuid
             references tb_auth_permission,
     granted_by_uuid varchar(36)
         constraint fk_auth_permission_grant_granted_by_uuid
@@ -139,12 +139,12 @@ create table tb_auth_permission_grant
 create index idx_tb_auth_permission_grant_user_uuid
     on tb_auth_permission_grant (user_uuid);
 
-create index idx_tb_auth_permission_grant_permission_id
-    on tb_auth_permission_grant (permission_id);
+create index idx_tb_auth_permission_grant_permission_uuid
+    on tb_auth_permission_grant (permission_uuid);
 
 create table tb_auth_verification
 (
-    id                varchar(36)  not null
+    uuid              varchar(36)  not null
         primary key,
     created_at        timestamp(6) not null,
     updated_at        timestamp(6),
@@ -166,7 +166,7 @@ create table tb_auth_verification
 
 create table tb_fcm_device_token
 (
-    id              varchar(36)  not null
+    uuid            varchar(36)  not null
         primary key,
     created_at      timestamp(6) not null,
     deleted_at      timestamp(6),
@@ -184,7 +184,7 @@ create table tb_fcm_device_token
 
 create table tb_fcm_notification
 (
-    id         varchar(36)  not null
+    uuid       varchar(36)  not null
         primary key,
     created_at timestamp(6) not null,
     deleted_at timestamp(6),
@@ -202,7 +202,7 @@ create table tb_fcm_notification
 
 create table tb_files
 (
-    id                 varchar(36)  not null
+    uuid               varchar(36)  not null
         primary key,
     content_type       varchar(255),
     created_at         timestamp(6),
@@ -222,7 +222,7 @@ create table tb_files
 
 create table tb_refresh_token
 (
-    id                   varchar(36)  not null
+    uuid                 varchar(36)  not null
         primary key,
     created_at           timestamp(6)  not null,
     deleted_at           timestamp(6),

@@ -27,14 +27,14 @@ class AuthPermissionServiceTest {
     private AuthPermissionGrantRepository grantRepository;
 
     private final AuthPermissionEntity rootPermission = AuthPermissionEntity.builder()
-            .id("permission-1")
+            .uuid("permission-1")
             .code("SAMPLE_MENU")
             .name("샘플 대메뉴")
             .depth(1)
             .build();
 
     private final AuthPermissionEntity sectionPermission = AuthPermissionEntity.builder()
-            .id("permission-2")
+            .uuid("permission-2")
             .code("SAMPLE_MENU_SECTION")
             .name("샘플 중메뉴")
             .depth(2)
@@ -42,7 +42,7 @@ class AuthPermissionServiceTest {
             .build();
 
     private final AuthPermissionEntity updatePermission = AuthPermissionEntity.builder()
-            .id("permission-3")
+            .uuid("permission-3")
             .code("SAMPLE_MENU_SECTION_UPDATE")
             .name("샘플 수정")
             .depth(3)
@@ -60,10 +60,10 @@ class AuthPermissionServiceTest {
         when(permissionRepository.findActiveByCode("SAMPLE_MENU_SECTION_UPDATE", org.springframework.data.domain.PageRequest.of(0, 1))).thenReturn(new PageImpl<>(List.of(updatePermission)));
         when(permissionRepository.findAllActiveByParent(any(AuthPermissionEntity.class))).thenAnswer(invocation -> {
             AuthPermissionEntity parent = invocation.getArgument(0);
-            if ("permission-1".equals(parent.getId())) {
+            if ("permission-1".equals(parent.getUuid())) {
                 return List.of(sectionPermission);
             }
-            if ("permission-2".equals(parent.getId())) {
+            if ("permission-2".equals(parent.getUuid())) {
                 return List.of(updatePermission);
             }
             return List.of();
@@ -141,7 +141,7 @@ class AuthPermissionServiceTest {
         dto.setParentCode("SAMPLE_MENU_SECTION");
         dto.setSortOrder(30);
         AuthPermissionEntity saved = AuthPermissionEntity.builder()
-                .id("permission-4")
+                .uuid("permission-4")
                 .code("SAMPLE_MENU_SECTION_DELETE")
                 .name("샘플 삭제")
                 .depth(3)
@@ -164,7 +164,7 @@ class AuthPermissionServiceTest {
     @Test
     void systemAdminGrantCreatesAllActivePermissionGrants() {
         AuthPermissionEntity systemAdmin = AuthPermissionEntity.builder()
-                .id("permission-99")
+                .uuid("permission-99")
                 .code(AuthPermissionService.SYSTEM_ADMIN)
                 .name("시스템 관리자")
                 .depth(1)
