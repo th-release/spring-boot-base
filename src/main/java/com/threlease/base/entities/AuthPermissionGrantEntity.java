@@ -2,7 +2,7 @@ package com.threlease.base.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.threlease.base.common.annotation.ExcelColumn;
-import com.threlease.base.common.entity.BaseEntity;
+import com.threlease.base.common.entity.BaseTimeEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
@@ -27,7 +27,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @NoArgsConstructor
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
-public class AuthPermissionGrantEntity extends BaseEntity {
+public class AuthPermissionGrantEntity extends BaseTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

@@ -14,7 +14,6 @@ public interface AuthPermissionRepository extends JpaRepository<AuthPermissionEn
             SELECT p
             FROM AuthPermissionEntity p
             WHERE p.code = :code
-              AND p.deletedAt IS NULL
             ORDER BY p.createdAt DESC, p.id DESC
             """)
     Page<AuthPermissionEntity> findActiveByCode(@Param("code") String code, Pageable pageable);
@@ -22,7 +21,6 @@ public interface AuthPermissionRepository extends JpaRepository<AuthPermissionEn
     @Query("""
             SELECT p
             FROM AuthPermissionEntity p
-            WHERE p.deletedAt IS NULL
             ORDER BY p.depth ASC, p.sortOrder ASC, p.id ASC
             """)
     List<AuthPermissionEntity> findAllActive();
@@ -31,7 +29,6 @@ public interface AuthPermissionRepository extends JpaRepository<AuthPermissionEn
             SELECT p
             FROM AuthPermissionEntity p
             WHERE p.parent = :parent
-              AND p.deletedAt IS NULL
             ORDER BY p.sortOrder ASC, p.id ASC
             """)
     List<AuthPermissionEntity> findAllActiveByParent(@Param("parent") AuthPermissionEntity parent);

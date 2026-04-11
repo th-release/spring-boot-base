@@ -17,8 +17,6 @@ public interface AuthPermissionGrantRepository extends JpaRepository<AuthPermiss
             FROM AuthPermissionGrantEntity g
             JOIN FETCH g.permission p
             WHERE g.user = :user
-              AND g.deletedAt IS NULL
-              AND p.deletedAt IS NULL
             ORDER BY p.depth ASC, p.sortOrder ASC, p.id ASC
             """)
     List<AuthPermissionGrantEntity> findAllActiveByUser(@Param("user") AuthEntity user);
@@ -28,7 +26,6 @@ public interface AuthPermissionGrantRepository extends JpaRepository<AuthPermiss
             FROM AuthPermissionGrantEntity g
             WHERE g.user = :user
               AND g.permission = :permission
-              AND g.deletedAt IS NULL
             ORDER BY g.createdAt DESC, g.id DESC
             """)
     Page<AuthPermissionGrantEntity> findLatestActiveByUserAndPermission(@Param("user") AuthEntity user,
@@ -40,7 +37,6 @@ public interface AuthPermissionGrantRepository extends JpaRepository<AuthPermiss
             FROM AuthPermissionGrantEntity g
             JOIN FETCH g.user u
             WHERE g.permission = :permission
-              AND g.deletedAt IS NULL
               AND u.deletedAt IS NULL
             ORDER BY g.createdAt ASC, g.id ASC
             """)

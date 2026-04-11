@@ -2,7 +2,7 @@ package com.threlease.base.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.threlease.base.common.annotation.ExcelColumn;
-import com.threlease.base.common.entity.BaseEntity;
+import com.threlease.base.common.entity.BaseTimeEntity;
 import com.threlease.base.common.enums.AuthVerificationType;
 import jakarta.persistence.*;
 import lombok.*;
@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
-public class AuthVerificationEntity extends BaseEntity {
+public class AuthVerificationEntity extends BaseTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

@@ -101,8 +101,7 @@ public class AuthPermissionService {
         Set<Long> revokePermissionIds = resolveGrantTargetIds(permission);
         for (AuthPermissionGrantEntity grant : authPermissionGrantRepository.findAllActiveByUser(user)) {
             if (grant.getPermission() != null && revokePermissionIds.contains(grant.getPermission().getId())) {
-                grant.delete();
-                authPermissionGrantRepository.save(grant);
+                authPermissionGrantRepository.delete(grant);
             }
         }
     }
@@ -237,7 +236,7 @@ public class AuthPermissionService {
     }
 
     private AuthPermissionEntity resolveParent(AuthPermissionEntity permission) {
-        return permission.getParent() != null && !permission.getParent().isDeleted() ? permission.getParent() : null;
+        return permission.getParent();
     }
 
     private Optional<AuthPermissionEntity> findActivePermission(String code) {

@@ -109,6 +109,10 @@ app:
       max-verification-attempts: ${AUTH_PASSWORD_RESET_MAX_VERIFICATION_ATTEMPTS:5}
       # 인증 코드 실패 횟수 초과 시 잠금 시간(분)
       verification-lock-minutes: ${AUTH_PASSWORD_RESET_VERIFICATION_LOCK_MINUTES:15}
+      # 만료/사용 완료 인증 데이터 정리 배치 활성화 여부
+      cleanup-enabled: ${AUTH_PASSWORD_RESET_CLEANUP_ENABLED:true}
+      # 만료/사용 완료 인증 데이터 정리 cron
+      cleanup-cron: ${AUTH_PASSWORD_RESET_CLEANUP_CRON:0 30 3 * * *}
     mfa:
       # MFA 기능 전역 활성화 여부
       enabled: ${AUTH_MFA_ENABLED:false}

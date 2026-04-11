@@ -7,8 +7,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface AuthVerificationRepository extends JpaRepository<AuthVerificationEntity, Long> {
@@ -18,7 +20,6 @@ public interface AuthVerificationRepository extends JpaRepository<AuthVerificati
             WHERE a.user = :user
               AND a.type = :type
               AND a.verified = false
-              AND a.deletedAt IS NULL
             ORDER BY a.createdAt DESC
             """)
     Page<AuthVerificationEntity> findLatestByUserAndTypeAndVerifiedFalse(@Param("user") AuthEntity user,
@@ -31,7 +32,6 @@ public interface AuthVerificationRepository extends JpaRepository<AuthVerificati
             WHERE a.user = :user
               AND a.type = :type
               AND a.verified = false
-              AND a.deletedAt IS NULL
             """)
     List<AuthVerificationEntity> findAllByUserAndTypeAndVerifiedFalse(@Param("user") AuthEntity user, @Param("type") AuthVerificationType type);
 
@@ -40,8 +40,14 @@ public interface AuthVerificationRepository extends JpaRepository<AuthVerificati
             FROM AuthVerificationEntity a
             WHERE a.user = :user
               AND a.type = :type
-              AND a.deletedAt IS NULL
             """)
     List<AuthVerificationEntity> findAllByUserAndType(@Param("user") AuthEntity user, @Param("type") AuthVerificationType type);
 
+    @Modifying
+    @Query("""
+            DELETE FROM AuthVerificationEntity a
+            WHERE a.expiresAt < :now
+               OR a.verified = true
+            """)
+    int deleteExpiredOrVerified(@Param("now") LocalDateTime now);
 }

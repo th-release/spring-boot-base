@@ -76,6 +76,8 @@ app:
       code-expire-minutes: 10
       max-verification-attempts: 5
       verification-lock-minutes: 15
+      cleanup-enabled: true
+      cleanup-cron: "0 30 3 * * *"
     mfa:
       enabled: false
       issuer: spring-boot-base

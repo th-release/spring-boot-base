@@ -50,5 +50,7 @@ public class AuthSecurityProperties {
         private int codeExpireMinutes = 10;
         private int maxVerificationAttempts = 5;
         private long verificationLockMinutes = 15;
+        private boolean cleanupEnabled = true;
+        private String cleanupCron = "0 30 3 * * *";
     }
 }

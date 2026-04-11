@@ -31,7 +31,6 @@ create table tb_auth_login_history
     id                 bigserial
         primary key,
     created_at         timestamp(6) not null,
-    deleted_at         timestamp(6),
     updated_at         timestamp(6),
     user_uuid          varchar(36)
         constraint fk_auth_login_history_user_uuid
@@ -59,7 +58,6 @@ create table tb_auth_mfa
     id         bigserial
         primary key,
     created_at timestamp(6) not null,
-    deleted_at timestamp(6),
     updated_at timestamp(6),
     user_uuid  varchar(36)  not null
         constraint fk_auth_mfa_user_uuid
@@ -79,7 +77,6 @@ create table tb_auth_permission
     id          bigserial
         primary key,
     created_at  timestamp(6) not null,
-    deleted_at  timestamp(6),
     updated_at  timestamp(6),
     code        varchar(120) not null,
     name        varchar(120) not null,
@@ -108,37 +105,37 @@ values (current_timestamp, 'SAMPLE_MENU', '샘플 대메뉴', 1, null, 10, '베�
 
 insert into tb_auth_permission (created_at, code, name, depth, parent_id, sort_order, description)
 values (current_timestamp, 'SAMPLE_MENU_SECTION', '샘플 중메뉴', 2,
-        (select id from tb_auth_permission where code = 'SAMPLE_MENU' and deleted_at is null order by id desc limit 1),
+        (select id from tb_auth_permission where code = 'SAMPLE_MENU' order by id desc limit 1),
         10, '베이스 프로젝트 샘플 중메뉴');
 
 insert into tb_auth_permission (created_at, code, name, depth, parent_id, sort_order, description)
 values (current_timestamp, 'SAMPLE_MENU_SECTION_UPDATE', '샘플 수정', 3,
-        (select id from tb_auth_permission where code = 'SAMPLE_MENU_SECTION' and deleted_at is null order by id desc limit 1),
+        (select id from tb_auth_permission where code = 'SAMPLE_MENU_SECTION' order by id desc limit 1),
         10, '샘플 수정 권한');
 
 insert into tb_auth_permission (created_at, code, name, depth, parent_id, sort_order, description)
 values (current_timestamp, 'SAMPLE_MENU_SECTION_CREATE', '샘플 생성', 3,
-        (select id from tb_auth_permission where code = 'SAMPLE_MENU_SECTION' and deleted_at is null order by id desc limit 1),
+        (select id from tb_auth_permission where code = 'SAMPLE_MENU_SECTION' order by id desc limit 1),
         20, '샘플 생성 권한');
 
 insert into tb_auth_permission (created_at, code, name, depth, parent_id, sort_order, description)
 values (current_timestamp, 'SAMPLE_POLICY_SECTION', '샘플 정책 중메뉴', 2,
-        (select id from tb_auth_permission where code = 'SAMPLE_MENU' and deleted_at is null order by id desc limit 1),
+        (select id from tb_auth_permission where code = 'SAMPLE_MENU' order by id desc limit 1),
         20, '베이스 프로젝트 샘플 정책 중메뉴');
 
 insert into tb_auth_permission (created_at, code, name, depth, parent_id, sort_order, description)
 values (current_timestamp, 'SAMPLE_POLICY_SECTION_APPLY', '샘플 정책 적용', 3,
-        (select id from tb_auth_permission where code = 'SAMPLE_POLICY_SECTION' and deleted_at is null order by id desc limit 1),
+        (select id from tb_auth_permission where code = 'SAMPLE_POLICY_SECTION' order by id desc limit 1),
         10, '샘플 정책 적용 권한');
 
 insert into tb_auth_permission (created_at, code, name, depth, parent_id, sort_order, description)
 values (current_timestamp, 'SAMPLE_POLICY_SECTION_VIEW', '샘플 정책 조회', 3,
-        (select id from tb_auth_permission where code = 'SAMPLE_POLICY_SECTION' and deleted_at is null order by id desc limit 1),
+        (select id from tb_auth_permission where code = 'SAMPLE_POLICY_SECTION' order by id desc limit 1),
         20, '샘플 정책 조회 권한');
 
 insert into tb_auth_permission (created_at, code, name, depth, parent_id, sort_order, description)
 values (current_timestamp, 'SAMPLE_POLICY_SECTION_MANAGE', '샘플 정책 관리', 3,
-        (select id from tb_auth_permission where code = 'SAMPLE_POLICY_SECTION' and deleted_at is null order by id desc limit 1),
+        (select id from tb_auth_permission where code = 'SAMPLE_POLICY_SECTION' order by id desc limit 1),
         30, '샘플 정책 관리 권한');
 
 create table tb_auth_permission_grant
@@ -146,7 +143,6 @@ create table tb_auth_permission_grant
     id              bigserial
         primary key,
     created_at      timestamp(6) not null,
-    deleted_at      timestamp(6),
     updated_at      timestamp(6),
     user_uuid       varchar(36)  not null
         constraint fk_auth_permission_grant_user_uuid
@@ -173,7 +169,6 @@ create table tb_auth_verification
     id                bigserial
         primary key,
     created_at        timestamp(6) not null,
-    deleted_at        timestamp(6),
     updated_at        timestamp(6),
     expires_at        timestamp(6) not null,
     failed_attempts   integer      not null,

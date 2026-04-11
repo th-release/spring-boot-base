@@ -122,10 +122,9 @@ class AuthPermissionServiceTest {
 
         authPermissionService.revokePermission("actor-1", "SAMPLE_MENU");
 
-        assertTrue(rootGrant.isDeleted());
-        assertTrue(sectionGrant.isDeleted());
-        assertTrue(updateGrant.isDeleted());
-        verify(grantRepository, times(3)).save(any(AuthPermissionGrantEntity.class));
+        verify(grantRepository).delete(rootGrant);
+        verify(grantRepository).delete(sectionGrant);
+        verify(grantRepository).delete(updateGrant);
     }
 
     @Test

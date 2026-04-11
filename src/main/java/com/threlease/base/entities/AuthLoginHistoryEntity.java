@@ -2,7 +2,7 @@ package com.threlease.base.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.threlease.base.common.annotation.ExcelColumn;
-import com.threlease.base.common.entity.BaseEntity;
+import com.threlease.base.common.entity.BaseTimeEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
@@ -29,7 +29,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
-public class AuthLoginHistoryEntity extends BaseEntity {
+public class AuthLoginHistoryEntity extends BaseTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
