@@ -1,5 +1,6 @@
 package com.threlease.base.functions.auth.dto;
 
+import com.threlease.base.common.enums.AuthStatuses;
 import com.threlease.base.common.enums.UserTypes;
 import lombok.Builder;
 import lombok.Getter;
@@ -12,6 +13,7 @@ public class AuthProfileDto {
     private String nickname;
     private String email;
     private UserTypes type;
+    private AuthStatuses status;
     private boolean mfaGloballyEnabled;
     private boolean mfaEnabled;
     private boolean mfaEnrollmentRequired;

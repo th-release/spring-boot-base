@@ -1,5 +1,6 @@
 package com.threlease.base.common.controller;
 
+import com.threlease.base.common.enums.AuthStatuses;
 import com.threlease.base.common.enums.UserTypes;
 import com.threlease.base.common.utils.enumeration.EnumMapperValue;
 import com.threlease.base.common.utils.responses.BasicResponse;
@@ -31,6 +32,7 @@ public class CommonController {
         
         // 여기에 노출할 Enum 클래스들을 추가합니다.
         enums.put("userTypes", toEnumValues(UserTypes.class));
+        enums.put("authStatuses", toEnumValues(AuthStatuses.class));
         
         return BasicResponse.ok(enums);
     }

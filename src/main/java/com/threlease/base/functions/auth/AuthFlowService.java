@@ -101,6 +101,7 @@ public class AuthFlowService {
                 .password(passwordEncoder.encode(dto.getPassword()))
                 .salt("")
                 .type(com.threlease.base.common.enums.UserTypes.USER)
+                .status(com.threlease.base.common.enums.AuthStatuses.ACTIVE)
                 .build();
 
         authService.authSave(user);

@@ -2,6 +2,7 @@ package com.threlease.base.functions.auth;
 
 import com.threlease.base.common.exception.BusinessException;
 import com.threlease.base.common.exception.ErrorCode;
+import com.threlease.base.common.enums.AuthStatuses;
 import com.threlease.base.common.properties.app.auth.AuthSecurityProperties;
 import com.threlease.base.common.properties.app.redis.RedisProperties;
 import com.threlease.base.common.properties.app.token.TokenProperties;
@@ -113,6 +114,17 @@ public class AuthService {
     }
 
     public void ensureLoginAllowed(AuthEntity auth) {
+        if (auth.getStatus() == null || auth.getStatus() == AuthStatuses.WITHDRAWN || auth.getStatus() == AuthStatuses.SUSPENDED) {
+            throw new BusinessException(ErrorCode.ACCOUNT_INACTIVE);
+        }
+        if (auth.getStatus() == AuthStatuses.LOCKED) {
+            LocalDateTime lockedUntil = getLockedUntil(auth);
+            if (lockedUntil == null || lockedUntil.isAfter(LocalDateTime.now())) {
+                throw new BusinessException(ErrorCode.ACCOUNT_LOCKED);
+            }
+            auth.setStatus(AuthStatuses.ACTIVE);
+            authSave(auth);
+        }
         if (!authSecurityProperties.getLoginFailure().isEnabled()) {
             return;
         }
@@ -135,6 +147,10 @@ public class AuthService {
         LocalDateTime lockedUntil = failureLimitEnabled && failedLoginCount >= authSecurityProperties.getLoginFailure().getMaxAttempts()
                 ? LocalDateTime.now().plusMinutes(authSecurityProperties.getLoginFailure().getLockMinutes())
                 : null;
+        if (lockedUntil != null) {
+            auth.setStatus(AuthStatuses.LOCKED);
+            authSave(auth);
+        }
         saveLoginHistory(auth, false, failedLoginCount, lockedUntil, clientIp, userAgent, failureReason);
     }
 
@@ -143,6 +159,10 @@ public class AuthService {
     }
 
     public void recordSuccessfulLogin(AuthEntity auth, String clientIp, String userAgent) {
+        if (auth.getStatus() == AuthStatuses.LOCKED) {
+            auth.setStatus(AuthStatuses.ACTIVE);
+            authSave(auth);
+        }
         saveLoginHistory(auth, true, 0, null, clientIp, userAgent, null);
     }
 
@@ -279,8 +299,7 @@ public class AuthService {
         return getSessions(userUuid, null);
     }
 
-    public PageResult<AdminUserSummaryDto> getUsers(String query, int page, int size) {
-        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(Math.max(page, 0), Math.max(size, 1));
+    public PageResult<AdminUserSummaryDto> getUsers(String query, org.springframework.data.domain.Pageable pageable) {
         org.springframework.data.domain.Page<AuthEntity> pageResult = authRepository.searchUsers(query, pageable);
 
         return new PageResult<>(
@@ -297,10 +316,14 @@ public class AuthService {
     }
 
     public void forceLockUser(AuthEntity auth, long minutes) {
+        auth.setStatus(AuthStatuses.LOCKED);
+        authSave(auth);
         saveLoginHistory(auth, false, getFailedLoginCount(auth), LocalDateTime.now().plusMinutes(Math.max(minutes, 1)), null, null, "ADMIN_LOCK");
     }
 
     public void unlockUser(AuthEntity auth) {
+        auth.setStatus(AuthStatuses.ACTIVE);
+        authSave(auth);
         saveLoginHistory(auth, false, 0, null, null, null, "ADMIN_UNLOCK");
     }
 
@@ -560,6 +583,7 @@ public class AuthService {
                 .username(auth.getUsername())
                 .nickname(auth.getNickname())
                 .type(auth.getType())
+                .status(auth.getStatus())
                 .failedLoginCount(getFailedLoginCount(auth))
                 .lockedUntil(getLockedUntil(auth))
                 .lastLoginAt(getLastLoginAt(auth))
@@ -577,6 +601,7 @@ public class AuthService {
                 .nickname(auth.getNickname())
                 .email(auth.getEmail())
                 .type(auth.getType())
+                .status(auth.getStatus())
                 .mfaGloballyEnabled(authSecurityProperties.getMfa().isEnabled())
                 .mfaEnabled(isMfaEnabled(auth))
                 .mfaEnrollmentRequired(authSecurityProperties.getMfa().isEnabled() && !isMfaEnabled(auth))

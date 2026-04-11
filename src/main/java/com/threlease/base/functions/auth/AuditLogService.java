@@ -15,11 +15,22 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class AuditLogService {
+    private static final Set<String> PERSISTED_ADMIN_ACTIONS = Set.of(
+            "ADMIN_LOGOUT_ALL",
+            "ADMIN_LOCK_USER",
+            "ADMIN_UNLOCK_USER",
+            "ADMIN_RESET_MFA",
+            "ADMIN_CREATE_PERMISSION",
+            "ADMIN_GRANT_PERMISSION",
+            "ADMIN_REVOKE_PERMISSION"
+    );
+
     private final AuditLogRepository auditLogRepository;
     private final AuthSecurityProperties authSecurityProperties;
     private final PrivacyProperties privacyProperties;
@@ -41,6 +52,17 @@ public class AuditLogService {
         if (!authSecurityProperties.getAudit().isEnabled()) {
             return;
         }
+        if (!PERSISTED_ADMIN_ACTIONS.contains(action)) {
+            log.info("ADMIN EVENT actor={}, action={}, resourceType={}, resourceId={}, success={}, ip={}, detail={}",
+                    actorUuid,
+                    action,
+                    resourceType,
+                    resourceId,
+                    success,
+                    maskIpIfNeeded(request != null ? IpUtils.getClientIp(request) : null),
+                    detail);
+            return;
+        }
 
         auditLogRepository.save(AuditLogEntity.builder()
                 .actorUuid(actorUuid)
@@ -50,7 +72,7 @@ public class AuditLogService {
                 .success(success)
                 .clientIp(maskIpIfNeeded(request != null ? IpUtils.getClientIp(request) : null))
                 .userAgent(resolveUserAgent(request))
-                .detail(detail)
+                .detail(trim(detail, 255))
                 .build());
     }
 
@@ -94,5 +116,12 @@ public class AuditLogService {
             return ip.substring(0, lastDot) + ".***";
         }
         return ip;
+    }
+
+    private String trim(String value, int maxLength) {
+        if (value == null) {
+            return null;
+        }
+        return value.substring(0, Math.min(value.length(), maxLength));
     }
 }

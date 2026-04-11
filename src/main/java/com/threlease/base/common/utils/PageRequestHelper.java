@@ -39,4 +39,15 @@ public class PageRequestHelper {
     public static Pageable ofLatest(Integer page, Integer size) {
         return of(page, size, Sort.by(Sort.Direction.DESC, "id"));
     }
+
+    /**
+     * 검색어 정규화: null/공백은 null로 반환하고, 과도하게 긴 입력은 제한합니다.
+     */
+    public static String searchQuery(String query) {
+        if (query == null || query.isBlank()) {
+            return null;
+        }
+        String normalized = query.trim();
+        return normalized.substring(0, Math.min(normalized.length(), 100));
+    }
 }

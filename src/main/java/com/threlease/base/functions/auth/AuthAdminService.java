@@ -11,6 +11,7 @@ import com.threlease.base.functions.auth.dto.RefreshTokenSessionDto;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
@@ -31,9 +32,9 @@ public class AuthAdminService {
         return user;
     }
 
-    public AuthService.PageResult<AdminUserSummaryDto> getUsers(AuthEntity admin, String query, int page, int size) {
+    public AuthService.PageResult<AdminUserSummaryDto> getUsers(AuthEntity admin, String query, Pageable pageable) {
         assertAdmin(admin);
-        return authService.getUsers(query, page, size);
+        return authService.getUsers(query, pageable);
     }
 
     public List<RefreshTokenSessionDto> getUserSessions(AuthEntity admin, String uuid) {

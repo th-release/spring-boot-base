@@ -9,6 +9,10 @@ create table tb_auth
     nickname                   varchar(36)  not null,
     password                   text         not null,
     salt                       varchar(32)  not null,
+    status                     varchar(50)  not null
+        constraint tb_auth_status_check
+            check ((status)::text = ANY
+        ((ARRAY ['ACTIVE'::character varying, 'LOCKED'::character varying, 'SUSPENDED'::character varying, 'WITHDRAWN'::character varying])::text[])),
     type                       varchar(50)  not null
         constraint tb_auth_type_check
             check ((type)::text = ANY

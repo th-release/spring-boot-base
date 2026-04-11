@@ -1,6 +1,7 @@
 package com.threlease.base.functions.auth.v1;
 
 import com.threlease.base.common.annotation.ApiVersion;
+import com.threlease.base.common.utils.PageRequestHelper;
 import com.threlease.base.common.utils.responses.BasicResponse;
 import com.threlease.base.entities.AuthEntity;
 import com.threlease.base.functions.auth.AuthAdminService;
@@ -37,7 +38,11 @@ public class AuthAdminController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             HttpServletRequest request) {
-        return BasicResponse.ok(authAdminService.getUsers((AuthEntity) request.getAttribute("user"), query, page, size));
+        return BasicResponse.ok(authAdminService.getUsers(
+                (AuthEntity) request.getAttribute("user"),
+                PageRequestHelper.searchQuery(query),
+                PageRequestHelper.ofLatest(page, size)
+        ));
     }
 
     @GetMapping("/users/{uuid}/sessions")

@@ -3,6 +3,7 @@ package com.threlease.base.entities;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.threlease.base.common.annotation.ExcelColumn;
 import com.threlease.base.common.entity.BaseEntity;
+import com.threlease.base.common.enums.AuthStatuses;
 import com.threlease.base.common.enums.UserTypes;
 import jakarta.persistence.*;
 import lombok.*;
@@ -48,4 +49,10 @@ public class AuthEntity extends BaseEntity {
     @ExcelColumn(headerName = "사용자 타입", order = 4)
     @Builder.Default
     private UserTypes type = UserTypes.USER;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 50)
+    @ExcelColumn(headerName = "계정 상태", order = 5)
+    @Builder.Default
+    private AuthStatuses status = AuthStatuses.ACTIVE;
 }

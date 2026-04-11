@@ -20,5 +20,6 @@ public interface AuthMapper {
     @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "salt", ignore = true)
     @Mapping(target = "type", ignore = true)
+    @Mapping(target = "status", ignore = true)
     AuthEntity toEntity(SignUpDto dto);
 }
