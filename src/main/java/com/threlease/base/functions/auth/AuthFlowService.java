@@ -1,6 +1,8 @@
 package com.threlease.base.functions.auth;
 
 import com.threlease.base.common.enums.AuthVerificationType;
+import com.threlease.base.common.enums.AuthStatuses;
+import com.threlease.base.common.enums.AuthTypes;
 import com.threlease.base.common.exception.BusinessException;
 import com.threlease.base.common.exception.ErrorCode;
 import com.threlease.base.common.properties.app.email.EmailProperties;
@@ -33,6 +35,7 @@ public class AuthFlowService {
     private final EmailService emailService;
     private final EmailProperties emailProperties;
     private final AuthVerificationService authVerificationService;
+    private final AuthAccountFactory authAccountFactory;
 
     public TokenResponseDto login(LoginDto dto, String userAgent, String clientIp, HttpServletRequest request) {
         AuthEntity auth = authService.findOneByUsername(dto.getUsername())
@@ -94,15 +97,14 @@ public class AuthFlowService {
             throw new BusinessException(ErrorCode.USER_DUPLICATE);
         }
 
-        AuthEntity user = AuthEntity.builder()
-                .username(dto.getUsername())
-                .nickname(dto.getNickname())
-                .email(dto.getEmail())
-                .password(passwordEncoder.encode(dto.getPassword()))
-                .salt("")
-                .type(com.threlease.base.common.enums.AuthTypes.GENERAL)
-                .status(com.threlease.base.common.enums.AuthStatuses.ACTIVE)
-                .build();
+        AuthEntity user = authAccountFactory.create(
+                dto.getUsername(),
+                dto.getNickname(),
+                dto.getEmail(),
+                dto.getPassword(),
+                AuthTypes.GENERAL,
+                AuthStatuses.ACTIVE
+        );
 
         authService.authSave(user);
         auditLogService.log(user.getUuid(), "SIGNUP", "AUTH", user.getUuid(), true, null, "User signup completed");

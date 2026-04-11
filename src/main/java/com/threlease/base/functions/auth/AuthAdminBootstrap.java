@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,7 +22,7 @@ public class AuthAdminBootstrap {
     private final AdminProperties adminProperties;
     private final AuthService authService;
     private final AuthPermissionService authPermissionService;
-    private final PasswordEncoder passwordEncoder;
+    private final AuthAccountFactory authAccountFactory;
 
     @Transactional
     @EventListener(ApplicationReadyEvent.class)
@@ -50,7 +49,7 @@ public class AuthAdminBootstrap {
         if (!adminProperties.isResetPasswordOnStartup()) {
             return;
         }
-        admin.setPassword(passwordEncoder.encode(adminProperties.getPassword()));
+        admin.setPassword(authAccountFactory.encodePassword(adminProperties.getPassword()));
         authService.authSave(admin);
         log.warn("Initial admin password was reset by app.admin.reset-password-on-startup=true. username={}", admin.getUsername());
     }
@@ -61,15 +60,14 @@ public class AuthAdminBootstrap {
             throw new BusinessException(ErrorCode.USER_DUPLICATE, "초기 관리자 이메일이 이미 사용 중입니다.");
         }
 
-        AuthEntity admin = AuthEntity.builder()
-                .username(trim(adminProperties.getUsername(), 24))
-                .nickname(trim(adminProperties.getNickname(), 36))
-                .email(trim(adminProperties.getEmail(), 255))
-                .password(passwordEncoder.encode(adminProperties.getPassword()))
-                .salt("")
-                .type(AuthTypes.INTERNAL)
-                .status(AuthStatuses.ACTIVE)
-                .build();
+        AuthEntity admin = authAccountFactory.create(
+                adminProperties.getUsername(),
+                adminProperties.getNickname(),
+                adminProperties.getEmail(),
+                adminProperties.getPassword(),
+                AuthTypes.INTERNAL,
+                AuthStatuses.ACTIVE
+        );
         authService.authSave(admin);
         return admin;
     }
@@ -83,10 +81,4 @@ public class AuthAdminBootstrap {
         }
     }
 
-    private String trim(String value, int maxLength) {
-        if (value == null) {
-            return null;
-        }
-        return value.substring(0, Math.min(value.length(), maxLength));
-    }
 }
