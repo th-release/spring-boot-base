@@ -21,6 +21,16 @@ repositories {
 	mavenCentral()
 }
 
+def querydslDir = "$buildDir/generated/querydsl"
+
+sourceSets {
+	main.java.srcDirs += [querydslDir]
+}
+
+tasks.withType(JavaCompile) {
+	options.annotationProcessorGeneratedSourcesDirectory = file(querydslDir)
+}
+
 dependencies {
 	// 테스트 관련
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
