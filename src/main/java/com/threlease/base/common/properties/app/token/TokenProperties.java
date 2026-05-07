@@ -12,4 +12,12 @@ import org.springframework.context.annotation.Configuration;
 public class TokenProperties {
     private String storage; //cache or rdb
     private int maxSessionsPerUser = 5;
+    private Cleanup cleanup = new Cleanup();
+
+    @Getter
+    @Setter
+    public static class Cleanup {
+        private boolean enabled = true;
+        private String cron = "0 45 3 * * *";
+    }
 }

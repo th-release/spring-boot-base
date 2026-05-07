@@ -23,4 +23,13 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshTokenEntity
 
     @Query("SELECT r FROM RefreshTokenEntity r WHERE r.user = :user AND r.revoked = false AND r.deletedAt IS NULL")
     List<RefreshTokenEntity> findAllByUserAndRevokedFalse(@Param("user") AuthEntity user);
+
+    @Query("""
+            SELECT r
+            FROM RefreshTokenEntity r
+            WHERE r.revoked = true
+              AND r.deletedAt IS NULL
+            ORDER BY r.updatedAt ASC, r.createdAt ASC, r.uuid ASC
+            """)
+    List<RefreshTokenEntity> findAllRevoked();
 }

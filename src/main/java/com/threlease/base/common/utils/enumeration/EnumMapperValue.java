@@ -19,4 +19,9 @@ public class EnumMapperValue {
         this.code = enumValue.getCode();
         this.name = enumValue.getName();
     }
+
+    public EnumMapperValue(String code, String name) {
+        this.code = code;
+        this.name = name;
+    }
 }

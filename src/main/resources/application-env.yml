@@ -145,6 +145,11 @@ app:
     storage: ${TOKEN_STORAGE:rdb}
     # 사용자당 최대 활성 세션 수
     max-sessions-per-user: ${TOKEN_MAX_SESSIONS_PER_USER:5}
+    cleanup:
+      # revoked refresh token 자동 정리 배치 활성화 여부
+      enabled: ${TOKEN_CLEANUP_ENABLED:true}
+      # revoked refresh token 자동 정리 cron
+      cron: ${TOKEN_CLEANUP_CRON:0 0 4 * * *}
   outbound:
     # 외부 API 연결 타임아웃(초)
     connect-timeout-seconds: ${OUTBOUND_CONNECT_TIMEOUT_SECONDS:5}

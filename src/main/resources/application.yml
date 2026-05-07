@@ -5,10 +5,10 @@ server:
   port: ${PORT:8080}
 
 spring:
-  # 기본 활성 프로필. 별도 지정이 없으면 local 사용
+  # 기본 활성 프로필. 별도 지정이 없으면 env 사용
   profiles:
     # 기본 실행 프로필 선택
-    active: ${SPRING_PROFILES_ACTIVE:local}
+    active: ${SPRING_PROFILES_ACTIVE:env}
   jackson:
     serialization:
       # Java 시간 타입을 timestamp 숫자 대신 ISO 문자열로 직렬화

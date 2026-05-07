@@ -63,7 +63,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
                         "/api/v*/auth/password/reset/request",
                         "/api/v*/auth/password/reset/confirm",
                         "/api/v*/files/content/**",
-                        "/api/api/common/enums",
+                        "/api/common/enums",
                         "/api/swagger-ui/**",
                         "/api/v3/api-docs/**",
                         "/api/actuator/health",
