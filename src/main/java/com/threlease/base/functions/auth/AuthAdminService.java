@@ -2,6 +2,7 @@ package com.threlease.base.functions.auth;
 
 import com.threlease.base.common.exception.BusinessException;
 import com.threlease.base.common.exception.ErrorCode;
+import com.threlease.base.common.dto.SearchDto;
 import com.threlease.base.entities.AuthEntity;
 import com.threlease.base.functions.auth.dto.AdminUserSummaryDto;
 import com.threlease.base.functions.auth.dto.AuthPermissionCreateDto;
@@ -29,9 +30,9 @@ public class AuthAdminService {
         return user;
     }
 
-    public AuthService.PageResult<AdminUserSummaryDto> getUsers(AuthEntity admin, String query, Pageable pageable) {
+    public AuthService.PageResult<AdminUserSummaryDto> getUsers(AuthEntity admin, SearchDto searchDto, Pageable pageable) {
         assertAdmin(admin);
-        return authService.getUsers(query, pageable);
+        return authService.getUsers(searchDto, pageable);
     }
 
     public List<RefreshTokenSessionDto> getUserSessions(AuthEntity admin, String uuid) {

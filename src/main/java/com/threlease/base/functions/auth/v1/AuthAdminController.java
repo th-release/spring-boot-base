@@ -1,7 +1,7 @@
 package com.threlease.base.functions.auth.v1;
 
 import com.threlease.base.common.annotation.ApiVersion;
-import com.threlease.base.common.dto.SearchRequest;
+import com.threlease.base.common.dto.SearchDto;
 import com.threlease.base.common.utils.PageRequestHelper;
 import com.threlease.base.common.utils.responses.BasicResponse;
 import com.threlease.base.entities.AuthEntity;
@@ -32,12 +32,12 @@ public class AuthAdminController {
 
     @GetMapping("/users")
     @Operation(summary = "관리자용 사용자 목록")
-    public ResponseEntity<BasicResponse<AuthService.PageResult<AdminUserSummaryDto>>> users(SearchRequest searchRequest,
+    public ResponseEntity<BasicResponse<AuthService.PageResult<AdminUserSummaryDto>>> users(SearchDto searchDto,
                                                                                             HttpServletRequest request) {
         return BasicResponse.ok(authAdminService.getUsers(
                 (AuthEntity) request.getAttribute("user"),
-                PageRequestHelper.searchQuery(searchRequest),
-                PageRequestHelper.latest(searchRequest)
+                searchDto,
+                PageRequestHelper.latest(searchDto)
         ));
     }
 

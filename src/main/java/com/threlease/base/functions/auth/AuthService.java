@@ -3,6 +3,7 @@ package com.threlease.base.functions.auth;
 import com.threlease.base.common.exception.BusinessException;
 import com.threlease.base.common.exception.ErrorCode;
 import com.threlease.base.common.enums.AuthStatuses;
+import com.threlease.base.common.dto.SearchDto;
 import com.threlease.base.common.properties.app.auth.AuthSecurityProperties;
 import com.threlease.base.common.properties.app.redis.RedisProperties;
 import com.threlease.base.common.properties.app.token.TokenProperties;
@@ -314,8 +315,8 @@ public class AuthService {
         return getSessions(userUuid, null);
     }
 
-    public PageResult<AdminUserSummaryDto> getUsers(String query, org.springframework.data.domain.Pageable pageable) {
-        org.springframework.data.domain.Page<AuthEntity> pageResult = authRepository.searchUsers(query, pageable);
+    public PageResult<AdminUserSummaryDto> getUsers(SearchDto searchDto, org.springframework.data.domain.Pageable pageable) {
+        org.springframework.data.domain.Page<AuthEntity> pageResult = authRepository.searchUsers(searchDto, pageable);
 
         return new PageResult<>(
                 pageResult.getContent().stream().map(this::toAdminUserSummary).toList(),
