@@ -69,14 +69,7 @@ public class WebSecurityConfig {
                 )
                 .addFilterBefore(jwtAuthenticationFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers(request -> {
-                            String uri = request.getRequestURI();
-                            return (HttpMethod.GET.matches(request.getMethod()) || HttpMethod.HEAD.matches(request.getMethod())) && !uri.startsWith("/api/");
-                        }).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/auth/login", "/api/v1/auth/signup", "/api/v1/auth/refresh",
-                                "/api/v1/auth/password/reset/request", "/api/v1/auth/password/reset/confirm",
-                                "/api/v1/files/content/**", "/api/common/enums", "/api/swagger-ui/**",
-                                "/api/v3/api-docs/**", "/api/actuator/health", "/api/actuator/health/**").permitAll()
+                        .requestMatchers(request -> ApiAccessRules.isPublicRequest(request.getMethod(), request.getRequestURI())).permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/api/**").permitAll()
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().denyAll()

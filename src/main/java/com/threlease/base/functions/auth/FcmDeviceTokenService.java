@@ -7,8 +7,8 @@ import com.threlease.base.entities.AuthEntity;
 import com.threlease.base.entities.FcmDeviceTokenEntity;
 import com.threlease.base.repositories.auth.FcmDeviceTokenRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -22,17 +22,40 @@ public class FcmDeviceTokenService {
         return fcmDeviceTokenRepository.findAllByUserAndEnabledTrueOrderByLastUsedAtDesc(AuthEntity.builder().uuid(userUuid).build());
     }
 
+    @Transactional
     public FcmDeviceTokenEntity register(AuthEntity auth, String deviceToken, String deviceLabel, String userAgent, String ipAddress) {
-        FcmDeviceTokenEntity entity = fcmDeviceTokenRepository.findLatestActiveByDeviceToken(deviceToken, PageRequest.of(0, 1))
-                .stream()
-                .findFirst()
+        List<FcmDeviceTokenEntity> existingTokens = fcmDeviceTokenRepository.findAllActiveByDeviceToken(deviceToken);
+        String normalizedDeviceLabel = deviceLabel == null || deviceLabel.isBlank() ? DeviceUtils.describe(userAgent) : deviceLabel;
+        String normalizedUserAgent = userAgent == null ? null : userAgent.substring(0, Math.min(userAgent.length(), 512));
+        String normalizedIpAddress = ipAddress == null ? null : ipAddress.substring(0, Math.min(ipAddress.length(), 64));
+        LocalDateTime now = LocalDateTime.now();
+
+        FcmDeviceTokenEntity ownedToken = existingTokens.stream()
                 .filter(existing -> existing.getUser() != null && auth.getUuid() != null && auth.getUuid().equals(existing.getUser().getUuid()))
-                .orElse(FcmDeviceTokenEntity.builder().deviceToken(deviceToken).build());
+                .findFirst()
+                .orElse(null);
+
+        if (ownedToken != null) {
+            ownedToken.setDeviceLabel(normalizedDeviceLabel);
+            ownedToken.setUserAgent(normalizedUserAgent);
+            ownedToken.setLastIpAddress(normalizedIpAddress);
+            ownedToken.setLastUsedAt(now);
+            ownedToken.setEnabled(true);
+            return fcmDeviceTokenRepository.save(ownedToken);
+        }
+
+        for (FcmDeviceTokenEntity existing : existingTokens) {
+            existing.delete();
+            existing.setEnabled(false);
+            fcmDeviceTokenRepository.save(existing);
+        }
+
+        FcmDeviceTokenEntity entity = FcmDeviceTokenEntity.builder().deviceToken(deviceToken).build();
         entity.setUser(auth);
-        entity.setDeviceLabel(deviceLabel == null || deviceLabel.isBlank() ? DeviceUtils.describe(userAgent) : deviceLabel);
-        entity.setUserAgent(userAgent == null ? null : userAgent.substring(0, Math.min(userAgent.length(), 512)));
-        entity.setLastIpAddress(ipAddress == null ? null : ipAddress.substring(0, Math.min(ipAddress.length(), 64)));
-        entity.setLastUsedAt(LocalDateTime.now());
+        entity.setDeviceLabel(normalizedDeviceLabel);
+        entity.setUserAgent(normalizedUserAgent);
+        entity.setLastIpAddress(normalizedIpAddress);
+        entity.setLastUsedAt(now);
         entity.setEnabled(true);
         return fcmDeviceTokenRepository.save(entity);
     }

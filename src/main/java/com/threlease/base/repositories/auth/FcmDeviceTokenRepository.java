@@ -24,6 +24,15 @@ public interface FcmDeviceTokenRepository extends JpaRepository<FcmDeviceTokenEn
     @Query("""
             SELECT f
             FROM FcmDeviceTokenEntity f
+            WHERE f.deviceToken = :deviceToken
+              AND f.deletedAt IS NULL
+            ORDER BY f.lastUsedAt DESC
+            """)
+    List<FcmDeviceTokenEntity> findAllActiveByDeviceToken(@Param("deviceToken") String deviceToken);
+
+    @Query("""
+            SELECT f
+            FROM FcmDeviceTokenEntity f
             WHERE f.user = :user
               AND f.enabled = true
               AND f.deletedAt IS NULL
