@@ -13,9 +13,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
-import com.threlease.base.common.handler.JwtAuthenticationFilter;
-import com.threlease.base.common.handler.RestAccessDeniedHandler;
-import com.threlease.base.common.handler.RestAuthenticationEntryPoint;
 
 import static org.springframework.security.config.Customizer.withDefaults;
 import org.springframework.http.HttpMethod;
@@ -25,9 +22,6 @@ import org.springframework.http.HttpMethod;
 @RequiredArgsConstructor
 public class WebSecurityConfig {
     private final SecurityProperties securityProperties;
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
-    private final RestAccessDeniedHandler restAccessDeniedHandler;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -63,15 +57,10 @@ public class WebSecurityConfig {
                 .sessionManagement(management ->
                         management.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
-                .exceptionHandling(exceptions -> exceptions
-                        .authenticationEntryPoint(restAuthenticationEntryPoint)
-                        .accessDeniedHandler(restAccessDeniedHandler)
-                )
-                .addFilterBefore(jwtAuthenticationFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(request -> ApiAccessRules.isPublicRequest(request.getMethod(), request.getRequestURI())).permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/api/**").permitAll()
-                        .requestMatchers("/api/**").authenticated()
+                        .requestMatchers("/api/**").permitAll()
                         .anyRequest().denyAll()
                 );
         return http.build();

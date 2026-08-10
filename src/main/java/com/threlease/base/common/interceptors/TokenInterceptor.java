@@ -11,6 +11,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import java.util.Optional;
+import java.util.List;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @Component
 @AllArgsConstructor
@@ -40,7 +43,16 @@ public class TokenInterceptor implements HandlerInterceptor {
         }
         authService.assertTokenUsable(user.get());
 
+        UsernamePasswordAuthenticationToken authentication =
+                UsernamePasswordAuthenticationToken.authenticated(user.get().getUuid(), null, List.of());
+        authentication.setDetails(user.get());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
         request.setAttribute("user", user.get());
         return true;
+    }
+
+    @Override
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
+        SecurityContextHolder.clearContext();
     }
 }

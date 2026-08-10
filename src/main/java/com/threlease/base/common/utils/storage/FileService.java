@@ -63,13 +63,14 @@ public class FileService {
     @Transactional(readOnly = true)
     public FileDownloadUrlDto createDownloadUrl(String uuid, AuthEntity user, boolean download) {
         FileEntity fileEntity = findOwnedFile(uuid, user);
+        LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(10);
 
         return FileDownloadUrlDto.builder()
                 .uuid(fileEntity.getUuid())
                 .fileName(fileEntity.getOriginalFileName())
                 .storageType(fileEntity.getStorageType().name())
                 .downloadUrl(resolveDownloadUrl(fileEntity, download))
-                .expiresAt(fileEntity.getStorageType() == FileEntity.StorageType.S3 ? LocalDateTime.now().plusMinutes(10) : null)
+                .expiresAt(expiresAt)
                 .build();
     }
 

@@ -35,6 +35,15 @@ public class FcmDeviceTokenService {
                 .findFirst()
                 .orElse(null);
 
+        for (FcmDeviceTokenEntity existing : existingTokens) {
+            if (existing == ownedToken) {
+                continue;
+            }
+            existing.delete();
+            existing.setEnabled(false);
+            fcmDeviceTokenRepository.save(existing);
+        }
+
         if (ownedToken != null) {
             ownedToken.setDeviceLabel(normalizedDeviceLabel);
             ownedToken.setUserAgent(normalizedUserAgent);
@@ -42,12 +51,6 @@ public class FcmDeviceTokenService {
             ownedToken.setLastUsedAt(now);
             ownedToken.setEnabled(true);
             return fcmDeviceTokenRepository.save(ownedToken);
-        }
-
-        for (FcmDeviceTokenEntity existing : existingTokens) {
-            existing.delete();
-            existing.setEnabled(false);
-            fcmDeviceTokenRepository.save(existing);
         }
 
         FcmDeviceTokenEntity entity = FcmDeviceTokenEntity.builder().deviceToken(deviceToken).build();
