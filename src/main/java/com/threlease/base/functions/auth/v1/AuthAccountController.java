@@ -30,7 +30,7 @@ public class AuthAccountController {
     @Operation(summary = "로그아웃")
     public ResponseEntity<BasicResponse<Void>> logout(@RequestHeader(HttpConstants.HEADER_REFRESH_TOKEN) String refreshToken,
                                                       HttpServletRequest request) {
-        authFlowService.logout((AuthEntity) request.getAttribute("user"), refreshToken, request);
+        authFlowService.logout((AuthEntity) request.getAttribute("user"), refreshToken, request.getHeader(HttpConstants.HEADER_AUTHORIZATION), request);
         return BasicResponse.noContent();
     }
 

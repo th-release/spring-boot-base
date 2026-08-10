@@ -21,6 +21,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.time.LocalDateTime;
+
 @Builder
 @Entity
 @Getter
@@ -55,6 +57,9 @@ public class AuthEntity extends BaseEntity {
     @JsonIgnore
     @Column(name = "salt", length = 64, nullable = false)
     private String salt;
+
+    @Column(name = "access_token_invalid_before")
+    private LocalDateTime accessTokenInvalidBefore;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false, length = 50)

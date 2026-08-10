@@ -93,6 +93,40 @@ class AuthServiceRdbTest {
     }
 
     @Test
+    void logoutRevokesCurrentAccessTokenFamily() {
+        AuthEntity user = AuthEntity.builder()
+                .uuid("user-1")
+                .username("tester")
+                .nickname("tester")
+                .password("encoded")
+                .build();
+
+        when(authRepository.findOneByUUID("user-1")).thenReturn(Optional.of(user));
+
+        List<RefreshTokenEntity> savedTokens = new java.util.ArrayList<>();
+        when(refreshTokenRepository.findAllByUserAndRevokedFalse(any(AuthEntity.class))).thenAnswer(invocation -> savedTokens.stream()
+                .filter(token -> !token.isRevoked())
+                .toList());
+        when(refreshTokenRepository.findAllByFamilyId("family-1")).thenAnswer(invocation -> savedTokens.stream()
+                .filter(token -> "family-1".equals(token.getFamilyId()))
+                .toList());
+        when(refreshTokenRepository.save(any(RefreshTokenEntity.class))).thenAnswer(invocation -> {
+            RefreshTokenEntity token = invocation.getArgument(0);
+            savedTokens.removeIf(existing -> existing.getTokenId().equals(token.getTokenId()));
+            savedTokens.add(token);
+            return token;
+        });
+
+        TokenResponseDto tokenResponse = authService.issueTokens(user, "family-1");
+
+        assertNotNull(authService.findOneByToken(tokenResponse.getAccessToken()).orElse(null));
+
+        authService.logout(tokenResponse.getRefreshToken(), user.getUuid(), tokenResponse.getAccessToken());
+
+        assertTrue(authService.findOneByToken(tokenResponse.getAccessToken()).isEmpty());
+    }
+
+    @Test
     void logoutAllRevokesActiveSessionsInRdbMode() {
         RefreshTokenEntity token1 = RefreshTokenEntity.builder()
                 .uuid("refresh-token-1")
@@ -104,6 +138,7 @@ class AuthServiceRdbTest {
                 .revoked(false)
                 .build();
 
+        when(authRepository.findOneByUUID("user-1")).thenReturn(Optional.of(AuthEntity.builder().uuid("user-1").build()));
         when(refreshTokenRepository.findAllByUserAndRevokedFalse(any(AuthEntity.class))).thenReturn(List.of(token1));
         when(refreshTokenRepository.findByTokenId("token-1")).thenReturn(Optional.of(token1));
         when(refreshTokenRepository.save(any(RefreshTokenEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));

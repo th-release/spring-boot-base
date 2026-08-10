@@ -23,6 +23,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -77,6 +78,12 @@ class AuthSecurityPolicyTest {
                 .map(List::of)
                 .map(PageImpl::new)
                 .orElseGet(() -> new PageImpl<>(List.of())));
+        when(authRepository.findOneByUUID(any())).thenAnswer(invocation -> Optional.of(AuthEntity.builder()
+                .uuid(invocation.getArgument(0))
+                .username("tester")
+                .nickname("tester")
+                .password("encoded")
+                .build()));
 
         authService = new AuthService(
                 authRepository,

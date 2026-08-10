@@ -12,6 +12,7 @@ create table tb_auth
     nickname                   varchar(36)  not null,
     password                   text         not null,
     salt                       varchar(64)  not null,
+    access_token_invalid_before timestamp(6),
     status                     varchar(50)  not null
         constraint tb_auth_status_check
             check ((status)::text = ANY

@@ -69,8 +69,8 @@ public class AuthFlowService {
         return authService.refresh(refreshToken, userAgent, clientIp);
     }
 
-    public void logout(AuthEntity user, String refreshToken, HttpServletRequest request) {
-        authService.logout(refreshToken, user.getUuid());
+    public void logout(AuthEntity user, String refreshToken, String accessToken, HttpServletRequest request) {
+        authService.logout(refreshToken, user.getUuid(), accessToken);
         auditLogService.log(user.getUuid(), "LOGOUT", "AUTH", user.getUuid(), true, request, "Current session logout");
     }
 

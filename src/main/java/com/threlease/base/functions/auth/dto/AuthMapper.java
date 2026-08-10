@@ -19,6 +19,7 @@ public interface AuthMapper {
     // SignUpDto -> AuthEntity (Password 등 필요한 필드는 수동 처리 필요할 수 있음)
     @Mapping(target = "uuid", ignore = true)
     @Mapping(target = "salt", ignore = true)
+    @Mapping(target = "accessTokenInvalidBefore", ignore = true)
     @Mapping(target = "type", ignore = true)
     @Mapping(target = "status", ignore = true)
     AuthEntity toEntity(SignUpDto dto);

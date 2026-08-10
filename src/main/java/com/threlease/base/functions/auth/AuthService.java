@@ -34,6 +34,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.Comparator;
 import java.util.List;
@@ -113,6 +114,14 @@ public class AuthService {
     })
     public void authSave(AuthEntity auth) {
         authRepository.save(auth);
+    }
+
+    public void invalidateAccessTokens(AuthEntity auth) {
+        if (auth == null) {
+            return;
+        }
+        auth.setAccessTokenInvalidBefore(LocalDateTime.now());
+        authSave(auth);
     }
 
     public void ensureLoginAllowed(AuthEntity auth) {
@@ -213,7 +222,7 @@ public class AuthService {
     public TokenResponseDto issueTokens(AuthEntity user, String familyId, String userAgent, String ipAddress) {
         enforceSessionLimit(user.getUuid());
         String refreshTokenId = UUID.randomUUID().toString();
-        String accessToken = jwtProvider.createAccessToken(user.getUuid());
+        String accessToken = jwtProvider.createAccessToken(user.getUuid(), familyId);
         String refreshToken = jwtProvider.createRefreshToken(user.getUuid(), refreshTokenId, familyId);
 
         saveRefreshToken(user.getUuid(), refreshTokenId, familyId, refreshToken, userAgent, ipAddress);
@@ -253,16 +262,29 @@ public class AuthService {
     }
 
     public void logout(String refreshToken, String userUuid) {
+        logout(refreshToken, userUuid, null);
+    }
+
+    public void logout(String refreshToken, String userUuid, String accessToken) {
         RefreshTokenClaims claims = jwtProvider.getRefreshTokenClaims(refreshToken);
         if (claims == null || !claims.userUuid().equals(userUuid)) {
             throw new BusinessException(ErrorCode.TOKEN_INVALID);
         }
 
-        deleteRefreshToken(claims.tokenId(), claims.familyId());
+        JwtProvider.AccessTokenClaims accessClaims = jwtProvider.getAccessTokenClaims(accessToken);
+        if (accessClaims == null || accessClaims.familyId() == null || accessClaims.familyId().isBlank()) {
+            AuthEntity user = findOneByUUID(userUuid)
+                    .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+            invalidateAccessTokens(user);
+        }
+
+        revokeRefreshTokenFamily(claims.familyId());
     }
 
     public void logoutAll(String userUuid) {
-        AuthEntity user = authRef(userUuid);
+        AuthEntity user = findOneByUUID(userUuid)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        invalidateAccessTokens(user);
         if (isRdbStorage()) {
             refreshTokenRepository.findAllByUserAndRevokedFalse(user)
                     .forEach(entity -> revokeRefreshToken(entity.getTokenId(), entity.getFamilyId(), "LOGOUT_ALL"));
@@ -279,7 +301,7 @@ public class AuthService {
         if (isRdbStorage()) {
             RefreshTokenEntity entity = refreshTokenRepository.findByTokenIdAndUser(tokenId, authRef(userUuid))
                     .orElseThrow(() -> new BusinessException(ErrorCode.TOKEN_INVALID));
-            revokeRefreshToken(entity.getTokenId(), entity.getFamilyId(), "REVOKED");
+            revokeRefreshTokenFamily(entity.getFamilyId());
             return;
         }
 
@@ -287,7 +309,7 @@ public class AuthService {
         if (record == null || !userUuid.equals(record.userUuid())) {
             throw new BusinessException(ErrorCode.TOKEN_INVALID);
         }
-        revokeRefreshToken(record.tokenId(), record.familyId(), "REVOKED");
+        revokeRefreshTokenFamily(record.familyId());
     }
 
     public List<RefreshTokenSessionDto> getSessions(String userUuid, String currentRefreshToken) {
@@ -408,7 +430,33 @@ public class AuthService {
     }
 
     public Optional<AuthEntity> findOneByToken(String token) {
-        return jwtProvider.findOneByToken(token);
+        JwtProvider.AccessTokenClaims claims = jwtProvider.getAccessTokenClaims(token);
+        if (claims == null) {
+            return Optional.empty();
+        }
+
+        Optional<AuthEntity> user = findOneByUUID(claims.userUuid());
+        if (user.isEmpty()) {
+            return Optional.empty();
+        }
+
+        assertTokenUsable(user.get());
+
+        if (claims.familyId() == null || claims.familyId().isBlank()) {
+            if (claims.issuedAtMillis() <= 0) {
+                return Optional.empty();
+            }
+            LocalDateTime invalidBefore = user.get().getAccessTokenInvalidBefore();
+            if (invalidBefore != null) {
+                long invalidBeforeMillis = invalidBefore.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+                if (claims.issuedAtMillis() <= invalidBeforeMillis) {
+                    return Optional.empty();
+                }
+            }
+            return user;
+        }
+
+        return isAccessTokenFamilyActive(claims.familyId()) ? user : Optional.empty();
     }
 
     private String hashRefreshToken(String refreshToken) {
@@ -451,6 +499,24 @@ public class AuthService {
                     }
                 }));
         redisTemplate.delete(familyKey);
+    }
+
+    private boolean isAccessTokenFamilyActive(String familyId) {
+        if (familyId == null || familyId.isBlank()) {
+            return false;
+        }
+
+        if (isRdbStorage()) {
+            return refreshTokenRepository.findAllByFamilyId(familyId).stream()
+                    .anyMatch(entity -> !entity.isRevoked() && !entity.isExpired());
+        }
+
+        StringRedisTemplate redisTemplate = getRedisTemplate();
+        Set<String> tokenIds = Optional.ofNullable(redisTemplate.opsForSet().members(buildRedisFamilyKey(familyId)))
+                .orElse(Set.of());
+        return tokenIds.stream()
+                .map(this::getStoredRefreshToken)
+                .anyMatch(record -> record != null && !record.revoked() && !record.isExpired());
     }
 
     private RefreshTokenRecord toRefreshTokenRecord(RefreshTokenEntity entity) {

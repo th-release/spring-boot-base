@@ -34,13 +34,14 @@ public class JwtProvider {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtProperties.getSecretKey()));
     }
 
-    public String createAccessToken(String uuid) {
+    public String createAccessToken(String uuid, String familyId) {
         return Jwts.builder()
                 .subject(uuid)
                 .issuer(issuer)
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + accessTokenExp))
                 .claim(TOKEN_TYPE_CLAIM, ACCESS_TOKEN_TYPE)
+                .claim(FAMILY_ID_CLAIM, familyId)
                 .signWith(getSigningKey())
                 .compact();
     }
@@ -111,10 +112,24 @@ public class JwtProvider {
                 .orElse(null);
     }
 
+    public AccessTokenClaims getAccessTokenClaims(String token) {
+        return verify(token)
+                .filter(jws -> ACCESS_TOKEN_TYPE.equals(jws.getPayload().get(TOKEN_TYPE_CLAIM, String.class)))
+                .map(jws -> new AccessTokenClaims(
+                        jws.getPayload().getSubject(),
+                        jws.getPayload().get(FAMILY_ID_CLAIM, String.class),
+                        jws.getPayload().getIssuedAt() == null ? 0L : jws.getPayload().getIssuedAt().getTime()
+                ))
+                .orElse(null);
+    }
+
     public long getRefreshTokenExpSeconds() {
         return refreshTokenExp / 1000L;
     }
 
     public record RefreshTokenClaims(String userUuid, String tokenId, String familyId, long expirationAtMillis) {
+    }
+
+    public record AccessTokenClaims(String userUuid, String familyId, long issuedAtMillis) {
     }
 }
