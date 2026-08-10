@@ -54,21 +54,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .addPathPatterns("/api/**");
 
         registry.addInterceptor(tokenInterceptor)
-                .addPathPatterns("/api/**")
-                .excludePathPatterns(
-                        // 모든 경로를 리터럴로 명시하여 직관성 확보
-                        "/api/v*/auth/login",
-                        "/api/v*/auth/signup",
-                        "/api/v*/auth/refresh",
-                        "/api/v*/auth/password/reset/request",
-                        "/api/v*/auth/password/reset/confirm",
-                        "/api/v*/files/content/**",
-                        "/api/common/enums",
-                        "/api/swagger-ui/**",
-                        "/api/v3/api-docs/**",
-                        "/api/actuator/health",
-                        "/api/actuator/health/**"
-                );
+                .addPathPatterns("/api/**");
     }
 
     /**

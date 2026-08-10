@@ -36,12 +36,9 @@ public class FcmDeviceTokenService {
                 .orElse(null);
 
         for (FcmDeviceTokenEntity existing : existingTokens) {
-            if (existing == ownedToken) {
-                continue;
+            if (existing != ownedToken) {
+                fcmDeviceTokenRepository.delete(existing);
             }
-            existing.delete();
-            existing.setEnabled(false);
-            fcmDeviceTokenRepository.save(existing);
         }
 
         if (ownedToken != null) {
@@ -63,20 +60,18 @@ public class FcmDeviceTokenService {
         return fcmDeviceTokenRepository.save(entity);
     }
 
+    @Transactional
     public void disableMyToken(String userUuid, String tokenUuid) {
         FcmDeviceTokenEntity entity = fcmDeviceTokenRepository.findByUuidAndUser(tokenUuid, AuthEntity.builder().uuid(userUuid).build())
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT));
-        entity.setEnabled(false);
-        fcmDeviceTokenRepository.save(entity);
+        fcmDeviceTokenRepository.delete(entity);
     }
 
     @Transactional
     public int disableByDeviceToken(String deviceToken) {
         int disabledCount = 0;
         for (FcmDeviceTokenEntity entity : fcmDeviceTokenRepository.findAllActiveByDeviceToken(deviceToken)) {
-            entity.delete();
-            entity.setEnabled(false);
-            fcmDeviceTokenRepository.save(entity);
+            fcmDeviceTokenRepository.delete(entity);
             disabledCount++;
         }
         return disabledCount;

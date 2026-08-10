@@ -173,7 +173,7 @@ create table tb_fcm_device_token
     deleted_at      timestamp(6),
     updated_at      timestamp(6),
     device_label    varchar(120),
-    device_token    varchar(512) not null,
+    device_token    varchar(512) not null unique,
     enabled         boolean      not null,
     last_ip_address varchar(64),
     last_used_at    timestamp(6),

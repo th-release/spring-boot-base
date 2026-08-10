@@ -2,6 +2,7 @@ package com.threlease.base.common.interceptors;
 
 import com.threlease.base.common.exception.BusinessException;
 import com.threlease.base.common.exception.ErrorCode;
+import com.threlease.base.common.configs.ApiAccessRules;
 import com.threlease.base.entities.AuthEntity;
 import com.threlease.base.functions.auth.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,7 +23,7 @@ public class TokenInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        if ("GET".equalsIgnoreCase(request.getMethod()) && request.getRequestURI().startsWith("/api/v1/files/content/")) {
+        if (ApiAccessRules.isPublicRequest(request.getMethod(), request.getRequestURI())) {
             return true;
         }
 

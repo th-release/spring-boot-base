@@ -46,7 +46,7 @@ public class FileService {
                 .uuid(fileEntity.getUuid())
                 .originalFileName(fileEntity.getOriginalFileName())
                 .filePath(fileEntity.getFilePath())
-                .url(resolveImmediateAccessUrl(fileEntity))
+                .url(resolveImmediateAccessUrl(fileEntity, false))
                 .contentType(fileEntity.getContentType())
                 .fileSize(fileEntity.getFileSize())
                 .dirName(fileEntity.getDirName())
@@ -130,12 +130,12 @@ public class FileService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.FORBIDDEN));
     }
 
-    private String resolveImmediateAccessUrl(FileEntity fileEntity) {
+    private String resolveImmediateAccessUrl(FileEntity fileEntity, boolean download) {
         if (fileEntity.getStorageType() == FileEntity.StorageType.S3) {
-            return storageService.getDownloadUrl(fileEntity, true);
+            return storageService.getDownloadUrl(fileEntity, download);
         }
         String token = fileDownloadTokenService.createToken(fileEntity.getUuid(), fileEntity.getFilePath(), 10);
-        return fileEntity.getUrl() + "?token=" + token + "&download=true";
+        return fileEntity.getUrl() + "?token=" + token + "&download=" + download;
     }
 
     private String resolveDownloadUrl(FileEntity fileEntity, boolean download) {
