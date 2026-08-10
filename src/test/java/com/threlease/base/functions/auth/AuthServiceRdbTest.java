@@ -37,6 +37,8 @@ class AuthServiceRdbTest {
     private final RefreshTokenRepository refreshTokenRepository = mock(RefreshTokenRepository.class);
     private final HashComponent hashComponent = new HashComponent();
     private final RandomComponent randomComponent = new RandomComponent();
+    private AuthUserService authUserService;
+    private AuthSessionService authSessionService;
     private AuthService authService;
 
     @BeforeEach
@@ -59,19 +61,26 @@ class AuthServiceRdbTest {
         ObjectProvider<StringRedisTemplate> objectProvider = mock(ObjectProvider.class);
         when(objectProvider.getIfAvailable()).thenReturn(null);
 
-        authService = new AuthService(
+        authUserService = new AuthUserService(
                 authRepository,
                 authLoginHistoryRepository,
                 authMfaRepository,
+                hashComponent,
+                randomComponent,
+                authSecurityProperties
+        );
+
+        authSessionService = new AuthSessionService(
                 refreshTokenRepository,
                 jwtProvider,
                 objectProvider,
                 hashComponent,
-                randomComponent,
                 redisProperties,
                 tokenProperties,
-                authSecurityProperties
+                authUserService
         );
+
+        authService = new AuthService(authUserService, authSessionService);
     }
 
     @Test

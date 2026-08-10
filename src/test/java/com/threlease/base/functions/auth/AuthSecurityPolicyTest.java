@@ -32,6 +32,7 @@ import static org.mockito.Mockito.when;
 
 class AuthSecurityPolicyTest {
     private AuthService authService;
+    private AuthUserService authUserService;
     private final List<AuthLoginHistoryEntity> loginHistories = new ArrayList<>();
 
     @BeforeEach
@@ -85,19 +86,26 @@ class AuthSecurityPolicyTest {
                 .password("encoded")
                 .build()));
 
-        authService = new AuthService(
+        authUserService = new AuthUserService(
                 authRepository,
                 authLoginHistoryRepository,
                 authMfaRepository,
+                hashComponent,
+                randomComponent,
+                authSecurityProperties
+        );
+
+        AuthSessionService authSessionService = new AuthSessionService(
                 refreshTokenRepository,
                 jwtProvider,
                 objectProvider,
                 hashComponent,
-                randomComponent,
                 redisProperties,
                 tokenProperties,
-                authSecurityProperties
+                authUserService
         );
+
+        authService = new AuthService(authUserService, authSessionService);
     }
 
     @Test
