@@ -58,11 +58,11 @@ public class S3StorageService implements StorageService {
     @Override
     public void delete(String filePath) {
         String bucket = s3Properties.getBucket();
-        // 실제 S3 파일 삭제
         try {
             s3Template.deleteObject(bucket, filePath);
         } catch (Exception e) {
             log.error("S3 파일 삭제 실패: filePath={}", filePath, e);
+            throw new BusinessException(ErrorCode.INTERNAL_ERROR, "S3 파일 삭제에 실패했습니다.");
         }
 
         // DB soft delete

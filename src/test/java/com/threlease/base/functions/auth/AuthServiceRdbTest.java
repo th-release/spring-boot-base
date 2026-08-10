@@ -130,7 +130,7 @@ class AuthServiceRdbTest {
 
         assertNotNull(authService.findOneByToken(tokenResponse.getAccessToken()).orElse(null));
 
-        authService.logout(tokenResponse.getRefreshToken(), user.getUuid(), tokenResponse.getAccessToken());
+        authService.logout(tokenResponse.getRefreshToken(), user.getUuid());
 
         assertTrue(authService.findOneByToken(tokenResponse.getAccessToken()).isEmpty());
     }

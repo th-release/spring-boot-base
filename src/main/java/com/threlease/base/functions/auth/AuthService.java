@@ -96,11 +96,7 @@ public class AuthService {
     }
 
     public void logout(String refreshToken, String userUuid) {
-        authSessionService.logout(refreshToken, userUuid, null);
-    }
-
-    public void logout(String refreshToken, String userUuid, String accessToken) {
-        authSessionService.logout(refreshToken, userUuid, accessToken);
+        authSessionService.logout(refreshToken, userUuid);
     }
 
     public void logoutAll(String userUuid) {

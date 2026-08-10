@@ -11,10 +11,12 @@ import com.threlease.base.functions.auth.dto.FcmNotificationDto;
 import com.threlease.base.functions.auth.dto.FcmPushRequestDto;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthFcmService {
@@ -67,7 +69,7 @@ public class AuthFcmService {
                 fcmNotificationService.saveSentNotification(uuid, messageId, dto.getTitle(), dto.getBody(), dto.getData());
                 messageIds.add(messageId);
             } catch (Exception e) {
-                // 한 디바이스 실패가 전체 발송을 막지 않도록 개별 실패를 무시합니다.
+                log.warn("FCM push failed for user={}, tokenUuid={}", uuid, token.getUuid(), e);
             }
         }
         auditLogService.logAdmin(admin.getUuid(), "ADMIN_SEND_FCM_PUSH", "FCM", uuid, !messageIds.isEmpty(), request, "Admin sent FCM push to user devices");

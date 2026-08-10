@@ -115,7 +115,7 @@ public class AuthSessionService {
         return issueTokens(user, claims.familyId(), userAgent, ipAddress);
     }
 
-    public void logout(String refreshToken, String userUuid, String accessToken) {
+    public void logout(String refreshToken, String userUuid) {
         RefreshTokenClaims claims = jwtProvider.getRefreshTokenClaims(refreshToken);
         if (claims == null || !claims.userUuid().equals(userUuid)) {
             throw new BusinessException(ErrorCode.TOKEN_INVALID);

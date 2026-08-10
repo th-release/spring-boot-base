@@ -58,12 +58,15 @@ public class LocalStorageService implements StorageService {
     @Override
     public void delete(String filePath) {
         String rootPath = storageProperties.getLocal().getPath();
-        // 실제 파일 삭제
         try {
             Path fileToDelete = Paths.get(rootPath, filePath);
             Files.deleteIfExists(fileToDelete);
         } catch (IOException e) {
             log.error("로컬 파일 삭제 실패: filePath={}", filePath, e);
+            throw new com.threlease.base.common.exception.BusinessException(
+                    com.threlease.base.common.exception.ErrorCode.INTERNAL_ERROR,
+                    "로컬 파일 삭제에 실패했습니다."
+            );
         }
 
         // DB soft delete
