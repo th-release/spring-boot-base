@@ -12,6 +12,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Base64;
 
@@ -78,7 +79,7 @@ public class AesComponent {
             Cipher cipher = Cipher.getInstance(ALGORITHM);
             cipher.init(Cipher.ENCRYPT_MODE, secretKey, new GCMParameterSpec(TAG_LENGTH, iv));
 
-            byte[] cipherText = cipher.doFinal(plainText.getBytes());
+            byte[] cipherText = cipher.doFinal(plainText.getBytes(StandardCharsets.UTF_8));
 
             byte[] combined = ByteBuffer.allocate(iv.length + cipherText.length)
                     .put(iv)
@@ -112,7 +113,7 @@ public class AesComponent {
             Cipher cipher = Cipher.getInstance(ALGORITHM);
             cipher.init(Cipher.DECRYPT_MODE, secretKey, new GCMParameterSpec(TAG_LENGTH, iv));
 
-            return new String(cipher.doFinal(cipherText));
+            return new String(cipher.doFinal(cipherText), StandardCharsets.UTF_8);
 
         } catch (Exception e) {
             throw new CryptoException("복호화 실패", e);

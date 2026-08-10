@@ -44,7 +44,7 @@ public class FileController {
             @RequestParam("token") String token,
             @RequestParam(value = "download", defaultValue = "true") boolean download
     ) {
-        return fileService.serve(extractFilePath(request), token, true);
+        return fileService.serve(extractFilePath(request), token, download);
     }
 
     @GetMapping("/{uuid}/download")

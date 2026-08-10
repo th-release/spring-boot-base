@@ -27,7 +27,7 @@ public class AuthPasswordService {
             return false;
         }
         if (auth.getSalt() == null || auth.getSalt().isBlank()) {
-            return passwordEncoder.matches(rawPassword, auth.getPassword());
+            return false;
         }
         return passwordEncoder.matches(preHash(rawPassword, auth.getSalt()), auth.getPassword());
     }

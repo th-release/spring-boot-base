@@ -18,6 +18,8 @@ public class JwtProperties {
     private static final int MIN_HS512_KEY_BYTES = 64;
 
     private String secretKey;
+    private long accessTokenExpMillis = 1000L * 60 * 60;
+    private long refreshTokenExpMillis = 1000L * 60 * 60 * 24 * 14;
 
     @PostConstruct
     public void validateSecretKey() {
@@ -37,6 +39,14 @@ public class JwtProperties {
 
     private IllegalStateException invalidKeyException(String reason) {
         return new IllegalStateException(reason + ". Recommended JWT_SECRET_KEY: " + generateRecommendedSecretKey());
+    }
+
+    public long getAccessTokenExpSeconds() {
+        return accessTokenExpMillis / 1000L;
+    }
+
+    public long getRefreshTokenExpSeconds() {
+        return refreshTokenExpMillis / 1000L;
     }
 
     private String generateRecommendedSecretKey() {

@@ -24,8 +24,6 @@ public class JwtProvider {
     private static final String ACCESS_TOKEN_TYPE = "access";
     private static final String REFRESH_TOKEN_TYPE = "refresh";
 
-    private final long accessTokenExp = 1000L * 60 * 60; // 1 hour
-    private final long refreshTokenExp = 1000L * 60 * 60 * 24 * 14; // 14 days
     private final String issuer = "spring-boot-base";
     private final AuthRepository authRepository;
     private final JwtProperties jwtProperties;
@@ -39,7 +37,7 @@ public class JwtProvider {
                 .subject(uuid)
                 .issuer(issuer)
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + accessTokenExp))
+                .expiration(new Date(System.currentTimeMillis() + jwtProperties.getAccessTokenExpMillis()))
                 .claim(TOKEN_TYPE_CLAIM, ACCESS_TOKEN_TYPE)
                 .claim(FAMILY_ID_CLAIM, familyId)
                 .signWith(getSigningKey())
@@ -52,7 +50,7 @@ public class JwtProvider {
                 .subject(uuid)
                 .issuer(issuer)
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + refreshTokenExp))
+                .expiration(new Date(System.currentTimeMillis() + jwtProperties.getRefreshTokenExpMillis()))
                 .claim(TOKEN_TYPE_CLAIM, REFRESH_TOKEN_TYPE)
                 .claim(FAMILY_ID_CLAIM, familyId)
                 .signWith(getSigningKey())
@@ -124,7 +122,7 @@ public class JwtProvider {
     }
 
     public long getRefreshTokenExpSeconds() {
-        return refreshTokenExp / 1000L;
+        return jwtProperties.getRefreshTokenExpSeconds();
     }
 
     public record RefreshTokenClaims(String userUuid, String tokenId, String familyId, long expirationAtMillis) {
