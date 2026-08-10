@@ -2,6 +2,7 @@ package com.threlease.base.functions.auth;
 
 import com.threlease.base.common.exception.BusinessException;
 import com.threlease.base.common.exception.ErrorCode;
+import com.threlease.base.common.annotation.DistributedLock;
 import com.threlease.base.common.utils.DeviceUtils;
 import com.threlease.base.entities.AuthEntity;
 import com.threlease.base.entities.FcmDeviceTokenEntity;
@@ -23,6 +24,7 @@ public class FcmDeviceTokenService {
     }
 
     @Transactional
+    @DistributedLock(key = "#deviceToken", waitTime = 5L, leaseTime = 5L)
     public FcmDeviceTokenEntity register(AuthEntity auth, String deviceToken, String deviceLabel, String userAgent, String ipAddress) {
         List<FcmDeviceTokenEntity> existingTokens = fcmDeviceTokenRepository.findAllActiveByDeviceToken(deviceToken);
         String normalizedDeviceLabel = deviceLabel == null || deviceLabel.isBlank() ? DeviceUtils.describe(userAgent) : deviceLabel;
@@ -68,6 +70,7 @@ public class FcmDeviceTokenService {
     }
 
     @Transactional
+    @DistributedLock(key = "#deviceToken", waitTime = 5L, leaseTime = 5L)
     public int disableByDeviceToken(String deviceToken) {
         int disabledCount = 0;
         for (FcmDeviceTokenEntity entity : fcmDeviceTokenRepository.findAllActiveByDeviceToken(deviceToken)) {

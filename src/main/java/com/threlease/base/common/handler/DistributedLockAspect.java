@@ -1,6 +1,8 @@
 package com.threlease.base.common.handler;
 
 import com.threlease.base.common.annotation.DistributedLock;
+import com.threlease.base.common.exception.BusinessException;
+import com.threlease.base.common.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -46,7 +48,7 @@ public class DistributedLockAspect {
             boolean available = rLock.tryLock(distributedLock.waitTime(), distributedLock.leaseTime(), distributedLock.timeUnit());
             if (!available) {
                 log.warn("Failed to acquire lock for key: {}", lockKey);
-                return null;
+                throw new BusinessException(ErrorCode.TOO_MANY_REQUESTS);
             }
 
             log.debug("Acquired lock for key: {}", lockKey);
