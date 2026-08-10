@@ -26,6 +26,7 @@ public class FcmDeviceTokenService {
         FcmDeviceTokenEntity entity = fcmDeviceTokenRepository.findLatestActiveByDeviceToken(deviceToken, PageRequest.of(0, 1))
                 .stream()
                 .findFirst()
+                .filter(existing -> existing.getUser() != null && auth.getUuid() != null && auth.getUuid().equals(existing.getUser().getUuid()))
                 .orElse(FcmDeviceTokenEntity.builder().deviceToken(deviceToken).build());
         entity.setUser(auth);
         entity.setDeviceLabel(deviceLabel == null || deviceLabel.isBlank() ? DeviceUtils.describe(userAgent) : deviceLabel);

@@ -51,9 +51,10 @@ public class FileController {
     @Operation(summary = "대용량 파일 다운로드 URL 발급", description = "파일 다운로드용 URL을 발급합니다. S3는 presigned URL, 로컬은 정적 서빙 URL을 반환합니다.")
     public ResponseEntity<BasicResponse<FileDownloadUrlDto>> downloadUrl(
             @PathVariable String uuid,
+            @RequestParam(value = "download", defaultValue = "true") boolean download,
             @RequestAttribute("user") AuthEntity user
     ) {
-        return BasicResponse.ok(fileService.createDownloadUrl(uuid, user));
+        return BasicResponse.ok(fileService.createDownloadUrl(uuid, user, download));
     }
 
     @PostMapping

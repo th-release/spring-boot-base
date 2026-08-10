@@ -13,6 +13,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import com.threlease.base.common.handler.JwtAuthenticationFilter;
+import com.threlease.base.common.handler.RestAccessDeniedHandler;
+import com.threlease.base.common.handler.RestAuthenticationEntryPoint;
 
 import static org.springframework.security.config.Customizer.withDefaults;
 import org.springframework.http.HttpMethod;
@@ -22,6 +25,9 @@ import org.springframework.http.HttpMethod;
 @RequiredArgsConstructor
 public class WebSecurityConfig {
     private final SecurityProperties securityProperties;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
+    private final RestAccessDeniedHandler restAccessDeniedHandler;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -57,11 +63,22 @@ public class WebSecurityConfig {
                 .sessionManagement(management ->
                         management.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint(restAuthenticationEntryPoint)
+                        .accessDeniedHandler(restAccessDeniedHandler)
+                )
+                .addFilterBefore(jwtAuthenticationFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers(HttpMethod.GET, "/**").permitAll()
-                        .requestMatchers(HttpMethod.HEAD, "/**").permitAll()
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/**").permitAll()
+                        .requestMatchers(request -> {
+                            String uri = request.getRequestURI();
+                            return (HttpMethod.GET.matches(request.getMethod()) || HttpMethod.HEAD.matches(request.getMethod())) && !uri.startsWith("/api/");
+                        }).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/auth/login", "/api/v1/auth/signup", "/api/v1/auth/refresh",
+                                "/api/v1/auth/password/reset/request", "/api/v1/auth/password/reset/confirm",
+                                "/api/v1/files/content/**", "/api/common/enums", "/api/swagger-ui/**",
+                                "/api/v3/api-docs/**", "/api/actuator/health", "/api/actuator/health/**").permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS, "/api/**").permitAll()
+                        .requestMatchers("/api/**").authenticated()
                         .anyRequest().denyAll()
                 );
         return http.build();

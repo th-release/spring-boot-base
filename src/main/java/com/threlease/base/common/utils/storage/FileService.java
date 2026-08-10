@@ -61,14 +61,14 @@ public class FileService {
     }
 
     @Transactional(readOnly = true)
-    public FileDownloadUrlDto createDownloadUrl(String uuid, AuthEntity user) {
+    public FileDownloadUrlDto createDownloadUrl(String uuid, AuthEntity user, boolean download) {
         FileEntity fileEntity = findOwnedFile(uuid, user);
 
         return FileDownloadUrlDto.builder()
                 .uuid(fileEntity.getUuid())
                 .fileName(fileEntity.getOriginalFileName())
                 .storageType(fileEntity.getStorageType().name())
-                .downloadUrl(resolveDownloadUrl(fileEntity))
+                .downloadUrl(resolveDownloadUrl(fileEntity, download))
                 .expiresAt(fileEntity.getStorageType() == FileEntity.StorageType.S3 ? LocalDateTime.now().plusMinutes(10) : null)
                 .build();
     }
@@ -137,13 +137,13 @@ public class FileService {
         return fileEntity.getUrl() + "?token=" + token + "&download=true";
     }
 
-    private String resolveDownloadUrl(FileEntity fileEntity) {
+    private String resolveDownloadUrl(FileEntity fileEntity, boolean download) {
         if (fileEntity.getStorageType() == FileEntity.StorageType.S3) {
-            return storageService.getDownloadUrl(fileEntity, true);
+            return storageService.getDownloadUrl(fileEntity, download);
         }
 
         String token = fileDownloadTokenService.createToken(fileEntity.getUuid(), fileEntity.getFilePath(), 10);
-        return fileEntity.getUrl() + "?token=" + token + "&download=true";
+        return fileEntity.getUrl() + "?token=" + token + "&download=" + download;
     }
 
     private void validateDownloadToken(FileEntity fileEntity, String token) {

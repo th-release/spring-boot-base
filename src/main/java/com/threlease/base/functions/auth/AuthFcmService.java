@@ -8,6 +8,7 @@ import com.threlease.base.entities.FcmDeviceTokenEntity;
 import com.threlease.base.functions.auth.dto.FcmDeviceTokenDto;
 import com.threlease.base.functions.auth.dto.FcmDeviceTokenRequestDto;
 import com.threlease.base.functions.auth.dto.FcmNotificationDto;
+import com.threlease.base.functions.auth.dto.FcmPushResultDto;
 import com.threlease.base.functions.auth.dto.FcmPushRequestDto;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -56,13 +57,14 @@ public class AuthFcmService {
                 .toList();
     }
 
-    public List<String> pushToUser(AuthEntity admin, String uuid, FcmPushRequestDto dto, HttpServletRequest request) throws Exception {
+    public FcmPushResultDto pushToUser(AuthEntity admin, String uuid, FcmPushRequestDto dto, HttpServletRequest request) throws Exception {
         authAdminService.assertAdmin(admin);
         if (!firebaseUtils.isEnabled()) {
             throw new BusinessException(ErrorCode.FIREBASE_DISABLED);
         }
 
         List<String> messageIds = new java.util.ArrayList<>();
+        List<String> failedTokenUuids = new java.util.ArrayList<>();
         for (FcmDeviceTokenEntity token : fcmDeviceTokenService.getTokensForUser(uuid)) {
             try {
                 String messageId = firebaseUtils.sendNotification(token.getDeviceToken(), dto.getTitle(), dto.getBody(), dto.getData());
@@ -70,10 +72,17 @@ public class AuthFcmService {
                 messageIds.add(messageId);
             } catch (Exception e) {
                 log.warn("FCM push failed for user={}, tokenUuid={}", uuid, token.getUuid(), e);
+                failedTokenUuids.add(token.getUuid());
             }
         }
-        auditLogService.logAdmin(admin.getUuid(), "ADMIN_SEND_FCM_PUSH", "FCM", uuid, !messageIds.isEmpty(), request, "Admin sent FCM push to user devices");
-        return messageIds;
+        auditLogService.logAdmin(admin.getUuid(), "ADMIN_SEND_FCM_PUSH", "FCM", uuid, !messageIds.isEmpty(), request,
+                failedTokenUuids.isEmpty() ? "Admin sent FCM push to user devices" : "Admin sent FCM push with partial failures");
+        return FcmPushResultDto.builder()
+                .messageIds(messageIds)
+                .failedTokenUuids(failedTokenUuids)
+                .successCount(messageIds.size())
+                .failureCount(failedTokenUuids.size())
+                .build();
     }
 
     private FcmDeviceTokenDto toDto(FcmDeviceTokenEntity token) {

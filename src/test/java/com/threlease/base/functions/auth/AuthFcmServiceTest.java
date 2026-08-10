@@ -3,6 +3,7 @@ package com.threlease.base.functions.auth;
 import com.threlease.base.common.utils.firebase.FirebaseUtils;
 import com.threlease.base.entities.AuthEntity;
 import com.threlease.base.entities.FcmDeviceTokenEntity;
+import com.threlease.base.functions.auth.dto.FcmPushResultDto;
 import com.threlease.base.functions.auth.dto.FcmPushRequestDto;
 import org.junit.jupiter.api.Test;
 
@@ -27,8 +28,8 @@ class AuthFcmServiceTest {
         AuthFcmService service = new AuthFcmService(tokenService, firebaseUtils, auditLogService, authAdminService, notificationService);
         AuthEntity admin = AuthEntity.builder().uuid("admin-1").build();
 
-        FcmDeviceTokenEntity token1 = FcmDeviceTokenEntity.builder().deviceToken("token-1").build();
-        FcmDeviceTokenEntity token2 = FcmDeviceTokenEntity.builder().deviceToken("token-2").build();
+        FcmDeviceTokenEntity token1 = FcmDeviceTokenEntity.builder().uuid("fcm-1").deviceToken("token-1").build();
+        FcmDeviceTokenEntity token2 = FcmDeviceTokenEntity.builder().uuid("fcm-2").deviceToken("token-2").build();
         when(tokenService.getTokensForUser("user-1")).thenReturn(List.of(token1, token2));
         when(firebaseUtils.isEnabled()).thenReturn(true);
         when(firebaseUtils.sendNotification("token-1", "title", "body", null)).thenReturn("msg-1");
@@ -38,8 +39,11 @@ class AuthFcmServiceTest {
         dto.setTitle("title");
         dto.setBody("body");
 
-        List<String> messageIds = service.pushToUser(admin, "user-1", dto, null);
+        FcmPushResultDto result = service.pushToUser(admin, "user-1", dto, null);
 
-        assertEquals(List.of("msg-1"), messageIds);
+        assertEquals(List.of("msg-1"), result.getMessageIds());
+        assertEquals(1, result.getFailedTokenUuids().size());
+        assertEquals(1, result.getSuccessCount());
+        assertEquals(1, result.getFailureCount());
     }
 }

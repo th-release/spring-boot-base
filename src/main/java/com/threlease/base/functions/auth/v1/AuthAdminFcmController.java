@@ -6,6 +6,7 @@ import com.threlease.base.entities.AuthEntity;
 import com.threlease.base.functions.auth.AuthFcmService;
 import com.threlease.base.functions.auth.dto.FcmDeviceTokenDto;
 import com.threlease.base.functions.auth.dto.FcmPushRequestDto;
+import com.threlease.base.functions.auth.dto.FcmPushResultDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -39,9 +40,9 @@ public class AuthAdminFcmController {
 
     @PostMapping("/users/{uuid}/fcm/push")
     @Operation(summary = "관리자용 사용자 FCM 푸시 발송")
-    public ResponseEntity<BasicResponse<List<String>>> pushToUser(@PathVariable String uuid,
-                                                                  @RequestBody @Valid FcmPushRequestDto dto,
-                                                                  HttpServletRequest request) throws Exception {
+    public ResponseEntity<BasicResponse<FcmPushResultDto>> pushToUser(@PathVariable String uuid,
+                                                                      @RequestBody @Valid FcmPushRequestDto dto,
+                                                                      HttpServletRequest request) throws Exception {
         return BasicResponse.ok(authFcmService.pushToUser((AuthEntity) request.getAttribute("user"), uuid, dto, request));
     }
 }
