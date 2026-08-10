@@ -13,6 +13,8 @@ import com.threlease.base.functions.auth.dto.FcmPushRequestDto;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import com.google.firebase.messaging.FirebaseMessagingException;
+import com.google.firebase.messaging.MessagingErrorCode;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -73,6 +75,9 @@ public class AuthFcmService {
             } catch (Exception e) {
                 log.warn("FCM push failed for user={}, tokenUuid={}", uuid, token.getUuid(), e);
                 failedTokenUuids.add(token.getUuid());
+                if (isInvalidDeviceToken(e)) {
+                    fcmDeviceTokenService.disableByDeviceToken(token.getDeviceToken());
+                }
             }
         }
         auditLogService.logAdmin(admin.getUuid(), "ADMIN_SEND_FCM_PUSH", "FCM", uuid, !messageIds.isEmpty(), request,
@@ -94,5 +99,17 @@ public class AuthFcmService {
                 .lastUsedAt(token.getLastUsedAt())
                 .enabled(token.isEnabled())
                 .build();
+    }
+
+    private boolean isInvalidDeviceToken(Exception e) {
+        Throwable current = e;
+        while (current != null) {
+            if (current instanceof FirebaseMessagingException firebaseMessagingException) {
+                MessagingErrorCode code = firebaseMessagingException.getMessagingErrorCode();
+                return code == MessagingErrorCode.UNREGISTERED || code == MessagingErrorCode.INVALID_ARGUMENT;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 }

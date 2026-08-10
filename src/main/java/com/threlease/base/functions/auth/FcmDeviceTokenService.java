@@ -70,6 +70,18 @@ public class FcmDeviceTokenService {
         fcmDeviceTokenRepository.save(entity);
     }
 
+    @Transactional
+    public int disableByDeviceToken(String deviceToken) {
+        int disabledCount = 0;
+        for (FcmDeviceTokenEntity entity : fcmDeviceTokenRepository.findAllActiveByDeviceToken(deviceToken)) {
+            entity.delete();
+            entity.setEnabled(false);
+            fcmDeviceTokenRepository.save(entity);
+            disabledCount++;
+        }
+        return disabledCount;
+    }
+
     public List<FcmDeviceTokenEntity> getTokensForUser(String userUuid) {
         return fcmDeviceTokenRepository.findAllByUserAndEnabledTrueOrderByLastUsedAtDesc(AuthEntity.builder().uuid(userUuid).build());
     }
