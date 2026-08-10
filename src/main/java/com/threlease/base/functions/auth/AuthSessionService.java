@@ -13,13 +13,13 @@ import com.threlease.base.entities.RefreshTokenEntity;
 import com.threlease.base.functions.auth.dto.RefreshTokenSessionDto;
 import com.threlease.base.functions.auth.dto.TokenResponseDto;
 import com.threlease.base.repositories.auth.RefreshTokenRepository;
+import com.google.gson.Gson;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.Comparator;
 import java.util.List;
@@ -35,6 +35,7 @@ public class AuthSessionService {
     private static final String REDIS_TOKEN_KEY_PREFIX = "refresh_token:";
     private static final String REDIS_FAMILY_KEY_PREFIX = "refresh_token_family:";
     private static final String REDIS_USER_KEY_PREFIX = "refresh_token_user:";
+    private static final Gson GSON = new Gson();
 
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtProvider jwtProvider;
@@ -120,13 +121,9 @@ public class AuthSessionService {
             throw new BusinessException(ErrorCode.TOKEN_INVALID);
         }
 
-        JwtProvider.AccessTokenClaims accessClaims = jwtProvider.getAccessTokenClaims(accessToken);
-        if (accessClaims == null || accessClaims.familyId() == null || accessClaims.familyId().isBlank()) {
-            AuthEntity user = authUserService.findOneByUUID(userUuid)
-                    .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
-            authUserService.invalidateAccessTokens(user);
-        }
-
+        AuthEntity user = authUserService.findOneByUUID(userUuid)
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+        authUserService.invalidateAccessTokens(user);
         revokeRefreshTokenFamily(claims.familyId());
     }
 
@@ -199,21 +196,18 @@ public class AuthSessionService {
 
         authUserService.assertTokenUsable(user.get());
 
-        if (claims.familyId() == null || claims.familyId().isBlank()) {
-            if (claims.issuedAtMillis() <= 0) {
-                return Optional.empty();
-            }
-            LocalDateTime invalidBefore = user.get().getAccessTokenInvalidBefore();
-            if (invalidBefore != null) {
-                long invalidBeforeMillis = invalidBefore.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
-                if (claims.issuedAtMillis() <= invalidBeforeMillis) {
-                    return Optional.empty();
-                }
-            }
-            return user;
+        if (claims.issuedAtMillis() <= 0) {
+            return Optional.empty();
         }
 
-        return isAccessTokenFamilyActive(claims.familyId()) ? user : Optional.empty();
+        LocalDateTime invalidBefore = user.get().getAccessTokenInvalidBefore();
+        if (invalidBefore != null) {
+            long invalidBeforeMillis = invalidBefore.toInstant(ZoneOffset.UTC).toEpochMilli();
+            if (claims.issuedAtMillis() <= invalidBeforeMillis) {
+                return Optional.empty();
+            }
+        }
+        return user;
     }
 
     private void saveRefreshToken(String uuid, String tokenId, String familyId, String refreshToken, String userAgent, String ipAddress) {
@@ -290,24 +284,6 @@ public class AuthSessionService {
         redisTemplate.delete(familyKey);
     }
 
-    private boolean isAccessTokenFamilyActive(String familyId) {
-        if (familyId == null || familyId.isBlank()) {
-            return false;
-        }
-
-        if (isRdbStorage()) {
-            return refreshTokenRepository.findAllByFamilyId(familyId).stream()
-                    .anyMatch(entity -> !entity.isRevoked() && !entity.isExpired());
-        }
-
-        StringRedisTemplate redisTemplate = getRedisTemplate();
-        Set<String> tokenIds = Optional.ofNullable(redisTemplate.opsForSet().members(buildRedisFamilyKey(familyId)))
-                .orElse(Set.of());
-        return tokenIds.stream()
-                .map(this::getStoredRefreshToken)
-                .anyMatch(record -> record != null && !record.revoked() && !record.isExpired());
-    }
-
     private RefreshTokenRecord toRefreshTokenRecord(RefreshTokenEntity entity) {
         return new RefreshTokenRecord(
                 entity.getTokenId(),
@@ -337,34 +313,38 @@ public class AuthSessionService {
     }
 
     private String serializeRefreshTokenRecord(RefreshTokenRecord record) {
-        return String.join("|",
+        return GSON.toJson(new RefreshTokenCacheRecord(
                 record.tokenId(),
                 record.familyId(),
                 record.userUuid(),
                 record.tokenHash(),
-                String.valueOf(toEpochSecond(record.issuedAt())),
-                String.valueOf(toEpochSecond(record.lastUsedAt())),
-                String.valueOf(record.expiryDate().toEpochSecond(ZoneOffset.UTC)),
-                nullSafe(record.userAgent()),
-                nullSafe(record.deviceLabel()),
-                nullSafe(record.ipAddress()),
-                String.valueOf(record.revoked()));
+                toEpochSecond(record.issuedAt()),
+                toEpochSecond(record.lastUsedAt()),
+                record.expiryDate().toEpochSecond(ZoneOffset.UTC),
+                record.userAgent(),
+                record.deviceLabel(),
+                record.ipAddress(),
+                record.revoked()
+        ));
     }
 
     private RefreshTokenRecord deserializeRefreshTokenRecord(String value) {
-        String[] parts = value.split("\\|", -1);
+        RefreshTokenCacheRecord record = GSON.fromJson(value, RefreshTokenCacheRecord.class);
+        if (record == null) {
+            return null;
+        }
         return new RefreshTokenRecord(
-                parts[0],
-                parts[1],
-                parts[2],
-                parts[3],
-                fromEpochSecond(parts[4]),
-                fromEpochSecond(parts[5]),
-                LocalDateTime.ofEpochSecond(Long.parseLong(parts[6]), 0, ZoneOffset.UTC),
-                emptyToNull(parts[7]),
-                emptyToNull(parts[8]),
-                emptyToNull(parts[9]),
-                Boolean.parseBoolean(parts[10])
+                record.tokenId(),
+                record.familyId(),
+                record.userUuid(),
+                record.tokenHash(),
+                fromEpochSecond(record.issuedAt()),
+                fromEpochSecond(record.lastUsedAt()),
+                LocalDateTime.ofEpochSecond(record.expiryDate(), 0, ZoneOffset.UTC),
+                record.userAgent(),
+                record.deviceLabel(),
+                record.ipAddress(),
+                record.revoked()
         );
     }
 
@@ -384,6 +364,21 @@ public class AuthSessionService {
         private boolean isExpired() {
             return expiryDate.isBefore(LocalDateTime.now());
         }
+    }
+
+    private record RefreshTokenCacheRecord(
+            String tokenId,
+            String familyId,
+            String userUuid,
+            String tokenHash,
+            long issuedAt,
+            long lastUsedAt,
+            long expiryDate,
+            String userAgent,
+            String deviceLabel,
+            String ipAddress,
+            boolean revoked
+    ) {
     }
 
     private void revokeRefreshToken(String tokenId, String familyId, String replacementState) {
@@ -474,19 +469,11 @@ public class AuthSessionService {
         return (dateTime == null ? LocalDateTime.now() : dateTime).toEpochSecond(ZoneOffset.UTC);
     }
 
-    private LocalDateTime fromEpochSecond(String epochSecond) {
-        if (epochSecond == null || epochSecond.isBlank()) {
+    private LocalDateTime fromEpochSecond(long epochSecond) {
+        if (epochSecond <= 0) {
             return null;
         }
-        return LocalDateTime.ofEpochSecond(Long.parseLong(epochSecond), 0, ZoneOffset.UTC);
-    }
-
-    private String nullSafe(String value) {
-        return value == null ? "" : value;
-    }
-
-    private String emptyToNull(String value) {
-        return value == null || value.isBlank() ? null : value;
+        return LocalDateTime.ofEpochSecond(epochSecond, 0, ZoneOffset.UTC);
     }
 
     private String trim(String value, int maxLength) {
