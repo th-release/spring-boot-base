@@ -154,7 +154,8 @@ public class MfaService {
     }
 
     private String generateBase32Secret() {
-        byte[] randomBytes = Base64.getDecoder().decode(Base64.getEncoder().encodeToString(java.security.SecureRandom.getSeed(20)));
+        byte[] randomBytes = new byte[20];
+        new java.security.SecureRandom().nextBytes(randomBytes);
         return encodeBase32(randomBytes);
     }
 

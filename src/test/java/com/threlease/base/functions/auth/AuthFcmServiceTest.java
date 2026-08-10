@@ -1,0 +1,45 @@
+package com.threlease.base.functions.auth;
+
+import com.threlease.base.common.utils.firebase.FirebaseUtils;
+import com.threlease.base.entities.AuthEntity;
+import com.threlease.base.entities.FcmDeviceTokenEntity;
+import com.threlease.base.functions.auth.dto.FcmPushRequestDto;
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+class AuthFcmServiceTest {
+
+    @Test
+    void pushToUserContinuesWhenOneDeviceFails() throws Exception {
+        FcmDeviceTokenService tokenService = mock(FcmDeviceTokenService.class);
+        FirebaseUtils firebaseUtils = mock(FirebaseUtils.class);
+        AuditLogService auditLogService = mock(AuditLogService.class);
+        AuthAdminService authAdminService = mock(AuthAdminService.class);
+        FcmNotificationService notificationService = mock(FcmNotificationService.class);
+
+        AuthFcmService service = new AuthFcmService(tokenService, firebaseUtils, auditLogService, authAdminService, notificationService);
+        AuthEntity admin = AuthEntity.builder().uuid("admin-1").build();
+
+        FcmDeviceTokenEntity token1 = FcmDeviceTokenEntity.builder().deviceToken("token-1").build();
+        FcmDeviceTokenEntity token2 = FcmDeviceTokenEntity.builder().deviceToken("token-2").build();
+        when(tokenService.getTokensForUser("user-1")).thenReturn(List.of(token1, token2));
+        when(firebaseUtils.isEnabled()).thenReturn(true);
+        when(firebaseUtils.sendNotification("token-1", "title", "body", null)).thenReturn("msg-1");
+        when(firebaseUtils.sendNotification("token-2", "title", "body", null)).thenThrow(new RuntimeException("boom"));
+
+        FcmPushRequestDto dto = new FcmPushRequestDto();
+        dto.setTitle("title");
+        dto.setBody("body");
+
+        List<String> messageIds = service.pushToUser(admin, "user-1", dto, null);
+
+        assertEquals(List.of("msg-1"), messageIds);
+    }
+}

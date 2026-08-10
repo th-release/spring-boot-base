@@ -52,6 +52,7 @@ public class AuthAdminBootstrap {
         admin.setPassword(encodedPassword.passwordHash());
         admin.setSalt(encodedPassword.salt());
         authService.authSave(admin);
+        authService.logoutAll(admin.getUuid());
         log.warn("Initial admin password was reset by app.admin.reset-password-on-startup=true. username={}", admin.getUsername());
     }
 

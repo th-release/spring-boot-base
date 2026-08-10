@@ -60,18 +60,17 @@ public class AuthFcmService {
             throw new BusinessException(ErrorCode.FIREBASE_DISABLED);
         }
 
-        List<String> messageIds = fcmDeviceTokenService.getTokensForUser(uuid).stream()
-                .map(token -> {
-                    try {
-                        String messageId = firebaseUtils.sendNotification(token.getDeviceToken(), dto.getTitle(), dto.getBody(), dto.getData());
-                        fcmNotificationService.saveSentNotification(uuid, messageId, dto.getTitle(), dto.getBody(), dto.getData());
-                        return messageId;
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                })
-                .toList();
-        auditLogService.logAdmin(admin.getUuid(), "ADMIN_SEND_FCM_PUSH", "FCM", uuid, true, request, "Admin sent FCM push to user devices");
+        List<String> messageIds = new java.util.ArrayList<>();
+        for (FcmDeviceTokenEntity token : fcmDeviceTokenService.getTokensForUser(uuid)) {
+            try {
+                String messageId = firebaseUtils.sendNotification(token.getDeviceToken(), dto.getTitle(), dto.getBody(), dto.getData());
+                fcmNotificationService.saveSentNotification(uuid, messageId, dto.getTitle(), dto.getBody(), dto.getData());
+                messageIds.add(messageId);
+            } catch (Exception e) {
+                // 한 디바이스 실패가 전체 발송을 막지 않도록 개별 실패를 무시합니다.
+            }
+        }
+        auditLogService.logAdmin(admin.getUuid(), "ADMIN_SEND_FCM_PUSH", "FCM", uuid, !messageIds.isEmpty(), request, "Admin sent FCM push to user devices");
         return messageIds;
     }
 

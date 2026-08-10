@@ -84,15 +84,22 @@ public class S3StorageService implements StorageService {
 
     @Override
     public String getDownloadUrl(FileEntity fileEntity) {
+        return getDownloadUrl(fileEntity, true);
+    }
+
+    @Override
+    public String getDownloadUrl(FileEntity fileEntity, boolean download) {
         S3Presigner presigner = s3PresignerProvider.getIfAvailable();
         if (presigner == null) {
             throw new BusinessException(ErrorCode.INTERNAL_ERROR, "S3 presigner가 설정되지 않았습니다.");
         }
 
+        String disposition = download ? "attachment" : "inline";
+
         GetObjectRequest getObjectRequest = GetObjectRequest.builder()
                 .bucket(s3Properties.getBucket())
                 .key(fileEntity.getFilePath())
-                .responseContentDisposition("attachment; filename=\"" + fileEntity.getOriginalFileName() + "\"")
+                .responseContentDisposition(disposition + "; filename=\"" + fileEntity.getOriginalFileName() + "\"")
                 .build();
 
         GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()

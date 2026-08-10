@@ -81,7 +81,7 @@ public class FileService {
 
         if (fileEntity.getStorageType() == FileEntity.StorageType.S3) {
             return ResponseEntity.status(302)
-                    .location(URI.create(storageService.getDownloadUrl(fileEntity)))
+                    .location(URI.create(storageService.getDownloadUrl(fileEntity, download)))
                     .build();
         }
 
@@ -131,7 +131,7 @@ public class FileService {
 
     private String resolveImmediateAccessUrl(FileEntity fileEntity) {
         if (fileEntity.getStorageType() == FileEntity.StorageType.S3) {
-            return storageService.getDownloadUrl(fileEntity);
+            return storageService.getDownloadUrl(fileEntity, true);
         }
         String token = fileDownloadTokenService.createToken(fileEntity.getUuid(), fileEntity.getFilePath(), 10);
         return fileEntity.getUrl() + "?token=" + token + "&download=true";
@@ -139,7 +139,7 @@ public class FileService {
 
     private String resolveDownloadUrl(FileEntity fileEntity) {
         if (fileEntity.getStorageType() == FileEntity.StorageType.S3) {
-            return storageService.getDownloadUrl(fileEntity);
+            return storageService.getDownloadUrl(fileEntity, true);
         }
 
         String token = fileDownloadTokenService.createToken(fileEntity.getUuid(), fileEntity.getFilePath(), 10);

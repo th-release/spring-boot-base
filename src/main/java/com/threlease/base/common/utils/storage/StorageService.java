@@ -26,4 +26,11 @@ public interface StorageService {
      * 다운로드용 URL을 생성합니다.
      */
     String getDownloadUrl(FileEntity fileEntity);
+
+    /**
+     * 다운로드/미리보기 성격을 반영한 URL을 생성합니다.
+     */
+    default String getDownloadUrl(FileEntity fileEntity, boolean download) {
+        return getDownloadUrl(fileEntity);
+    }
 }

@@ -85,6 +85,11 @@ public class LocalStorageService implements StorageService {
 
     @Override
     public String getDownloadUrl(FileEntity fileEntity) {
-        return getUrl(fileEntity.getFilePath());
+        return getDownloadUrl(fileEntity, true);
+    }
+
+    @Override
+    public String getDownloadUrl(FileEntity fileEntity, boolean download) {
+        return getUrl(fileEntity.getFilePath()) + (download ? "?download=true" : "?download=false");
     }
 }
