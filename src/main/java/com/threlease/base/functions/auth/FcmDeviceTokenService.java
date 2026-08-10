@@ -2,12 +2,12 @@ package com.threlease.base.functions.auth;
 
 import com.threlease.base.common.exception.BusinessException;
 import com.threlease.base.common.exception.ErrorCode;
-import com.threlease.base.common.annotation.DistributedLock;
 import com.threlease.base.common.utils.DeviceUtils;
 import com.threlease.base.entities.AuthEntity;
 import com.threlease.base.entities.FcmDeviceTokenEntity;
 import com.threlease.base.repositories.auth.FcmDeviceTokenRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,14 +18,15 @@ import java.util.List;
 @RequiredArgsConstructor
 public class FcmDeviceTokenService {
     private final FcmDeviceTokenRepository fcmDeviceTokenRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     public List<FcmDeviceTokenEntity> getMyTokens(String userUuid) {
         return fcmDeviceTokenRepository.findAllByUserAndEnabledTrueOrderByLastUsedAtDesc(AuthEntity.builder().uuid(userUuid).build());
     }
 
     @Transactional
-    @DistributedLock(key = "#deviceToken", waitTime = 5L, leaseTime = 5L)
     public FcmDeviceTokenEntity register(AuthEntity auth, String deviceToken, String deviceLabel, String userAgent, String ipAddress) {
+        lockDeviceToken(deviceToken);
         List<FcmDeviceTokenEntity> existingTokens = fcmDeviceTokenRepository.findAllActiveByDeviceToken(deviceToken);
         String normalizedDeviceLabel = deviceLabel == null || deviceLabel.isBlank() ? DeviceUtils.describe(userAgent) : deviceLabel;
         String normalizedUserAgent = userAgent == null ? null : userAgent.substring(0, Math.min(userAgent.length(), 512));
@@ -70,8 +71,8 @@ public class FcmDeviceTokenService {
     }
 
     @Transactional
-    @DistributedLock(key = "#deviceToken", waitTime = 5L, leaseTime = 5L)
     public int disableByDeviceToken(String deviceToken) {
+        lockDeviceToken(deviceToken);
         int disabledCount = 0;
         for (FcmDeviceTokenEntity entity : fcmDeviceTokenRepository.findAllActiveByDeviceToken(deviceToken)) {
             fcmDeviceTokenRepository.delete(entity);
@@ -82,5 +83,12 @@ public class FcmDeviceTokenService {
 
     public List<FcmDeviceTokenEntity> getTokensForUser(String userUuid) {
         return fcmDeviceTokenRepository.findAllByUserAndEnabledTrueOrderByLastUsedAtDesc(AuthEntity.builder().uuid(userUuid).build());
+    }
+
+    private void lockDeviceToken(String deviceToken) {
+        Boolean acquired = jdbcTemplate.queryForObject("select pg_try_advisory_xact_lock(hashtext(?))", Boolean.class, deviceToken);
+        if (!Boolean.TRUE.equals(acquired)) {
+            throw new BusinessException(ErrorCode.TOO_MANY_REQUESTS);
+        }
     }
 }
