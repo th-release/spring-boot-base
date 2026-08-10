@@ -57,9 +57,9 @@ public class AuthFlowService {
         }
 
         mfaService.verifyLogin(auth, dto.getOtpCode());
+        TokenResponseDto response = authService.issueTokens(auth, userAgent, clientIp);
         authService.recordSuccessfulLogin(auth, clientIp, userAgent);
         auditLogService.log(auth.getUuid(), "LOGIN", "AUTH", auth.getUuid(), true, request, "User login succeeded");
-        TokenResponseDto response = authService.issueTokens(auth, userAgent, clientIp);
         response.setMfaEnabled(mfaService.isEnabled(auth));
         response.setMfaEnrollmentRequired(mfaService.isEnrollmentRequired(auth));
         return response;

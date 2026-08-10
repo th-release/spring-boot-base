@@ -1,6 +1,7 @@
 package com.threlease.base.common.utils.crypto;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -10,7 +11,7 @@ public class HashComponent {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-512");
 
-            byte[] messageDigest = md.digest(input.getBytes());
+            byte[] messageDigest = md.digest(input.getBytes(StandardCharsets.UTF_8));
 
             // Convert byte array to hexadecimal string
             StringBuilder hexString = new StringBuilder();
@@ -24,9 +25,7 @@ public class HashComponent {
 
             return hexString.toString();
         } catch (NoSuchAlgorithmException e) {
-            // Handle NoSuchAlgorithmException (unavailable algorithm)
-            e.printStackTrace();
-            return null;
+            throw new IllegalStateException("SHA-512 algorithm is unavailable", e);
         }
     }
 
@@ -34,7 +33,7 @@ public class HashComponent {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
 
-            byte[] messageDigest = md.digest(input.getBytes());
+            byte[] messageDigest = md.digest(input.getBytes(StandardCharsets.UTF_8));
 
             // Convert byte array to hexadecimal string
             StringBuilder hexString = new StringBuilder();
@@ -48,9 +47,7 @@ public class HashComponent {
 
             return hexString.toString();
         } catch (NoSuchAlgorithmException e) {
-            // Handle NoSuchAlgorithmException (unavailable algorithm)
-            e.printStackTrace();
-            return null;
+            throw new IllegalStateException("SHA-256 algorithm is unavailable", e);
         }
     }
 }
