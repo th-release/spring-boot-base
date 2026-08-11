@@ -17,11 +17,11 @@ spring:
     # JDBC 드라이버 클래스명
     driver-class-name: org.postgresql.Driver
     # 공통 DB 연결 URL. currentSchema는 JPA_SCHEMA 값을 사용
-    url: jdbc:postgresql://${DATABASE_HOST:127.0.0.1}:${DATABASE_PORT:5432}/${DATABASE_DATABASE:base}?characterEncoding=UTF-8&allowMultiQueries=true&allowMultiQueries=true&currentSchema=${JPA_SCHEMA:base}
+    url: jdbc:postgresql://${DATABASE_HOST:127.0.0.1}:${DATABASE_PORT:5432}/${DATABASE_DATABASE:base}?currentSchema=${JPA_SCHEMA:base}
     # DB 접속 계정
-    username: ${DATABASE_USERNAME:root}
+    username: ${DATABASE_USERNAME:}
     # DB 접속 비밀번호
-    password: ${DATABASE_PASSWORD:root}
+    password: ${DATABASE_PASSWORD:}
     hikari:
       # 커넥션 풀 최대 크기
       maximum-pool-size: ${DATABASE_MAXIMUM_POOL_SIZE:50}
@@ -69,7 +69,7 @@ spring:
 crypto:
   aes:
     # AES 암복호화 키
-    secret-key: ${AES_SECRET_KEY:R3zmKTgCnAp1m0zRd5DCVmTA3GQhYPYd+iJsbk1+l9c=}
+    secret-key: ${AES_SECRET_KEY:}
 
 springdoc:
   # Swagger UI와 OpenAPI 문서 경로 설정

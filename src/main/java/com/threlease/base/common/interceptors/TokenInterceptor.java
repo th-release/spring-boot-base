@@ -27,6 +27,15 @@ public class TokenInterceptor implements HandlerInterceptor {
             return true;
         }
 
+        AuthEntity cachedUser = (AuthEntity) request.getAttribute("user");
+        if (cachedUser != null) {
+            UsernamePasswordAuthenticationToken authentication =
+                    UsernamePasswordAuthenticationToken.authenticated(cachedUser.getUuid(), null, List.of());
+            authentication.setDetails(cachedUser);
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            return true;
+        }
+
         String token = request.getHeader("Authorization");
 
         if (token == null || token.isBlank()) {

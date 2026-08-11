@@ -5,6 +5,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest(properties = {
 		"app.jwt.secret-key=Nwzbu8o3Rkf0iOJj0wpY2i749zjM7kr6Hnnl6x/n4e+tJoAmn5wYJt/jeFX71cawaR4kQFTw1ACeJgsHAJ/AeA==",
+		"crypto.aes.secret-key=vN7NssQ8SIlLZ/qKHf9fFZqQgHJ5smcdTme3bChtI6A=",
 		"app.token.storage=rdb",
 		"app.redis.enabled=false",
 		"spring.flyway.enabled=false",

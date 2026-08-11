@@ -66,7 +66,7 @@ public class AuthAccountController {
 
     @GetMapping("/@me")
     @Operation(summary = "내 정보 조회")
-    public ResponseEntity<BasicResponse<AuthProfileDto>> me(@RequestHeader(HttpConstants.HEADER_AUTHORIZATION) String token) {
-        return BasicResponse.ok(authFlowService.getMyProfile(token));
+    public ResponseEntity<BasicResponse<AuthProfileDto>> me(HttpServletRequest request) {
+        return BasicResponse.ok(authFlowService.getMyProfile((AuthEntity) request.getAttribute("user")));
     }
 }

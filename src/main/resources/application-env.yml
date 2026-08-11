@@ -82,7 +82,7 @@ app:
     cache-prefix: ${REDIS_CACHE_PREFIX:v1}
   jwt:
     # JWT 서명 키
-    secret-key: ${JWT_SECRET_KEY:4zB0ZR7iYAfapSSkFfQKP33FYQHJx3o/frfaL2oZNvM9OvWt5IPUZaTH+3imbJGaNDN68VHWaCmB+IdyQHmWKQ==}
+    secret-key: ${JWT_SECRET_KEY:}
   cache:
     # 기본 캐시 TTL(초)
     default-ttl-seconds: ${CACHE_DEFAULT_TTL_SECONDS:3600}
@@ -128,15 +128,15 @@ app:
       required-types: []
   admin:
     # 초기 관리자 계정 자동 생성 활성화 여부
-    enabled: ${ADMIN_ENABLED:true}
+    enabled: ${ADMIN_ENABLED:false}
     # 초기 관리자 로그인 아이디
-    username: ${ADMIN_USERNAME:admin}
+    username: ${ADMIN_USERNAME:}
     # 초기 관리자 비밀번호
-    password: ${ADMIN_PASSWORD:Admin1234!}
+    password: ${ADMIN_PASSWORD:}
     # 초기 관리자 표시 이름
     nickname: ${ADMIN_NICKNAME:관리자}
     # 초기 관리자 이메일
-    email: ${ADMIN_EMAIL:admin@base.local}
+    email: ${ADMIN_EMAIL:}
     # 기존 관리자 계정이 이미 있을 때 시작 시 비밀번호를 설정값으로 재설정할지 여부
     reset-password-on-startup: ${ADMIN_RESET_PASSWORD_ON_STARTUP:false}
   token:

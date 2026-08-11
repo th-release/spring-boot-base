@@ -194,9 +194,10 @@ public class AuthFlowService {
         auditLogService.log(user.getUuid(), "REGISTER_MFA", "AUTH", user.getUuid(), true, request, "MFA enrollment completed");
     }
 
-    public AuthProfileDto getMyProfile(String token) {
-        AuthEntity user = authService.findOneByToken(token)
-                .orElseThrow(() -> new BusinessException(ErrorCode.TOKEN_INVALID));
+    public AuthProfileDto getMyProfile(AuthEntity user) {
+        if (user == null) {
+            throw new BusinessException(ErrorCode.TOKEN_INVALID);
+        }
         return authService.toAuthProfile(user);
     }
 }

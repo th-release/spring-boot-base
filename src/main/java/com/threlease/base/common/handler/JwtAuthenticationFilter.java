@@ -37,14 +37,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (authorization == null || authorization.isBlank()) {
                 throw new AuthenticationCredentialsNotFoundException("TOKEN_MISSING");
             }
+            if (!authorization.toLowerCase().startsWith("bearer ")) {
+                throw new BadCredentialsException("TOKEN_INVALID");
+            }
 
-            AuthEntity user = authService.findOneByToken(authorization)
+            String token = authorization.substring(7).trim();
+            if (token.isBlank()) {
+                throw new BadCredentialsException("TOKEN_INVALID");
+            }
+
+            AuthEntity user = authService.findOneByToken(token)
                     .orElseThrow(() -> new BadCredentialsException("TOKEN_INVALID"));
 
             UsernamePasswordAuthenticationToken authentication =
                     UsernamePasswordAuthenticationToken.authenticated(user.getUuid(), null, List.of());
             authentication.setDetails(user);
             SecurityContextHolder.getContext().setAuthentication(authentication);
+            request.setAttribute("user", user);
 
             filterChain.doFilter(request, response);
         } finally {

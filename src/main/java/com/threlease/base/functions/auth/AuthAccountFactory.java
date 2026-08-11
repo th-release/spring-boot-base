@@ -2,6 +2,8 @@ package com.threlease.base.functions.auth;
 
 import com.threlease.base.common.enums.AuthStatuses;
 import com.threlease.base.common.enums.AuthTypes;
+import com.threlease.base.common.exception.BusinessException;
+import com.threlease.base.common.exception.ErrorCode;
 import com.threlease.base.entities.AuthEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -37,6 +39,9 @@ public class AuthAccountFactory {
         if (value == null) {
             return null;
         }
-        return value.substring(0, Math.min(value.length(), maxLength));
+        if (value.length() > maxLength) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
+        return value;
     }
 }
