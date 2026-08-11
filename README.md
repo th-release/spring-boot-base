@@ -83,22 +83,19 @@ src/main/java/com/threlease/base
 ```yml
 spring:
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:local}
+    active: ${SPRING_PROFILES_ACTIVE:env}
 ```
 
 ### 프로필별 설정
 
-- `application-local.yml`
-- `application-dev.yml`
-- `application-prod.yml`
 - `application-env.yml`
 
-역할은 아래와 같습니다.
+현재 저장소에는 `application-env.yml`만 포함되어 있으며, 기본 실행 프로필도 `env`로 설정되어 있습니다.
 
-- `local`, `dev`, `prod`
-  - 베이스 프로젝트 커스텀 기능을 고정값으로 관리
 - `env`
   - 베이스 프로젝트 커스텀 기능을 환경변수 기반으로 관리
+
+필요하다면 서비스별로 `application-local.yml`, `application-dev.yml`, `application-prod.yml`을 추가해서 사용할 수 있습니다.
 
 주요 커스텀 설정 범위:
 
