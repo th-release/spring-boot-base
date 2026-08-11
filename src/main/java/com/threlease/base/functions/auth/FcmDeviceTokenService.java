@@ -28,7 +28,7 @@ public class FcmDeviceTokenService {
     public FcmDeviceTokenEntity register(AuthEntity auth, String deviceToken, String deviceLabel, String userAgent, String ipAddress) {
         lockDeviceToken(deviceToken);
         List<FcmDeviceTokenEntity> existingTokens = fcmDeviceTokenRepository.findAllActiveByDeviceToken(deviceToken);
-        String normalizedDeviceLabel = deviceLabel == null || deviceLabel.isBlank() ? DeviceUtils.describe(userAgent) : deviceLabel;
+        String normalizedDeviceLabel = trim(deviceLabel == null || deviceLabel.isBlank() ? DeviceUtils.describe(userAgent) : deviceLabel, 120);
         String normalizedUserAgent = userAgent == null ? null : userAgent.substring(0, Math.min(userAgent.length(), 512));
         String normalizedIpAddress = ipAddress == null ? null : ipAddress.substring(0, Math.min(ipAddress.length(), 64));
         LocalDateTime now = LocalDateTime.now();
@@ -90,5 +90,12 @@ public class FcmDeviceTokenService {
         if (!Boolean.TRUE.equals(acquired)) {
             throw new BusinessException(ErrorCode.TOO_MANY_REQUESTS);
         }
+    }
+
+    private String trim(String value, int maxLength) {
+        if (value == null) {
+            return null;
+        }
+        return value.substring(0, Math.min(value.length(), maxLength));
     }
 }

@@ -87,10 +87,7 @@ public class MfaService {
         if (!authSecurityProperties.getMfa().isEnabled()) {
             return false;
         }
-        if (isEnabled(user)) {
-            return true;
-        }
-        return false;
+        return isEnabled(user) || authSecurityProperties.getMfa().isRequiredFor(user == null ? null : user.getType());
     }
 
     public boolean isEnrollmentRequired(AuthEntity user) {

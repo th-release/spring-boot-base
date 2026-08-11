@@ -121,9 +121,9 @@ spring:
 대표 클래스:
 
 - `functions/auth/v1/AuthPublicController`
-- `functions/auth/v1/AuthSessionController`
-- `functions/auth/v1/AuthPasswordController`
-- `functions/auth/v1/AuthMfaController`
+- `functions/auth/v1/AuthAccountController`
+- `functions/auth/v1/AuthEmailController`
+- `functions/auth/v1/AuthMfaController` (when enabled)
 - `functions/auth/v1/AuthAdminController`
 - `functions/auth/AuthService`
 - `functions/auth/AuthFlowService`

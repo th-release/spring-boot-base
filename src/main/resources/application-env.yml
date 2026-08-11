@@ -242,7 +242,7 @@ management:
     web:
       exposure:
         # 외부 노출할 actuator endpoint 목록
-        include: ${MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE:health}
+        include: ${MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE:health,prometheus,metrics}
   endpoint:
     health:
       # health 상세정보 노출 수준

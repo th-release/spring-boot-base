@@ -13,6 +13,9 @@ class ApiAccessRulesTest {
         assertTrue(ApiAccessRules.isPublicRequest("HEAD", "/dashboard"));
         assertTrue(ApiAccessRules.isPublicRequest("GET", "/api/v1/auth/login"));
         assertTrue(ApiAccessRules.isPublicRequest("GET", "/api/v1/files/content/sample"));
+        assertTrue(ApiAccessRules.isPublicRequest("GET", "/api/swagger"));
+        assertTrue(ApiAccessRules.isPublicRequest("GET", "/api/v3/api-docs"));
+        assertTrue(ApiAccessRules.isPublicRequest("GET", "/api/actuator/prometheus"));
     }
 
     @Test

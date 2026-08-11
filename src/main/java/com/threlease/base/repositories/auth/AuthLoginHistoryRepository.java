@@ -13,7 +13,7 @@ public interface AuthLoginHistoryRepository extends JpaRepository<AuthLoginHisto
             SELECT h
             FROM AuthLoginHistoryEntity h
             WHERE h.user = :user
-            ORDER BY h.createdAt DESC, h.id DESC
+            ORDER BY h.createdAt DESC, h.uuid DESC
             """)
     Page<AuthLoginHistoryEntity> findRecentByUser(@Param("user") AuthEntity user, Pageable pageable);
 
@@ -22,7 +22,7 @@ public interface AuthLoginHistoryRepository extends JpaRepository<AuthLoginHisto
             FROM AuthLoginHistoryEntity h
             WHERE h.user = :user
               AND h.success = true
-            ORDER BY h.createdAt DESC, h.id DESC
+            ORDER BY h.createdAt DESC, h.uuid DESC
             """)
     Page<AuthLoginHistoryEntity> findRecentSuccessfulByUser(@Param("user") AuthEntity user, Pageable pageable);
 }

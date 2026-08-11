@@ -2,6 +2,7 @@ package com.threlease.base.common.properties.app.auth;
 
 import lombok.Getter;
 import lombok.Setter;
+import com.threlease.base.common.enums.AuthTypes;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
@@ -42,6 +43,13 @@ public class AuthSecurityProperties {
         private int timeStepSeconds = 30;
         private int allowedWindows = 1;
         private List<String> requiredTypes = new ArrayList<>();
+
+        public boolean isRequiredFor(AuthTypes type) {
+            if (type == null || requiredTypes == null || requiredTypes.isEmpty()) {
+                return false;
+            }
+            return requiredTypes.stream().anyMatch(requiredType -> requiredType != null && requiredType.equalsIgnoreCase(type.name()));
+        }
     }
 
     @Getter

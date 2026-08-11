@@ -162,7 +162,7 @@ public class AuthFlowService {
         }
 
         if (emailProperties.isEnabled()) {
-            authVerificationService.verifyCode(user, AuthVerificationType.PASSWORD_RESET, dto.getVerificationCode());
+            authVerificationService.verifyCode(user, AuthVerificationType.PASSWORD_RESET, user.getEmail(), dto.getVerificationCode());
             AuthPasswordService.EncodedPassword encodedPassword = authPasswordService.encode(dto.getNewPassword());
             authService.changePassword(user, encodedPassword.passwordHash(), encodedPassword.salt());
             authService.logoutAll(user.getUuid());

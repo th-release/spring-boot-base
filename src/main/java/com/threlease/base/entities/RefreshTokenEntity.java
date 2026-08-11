@@ -13,7 +13,9 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @Setter
-@Table(name = "tb_refresh_token")
+@Table(name = "tb_refresh_token", uniqueConstraints = {
+        @jakarta.persistence.UniqueConstraint(name = "uq_tb_refresh_token_token_id", columnNames = "token_id")
+})
 @NoArgsConstructor
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
@@ -40,9 +42,6 @@ public class RefreshTokenEntity extends BaseEntity {
 
     @Column(name = "token_hash", nullable = false, length = 1024)
     private String tokenHash;
-
-    @Column(name = "token", nullable = false, length = 1024)
-    private String token;
 
     @Column(name = "expiry_date", nullable = false)
     @ExcelColumn(headerName = "만료 시간", order = 4)

@@ -39,7 +39,7 @@ public class AuthVerificationService {
         return code;
     }
 
-    public void verifyCode(AuthEntity auth, AuthVerificationType type, String code) {
+    public void verifyCode(AuthEntity auth, AuthVerificationType type, String target, String code) {
         if (code == null || code.isBlank()) {
             throw new BusinessException(ErrorCode.PASSWORD_RESET_CODE_INVALID);
         }
@@ -54,6 +54,9 @@ public class AuthVerificationService {
             throw new BusinessException(ErrorCode.PASSWORD_RESET_CODE_EXPIRED);
         }
         if (verification.getLockedUntil() != null && verification.getLockedUntil().isAfter(LocalDateTime.now())) {
+            throw new BusinessException(ErrorCode.PASSWORD_RESET_CODE_INVALID);
+        }
+        if (target == null || !target.equals(verification.getTarget())) {
             throw new BusinessException(ErrorCode.PASSWORD_RESET_CODE_INVALID);
         }
 

@@ -11,8 +11,12 @@ public final class ApiAccessRules {
             "/api/v1/auth/password/reset/confirm",
             "/api/v1/files/content/",
             "/api/common/enums",
+            "/api/swagger",
+            "/api/v3/api-docs",
             "/api/swagger-ui/",
             "/api/v3/api-docs/",
+            "/api/actuator/prometheus",
+            "/api/actuator/metrics",
             "/api/actuator/health"
     );
 

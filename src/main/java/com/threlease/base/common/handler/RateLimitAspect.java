@@ -66,9 +66,10 @@ public class RateLimitAspect {
 
     private long handleLocalRateLimit(String key, int windowSeconds) {
         long now = Instant.now().getEpochSecond();
+        cleanupExpiredLocalEntries(now);
         Long expiration = localExpiration.get(key);
 
-        if (expiration == null || now > expiration) {
+        if (expiration == null || now >= expiration) {
             localCache.put(key, 1L);
             localExpiration.put(key, now + windowSeconds);
             return 1L;
@@ -77,6 +78,11 @@ public class RateLimitAspect {
         long count = localCache.getOrDefault(key, 0L) + 1;
         localCache.put(key, count);
         return count;
+    }
+
+    private void cleanupExpiredLocalEntries(long now) {
+        localExpiration.entrySet().removeIf(entry -> entry.getValue() == null || entry.getValue() <= now);
+        localCache.keySet().removeIf(key -> !localExpiration.containsKey(key));
     }
 
     private String getIdentifier(HttpServletRequest request) {

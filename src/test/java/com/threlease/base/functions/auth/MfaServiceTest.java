@@ -107,6 +107,35 @@ class MfaServiceTest {
         assertDoesNotThrow(() -> mfaService.verifyLogin(user, null));
     }
 
+    @Test
+    void verifyLoginRequiresOtpForConfiguredAuthType() {
+        AuthSecurityProperties properties = new AuthSecurityProperties();
+        properties.getMfa().setEnabled(true);
+        properties.getMfa().getRequiredTypes().add("GENERAL");
+
+        AuthMfaRepository authMfaRepository = mock(AuthMfaRepository.class);
+        when(authMfaRepository.findLatestActiveByUser(any(AuthEntity.class), any())).thenReturn(new PageImpl<>(List.of()));
+
+        CryptoProperties cryptoProperties = new CryptoProperties();
+        CryptoProperties.AesProperties aesProperties = new CryptoProperties.AesProperties();
+        aesProperties.setSecretKey("R3zmKTgCnAp1m0zRd5DCVmTA3GQhYPYd+iJsbk1+l9c=");
+        cryptoProperties.setAes(aesProperties);
+
+        AesComponent aesComponent = new AesComponent(cryptoProperties);
+        aesComponent.init();
+
+        QrCodeProperties qrCodeProperties = new QrCodeProperties();
+        qrCodeProperties.setWidth(300);
+        qrCodeProperties.setHeight(300);
+        qrCodeProperties.setFormat("PNG");
+        qrCodeProperties.setCharset("UTF-8");
+        qrCodeProperties.setMargin(1);
+
+        MfaService requiredMfaService = new MfaService(properties, authMfaRepository, aesComponent, new QRCode(qrCodeProperties));
+
+        assertThrows(BusinessException.class, () -> requiredMfaService.verifyLogin(user, null));
+    }
+
     private String generateTotp(String base32Secret, long timestep, int digits) {
         try {
             byte[] key = decodeBase32(base32Secret);

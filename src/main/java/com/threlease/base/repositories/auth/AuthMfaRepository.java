@@ -13,7 +13,7 @@ public interface AuthMfaRepository extends JpaRepository<AuthMfaEntity, String> 
             SELECT m
             FROM AuthMfaEntity m
             WHERE m.user = :user
-            ORDER BY m.createdAt DESC, m.id DESC
+            ORDER BY m.createdAt DESC, m.uuid DESC
             """)
     Page<AuthMfaEntity> findLatestActiveByUser(@Param("user") AuthEntity user, Pageable pageable);
 }

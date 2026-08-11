@@ -224,7 +224,6 @@ public class AuthSessionService {
                     .tokenId(tokenId)
                     .familyId(familyId)
                     .tokenHash(hashedToken)
-                    .token(hashedToken)
                     .userAgent(normalizedUserAgent)
                     .deviceLabel(deviceLabel)
                     .ipAddress(normalizedIp)
@@ -279,9 +278,10 @@ public class AuthSessionService {
                     redisTemplate.delete(buildRedisTokenKey(tokenId));
                     if (record != null) {
                         redisTemplate.opsForSet().remove(buildRedisUserKey(record.userUuid()), tokenId);
+                        cleanupEmptyRedisSet(buildRedisUserKey(record.userUuid()));
                     }
                 }));
-        redisTemplate.delete(familyKey);
+        cleanupEmptyRedisSet(familyKey);
     }
 
     private RefreshTokenRecord toRefreshTokenRecord(RefreshTokenEntity entity) {
@@ -400,6 +400,8 @@ public class AuthSessionService {
         redisTemplate.delete(buildRedisTokenKey(tokenId));
         redisTemplate.opsForSet().remove(buildRedisFamilyKey(familyId), tokenId);
         redisTemplate.opsForSet().remove(buildRedisUserKey(record.userUuid()), tokenId);
+        cleanupEmptyRedisSet(buildRedisFamilyKey(familyId));
+        cleanupEmptyRedisSet(buildRedisUserKey(record.userUuid()));
     }
 
     private List<RefreshTokenRecord> getActiveRefreshTokenRecords(String userUuid) {
@@ -455,6 +457,14 @@ public class AuthSessionService {
             throw new IllegalStateException("StringRedisTemplate is required when app.token.storage is not 'rdb'");
         }
         return redisTemplate;
+    }
+
+    private void cleanupEmptyRedisSet(String key) {
+        StringRedisTemplate redisTemplate = getRedisTemplate();
+        Long size = redisTemplate.opsForSet().size(key);
+        if (size == null || size == 0L) {
+            redisTemplate.delete(key);
+        }
     }
 
     private AuthEntity authRef(String uuid) {

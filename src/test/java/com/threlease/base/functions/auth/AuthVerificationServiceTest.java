@@ -67,7 +67,7 @@ class AuthVerificationServiceTest {
         when(authVerificationRepository.findLatestByUserAndTypeAndVerifiedFalse(any(AuthEntity.class), any(AuthVerificationType.class), any()))
                 .thenReturn(new PageImpl<>(java.util.List.of(entity)));
 
-        assertThrows(BusinessException.class, () -> authVerificationService.verifyCode(auth, AuthVerificationType.PASSWORD_RESET, "123456"));
+        assertThrows(BusinessException.class, () -> authVerificationService.verifyCode(auth, AuthVerificationType.PASSWORD_RESET, "user@example.com", "123456"));
     }
 
     @Test
@@ -94,6 +94,28 @@ class AuthVerificationServiceTest {
                 .thenReturn(new PageImpl<>(java.util.List.of(entity)));
         when(authVerificationRepository.save(any(AuthVerificationEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        assertDoesNotThrow(() -> authVerificationService.verifyCode(auth, AuthVerificationType.PASSWORD_RESET, code));
+        assertDoesNotThrow(() -> authVerificationService.verifyCode(auth, AuthVerificationType.PASSWORD_RESET, "user@example.com", code));
+    }
+
+    @Test
+    void verifyCodeFailsWhenTargetDoesNotMatch() {
+        AuthEntity auth = AuthEntity.builder()
+                .uuid("user-1")
+                .email("user@example.com")
+                .build();
+
+        AuthVerificationEntity entity = AuthVerificationEntity.builder()
+                .user(auth)
+                .type(AuthVerificationType.PASSWORD_RESET)
+                .target("user@example.com")
+                .verificationHash(new HashComponent().generateSHA256("123456"))
+                .expiresAt(LocalDateTime.now().plusMinutes(10))
+                .verified(false)
+                .build();
+
+        when(authVerificationRepository.findLatestByUserAndTypeAndVerifiedFalse(any(AuthEntity.class), any(AuthVerificationType.class), any()))
+                .thenReturn(new PageImpl<>(java.util.List.of(entity)));
+
+        assertThrows(BusinessException.class, () -> authVerificationService.verifyCode(auth, AuthVerificationType.PASSWORD_RESET, "other@example.com", "123456"));
     }
 }

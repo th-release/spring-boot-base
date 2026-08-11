@@ -21,7 +21,9 @@ create table tb_auth
         constraint tb_auth_type_check
             check ((type)::text = ANY
         ((ARRAY ['GENERAL'::character varying, 'INTERNAL'::character varying, 'EXTERNAL'::character varying])::text[])),
-    username                   varchar(24)  not null
+    username                   varchar(24)  not null,
+    constraint uq_tb_auth_username unique (username),
+    constraint uq_tb_auth_email unique (email)
 );
 
 create table tb_auth_login_history
@@ -57,6 +59,7 @@ create table tb_auth_mfa
     user_uuid  varchar(36)  not null
         constraint fk_auth_mfa_user_uuid
             references tb_auth,
+    constraint uq_tb_auth_mfa_user_uuid unique (user_uuid),
     secret     text,
     enabled    boolean      not null
 );
@@ -77,7 +80,8 @@ create table tb_auth_permission
         constraint fk_auth_permission_parent_uuid
             references tb_auth_permission,
     sort_order  integer      not null,
-    description varchar(255)
+    description varchar(255),
+    constraint uq_tb_auth_permission_code unique (code)
 );
 
 create index idx_tb_auth_permission_code
@@ -134,7 +138,8 @@ create table tb_auth_permission_grant
             references tb_auth_permission,
     granted_by_uuid varchar(36)
         constraint fk_auth_permission_grant_granted_by_uuid
-            references tb_auth
+            references tb_auth,
+    constraint uq_tb_auth_permission_grant_user_permission unique (user_uuid, permission_uuid)
 );
 
 create index idx_tb_auth_permission_grant_user_uuid
@@ -235,11 +240,11 @@ create table tb_refresh_token
     last_used_at         timestamp(6),
     replaced_by_token_id varchar(64),
     revoked              boolean       not null,
-    token                varchar(1024) not null,
     token_hash           varchar(1024) not null,
     token_id             varchar(64)   not null,
     user_agent           varchar(512),
     user_uuid            varchar(36)   not null
         constraint fkes59al21mee9i14oy9310kpas
-            references tb_auth
+            references tb_auth,
+    constraint uq_tb_refresh_token_token_id unique (token_id)
 );

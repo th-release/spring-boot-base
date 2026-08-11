@@ -37,7 +37,7 @@ public class FcmNotificationService {
     }
 
     public List<FcmNotificationDto> getMyNotifications(String userUuid, int page, int size) {
-        PageRequest pageRequest = PageRequest.of(Math.max(page, 0), Math.max(size, 1));
+        PageRequest pageRequest = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 100));
         return fcmNotificationRepository.findAllActiveByUser(AuthEntity.builder().uuid(userUuid).build(), pageRequest).stream()
                 .map(this::toDto)
                 .toList();

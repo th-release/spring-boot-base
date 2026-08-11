@@ -27,7 +27,10 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @Setter
-@Table(name = "tb_auth")
+@Table(name = "tb_auth", uniqueConstraints = {
+        @jakarta.persistence.UniqueConstraint(name = "uq_tb_auth_username", columnNames = "username"),
+        @jakarta.persistence.UniqueConstraint(name = "uq_tb_auth_email", columnNames = "email")
+})
 @NoArgsConstructor
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)

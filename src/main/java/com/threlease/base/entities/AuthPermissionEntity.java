@@ -23,7 +23,9 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Entity
 @Getter
 @Setter
-@Table(name = "tb_auth_permission")
+@Table(name = "tb_auth_permission", uniqueConstraints = {
+        @jakarta.persistence.UniqueConstraint(name = "uq_tb_auth_permission_code", columnNames = "code")
+})
 @NoArgsConstructor
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
